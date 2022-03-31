@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'apache-superset==1.4.1',
         'authlib',
+        'psycopg2'
     ],
     classifiers=[
         'Programming Language :: Python',
