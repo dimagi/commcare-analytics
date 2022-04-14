@@ -1,8 +1,17 @@
 import os
+from datetime import datetime
+from typing import Any, Dict, List
+from urllib.parse import urljoin
 
 import jinja2
+import requests
+from sqlalchemy.orm import Session
 
 from flask import flash, g, redirect, request, url_for
+from superset_config import HQ_BASE_URL
+
+from .models import HQDataSourceConfigModel
+from .schemas import HQDataSourceConfigSchema
 
 DOMAIN_REQUIRED_VIEWS = [
     'TableModelView.list'
@@ -59,3 +68,40 @@ def add_domain_links(active_domain, domains):
     import superset
     for domain in domains:
         superset.appbuilder.menu.add_link(domain, category=active_domain, href=url_for('SelectDomainView.select', hq_domain=domain))
+
+
+# TODO: Import data source configs on login
+def import_data_source_configs(
+    session: Session,
+    hq_domain: str,
+) -> None:
+    """
+    Imports or refreshes an HQ domain's data source configs
+    """
+    (session.query(HQDataSourceConfigModel)
+            .filter(HQDataSourceConfigModel.domain == hq_domain)
+            .delete())
+    # TODO: Delete after upserting, not before
+    for dict_ in fetch_data_source_configs(hq_domain):
+        model = HQDataSourceConfigModel(**dict_)
+        session.add(model)
+    session.commit()
+
+
+def fetch_data_source_configs(hq_domain: str) -> List[Dict[str, Any]]:
+    schema = HQDataSourceConfigSchema()
+    retrieved_at = datetime.utcnow()
+
+    # https://www.commcarehq.org/a/[PROJECT]/api/v0.5/ucr_data_source/?format=json -- 404
+    url = urljoin(HQ_BASE_URL, f'/a/{hq_domain}/api/v0.5/ucr_data_source/')
+    headers = {'Accept': 'application/json'}
+    # TODO: Auth
+    response = requests.get(url, headers=headers)
+    return [
+        schema.load({
+            'domain': hq_domain,
+            'id': item['id'],
+            'display_name': item['display_name'],
+            'retrieved_at': retrieved_at,
+        }) for item in response.json()['objects']
+    ]

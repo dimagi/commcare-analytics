@@ -4,7 +4,8 @@ from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
 from superset.typing import FlaskResponse
 
-from . import hq_domain
+from .hq_domain import fetch_data_source_configs, user_domains
+from .models import HQDataSourceConfigModel
 
 
 class SelectDomainView(BaseView):
@@ -26,7 +27,7 @@ class SelectDomainView(BaseView):
         return self.render_template(
             'select_domain.html',
             next=request.args.get('next'),
-            domains=hq_domain.user_domains(current_user)
+            domains=user_domains(current_user)
         )
 
     @has_access
@@ -54,10 +55,11 @@ class HQDataSourceConfigView(BaseView):
     def list(self) -> FlaskResponse:
         # return super().render_app_template()
 
-        # domain = 'demo'
-        # data_source_configs = fetch_data_source_configs(domain)
-
-        data_source_configs = ['foo', 'bar', 'baz']
+        domain = 'demo'
+        data_source_configs = [
+            HQDataSourceConfigModel(**dict_)
+            for dict_ in fetch_data_source_configs(domain)
+        ]
         return self.render_template(
             'hq_data_source_config_list.html',
             data_source_configs=data_source_configs,
