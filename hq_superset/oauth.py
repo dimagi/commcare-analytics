@@ -14,6 +14,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
 
     def set_oauth_session(self, provider, oauth_response):
         super().set_oauth_session(provider, oauth_response)
-        # The default FAB implementation only stores the access_token and disregards `refresh_token` and `expires_at`
-        #   keep a track of refresh_token so that new access_token can be obtained
+        # The default FAB implementation only stores the access_token and disregards
+        #   other part of the oauth_response such as `refresh_token` and `expires_at`
+        #   keep a track of full response so that refresh_token is not lost for latter use
         session['oauth_response'] = oauth_response
