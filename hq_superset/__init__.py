@@ -8,4 +8,6 @@ def patch_superset_config(config):
 def flask_app_mutator(app):
     # Import the views (which assumes the app is initialized) here
     # return
-    pass
+    from . import views
+    from superset.extensions import appbuilder
+    appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource')
