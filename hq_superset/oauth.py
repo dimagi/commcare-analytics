@@ -12,7 +12,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
         if provider == 'commcare':
             logging.debug("Getting user info from {}".format(provider))
             user = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/identity/", token=response).json()
-            domains = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/user_domains/", token=response).json()
+            domains = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/user_domains?feature_flag=superset-analytics", token=response).json()
             session["user_hq_domains"] = domains
             logging.debug("user - {}".format(user))
             return user
