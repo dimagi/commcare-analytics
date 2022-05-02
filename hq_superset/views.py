@@ -10,7 +10,7 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.sql_parse import Table
 from superset.models.core import Database
 from zipfile import ZipFile
-from .utils import get_datasource_export_url
+from .utils import get_datasource_export_url, get_ucr_database
 from .oauth import get_valid_cchq_oauth_token
 
 
@@ -114,12 +114,6 @@ def refresh_hq_datasource(domain, datasource_id):
     # Assign the datasource:view access for the user's domain-role
     # Todo; could return the ID of the created datasource
     return "success"
-
-
-
-def get_ucr_database():
-    # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name='HQ Data').one()
 
 
 def get_domain_db_schema(domain):
