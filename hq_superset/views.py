@@ -12,6 +12,7 @@ from superset.models.core import Database
 from zipfile import ZipFile
 from .utils import get_datasource_export_url, get_ucr_database
 from .oauth import get_valid_cchq_oauth_token
+from .hq_domain import user_domains
 
 
 class HQDatasourceView(BaseView):
@@ -119,4 +120,37 @@ def refresh_hq_datasource(domain, datasource_id):
 def get_domain_db_schema(domain):
     # Todo; get actual domain schema
     return 'public'
+
+
+class SelectDomainView(BaseView):
+
+    """
+    Select a Domain view, all roles that have 'profile' access on 'core.Superset' view can access this
+    """
+    # re-use core.Superset view's permission name
+    class_permission_name = "Superset"
+
+    def __init__(self):
+        self.route_base = "/domain"
+        super().__init__()
+
+    @has_access
+    @permission_name("profile")
+    @expose('/list/', methods=['GET'])
+    def list(self):
+        return self.render_template(
+            'select_domain.html',
+            next=request.args.get('next'),
+            domains=hq_domain.user_domains(current_user)
+        )
+
+    @has_access
+    @permission_name("profile")
+    @expose('/select/<hq_domain>', methods=['GET'])
+    def select(self, hq_domain):
+        import pdb; pdb.set_trace()
+        response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
+        # Todo validate domain permission
+        response.set_cookie('hq_domain', hq_domain)
+        return response
 
