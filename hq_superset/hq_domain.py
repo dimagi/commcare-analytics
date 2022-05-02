@@ -2,22 +2,18 @@ import os
 
 import jinja2
 
-from flask import flash, g, redirect, request, url_for
-
-DOMAIN_REQUIRED_VIEWS = [
-    'TableModelView.list'
-]
-
+from flask import flash, g, redirect, request, url_for, session
+from flask_login import current_user
 
 def before_request_hook():
-    # Check URL is one of DOMAIN_REQUIRED_VIEWS
+    override_jinja2_template_loader()
     # Check if a hq_domain cookie is set
     # If not redirect to domain_list view
-    _override_jinja2_template_loader()
-    _validate_domain()
+    return redirect_to_select_domain_view()
 
 
-def _override_jinja2_template_loader():
+def override_jinja2_template_loader():
+    # Allow loading templates from the templates directory in this project as well
     from superset import app
 
     template_path = os.sep.join((
@@ -31,18 +27,29 @@ def _override_jinja2_template_loader():
     app.jinja_loader = my_loader
 
 
-def _validate_domain():
-    if not request.url_rule.endpoint in DOMAIN_REQUIRED_VIEWS:
+DOMAIN_EXCLUDED_VIEWS = [
+    "AuthOAuthView.login",
+    "AuthOAuthView.logout",
+    "AuthOAuthView.oauth_authorized",
+    "AuthDBView.logout",
+    "AuthDBView.login",
+    "SelectDomainView.list",
+    "appbuilder.static",
+]
+
+def redirect_to_select_domain_view():
+    if request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS:
         return
+    hq_domain = request.cookies.get('hq_domain')
+    valid_domains = user_domains(current_user)
+    # Todo; Handle no superset enabled domains case
+    if hq_domain in valid_domains:
+        g.hq_domain = hq_domain
+    elif len(valid_domains) == 1:
+        g.hq_domain = valid_domains[0]
     else:
-        hq_domain = request.cookies.get('hq_domain')
-        if hq_domain and is_valid_user_domain(hq_domain):
-            import pdb; pdb.set_trace()
-            g.hq_domain = hq_domain
-            # add_domain_links(hq_domain, user_domains('todo'))
-        else:
-            flash('You need to select a domain to access this page', 'error')
-            return redirect(url_for('SelectDomainView.list', next=request.url))
+        flash('You need to select a domain to access this page', 'error')
+        return redirect(url_for('SelectDomainView.list', next=request.url))
 
 
 def is_valid_user_domain(hq_domain):
@@ -51,8 +58,11 @@ def is_valid_user_domain(hq_domain):
 
 
 def user_domains(user):
-    # Todo Implement based on persisted user domain membership data
-    return ['a', 'b']
+    # This should be set by oauth_user_info after OAuth
+    return [
+        d["domain_name"]
+        for d in session["user_hq_domains"]["objects"]
+    ]
 
 
 def add_domain_links(active_domain, domains):
