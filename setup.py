@@ -15,6 +15,8 @@ setup(
     install_requires=[
         'apache-superset==1.4.1',
         'authlib',
+        'nose',
+        'MarkupSafe==2.0.1',
     ],
     classifiers=[
         'Programming Language :: Python',

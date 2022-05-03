@@ -1,4 +1,7 @@
 import logging
+from typing import List, Optional
+
+from flask_appbuilder.security.sqla.models import PermissionView, Role
 
 from superset.security import SupersetSecurityManager
 
@@ -13,8 +16,8 @@ class CommCareSecurityManager(SupersetSecurityManager):
             logging.debug("user - {}".format(user))
             return user
 
-    def create_custom_role_perms(self, domains):
-        for domain_name in domains.items():
+    def create_custom_role_perms(self, domains: List[str]) -> None:
+        for domain_name in domains:
             role_created = self.create_custom_role(domain_name)
             if not role_created:
                 continue
@@ -25,12 +28,12 @@ class CommCareSecurityManager(SupersetSecurityManager):
             sesh.merge(role_created)
             sesh.commit()
 
-    def create_custom_permission(self, domain_name):
+    def create_custom_permission(self, domain_name: str) -> PermissionView:
         schema_access_perm_name = "schema_access"
         schema_access_view_menu_name = "[{}].[{}]".format("superset", domain_name)
         return self.add_permission_view_menu(schema_access_perm_name, schema_access_view_menu_name)
 
-    def create_custom_role(self, role_name):
+    def create_custom_role(self, role_name: str) -> Optional[Role]:
         is_role_present = self.find_role(role_name)
         if is_role_present:
             logging.debug("Role {} already exists".format(role_name))
@@ -38,7 +41,10 @@ class CommCareSecurityManager(SupersetSecurityManager):
         logging.info("Creating role {}".format(role_name))
         return self.add_role(role_name)
 
-    def create_schema(self, schema_name):
+    def assign_role_to_user(self, role_name: str, user):
+        pass
+
+    def create_schema(self, schema_name: str):
         # TODO: use schema creation util, diff. PR for it
         pass
 
