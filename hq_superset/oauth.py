@@ -5,6 +5,10 @@ from flask import session
 from flask_login import current_user
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
+from .utils import (
+    get_ucr_database, get_role_name_for_domain, DOMAIN_PREFIX, create_schema_if_not_exists,
+    get_schema_name_for_domain
+)
 
 class CommCareSecurityManager(SupersetSecurityManager):
 
@@ -41,47 +45,32 @@ class CommCareSecurityManager(SupersetSecurityManager):
         return self.add_role(get_role_name_for_domain(domain))
 
     def ensure_schema_perm_created(self, domain):
-        menu_name = self.get_schema_perm(get_ucr_database(), domain)
+        menu_name = self.get_schema_perm(get_ucr_database(), get_schema_name_for_domain(domain))
         permission = self.find_permission_view_menu("schema_access", menu_name)
         if not permission:
             permission = self.add_permission_view_menu("schema_access", menu_name)
         return permission
 
+    def ensure_schema_created(self, domain):
+        create_schema_if_not_exists(domain)
+
     def sync_domain_role(self, domain):
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
-        # self.create_schema(domain)
+        self.ensure_schema_created(domain)
         permission = self.ensure_schema_perm_created(domain)
         role = self.ensure_domain_role_created(domain)
-        role.permissions = [permission]
-        # Todo; may need to add the permission to admin role as well
-        self.get_session.add(role)
-        self.get_session.commit()
-        import pdb; pdb.set_trace()
+        self.add_permission_role(role, permission)
         # Filter out other domain roles
         filtered_roles = [
             r
             for r in current_user.roles
-            if not r.name.startswith(DOMAIN_ROLE_PREFIX)
+            if not r.name.startswith(DOMAIN_PREFIX)
         ]
         # Add the domain's role
         current_user.roles = filtered_roles + [role]
         self.get_session.add(current_user)
         self.get_session.commit()
-
-
-def get_ucr_database():
-    from superset import db
-    from superset.models.core import Database
-    # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name="HQ Data").one()
-
-
-DOMAIN_ROLE_PREFIX = "hqdomain_"
-
-def get_role_name_for_domain(domain):
-    # Prefix the custom domain specific roles
-    return f"{DOMAIN_ROLE_PREFIX}{domain}"
 
 
 class OAuthSessionExpired(Exception):

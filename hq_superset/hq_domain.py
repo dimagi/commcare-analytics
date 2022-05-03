@@ -4,6 +4,8 @@ import jinja2
 
 from flask import flash, g, redirect, request, url_for, session
 from flask_login import current_user
+from superset.views.base import is_user_admin
+
 
 def before_request_hook():
     override_jinja2_template_loader()
@@ -39,12 +41,12 @@ def ensure_domain_selected():
     # Check if a hq_domain cookie is set
     #   Ensure necessary roles, permissions and DB schemas are created for the domain
     import superset
-    if request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS:
+    if is_user_admin() or (request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS):
         return
     hq_domain = request.cookies.get('hq_domain')
     valid_domains = user_domains(current_user)
     # Todo; Handle no superset enabled domains case
-    if hq_domain in valid_domains:
+    if is_valid_user_domain(hq_domain):
         g.hq_domain = hq_domain
     elif len(valid_domains) == 1:
         g.hq_domain = valid_domains[0]
@@ -54,12 +56,14 @@ def ensure_domain_selected():
 
 
 def is_valid_user_domain(hq_domain):
-    # Todo; implement based on domains returned from HQ user_info API endpoint
-    return True
+    # Admins have access to all domains
+    return is_user_admin() or hq_domain in user_domains(current_user)
 
 
 def user_domains(user):
     # This should be set by oauth_user_info after OAuth
+    if is_user_admin():
+        return []
     return [
         d["domain_name"]
         for d in session["user_hq_domains"]["objects"]

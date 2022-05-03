@@ -10,7 +10,7 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.sql_parse import Table
 from superset.models.core import Database
 from zipfile import ZipFile
-from .utils import get_datasource_export_url, get_ucr_database
+from .utils import get_datasource_export_url, get_ucr_database, get_schema_name_for_domain
 from .oauth import get_valid_cchq_oauth_token
 from .hq_domain import user_domains
 
@@ -25,6 +25,8 @@ class HQDatasourceView(BaseView):
     def create_or_update(self, domain, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
         from .oauth import get_valid_cchq_oauth_token
+        if not domain == g.hq_domain:
+            return f"You can only refresh for your selected domain {g.hq_domain}", 400
         res = refresh_hq_datasource(domain, datasource_id)
         return res
 
@@ -47,7 +49,7 @@ def refresh_hq_datasource(domain, datasource_id):
     filename = zipfile.namelist()[0]
     # Upload to table
     database = get_ucr_database()
-    schema = get_domain_db_schema(domain)
+    schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
 
     try:
@@ -111,15 +113,11 @@ def refresh_hq_datasource(domain, datasource_id):
         db.session.rollback()
         raise ex
 
+    superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     # Todo;
     # Assign the datasource:view access for the user's domain-role
     # Todo; could return the ID of the created datasource
     return "success"
-
-
-def get_domain_db_schema(domain):
-    # Todo; get actual domain schema
-    return 'public'
 
 
 class SelectDomainView(BaseView):
