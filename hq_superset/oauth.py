@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
 from .utils import (
     get_ucr_database, get_role_name_for_domain, DOMAIN_PREFIX, create_schema_if_not_exists,
-    get_schema_name_for_domain
+    get_schema_name_for_domain, SESSION_USER_DOMAINS_KEY, SESSION_OAUTH_RESPONSE_KEY
 )
 
 class CommCareSecurityManager(SupersetSecurityManager):
@@ -18,7 +18,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
             logging.debug("Getting user info from {}".format(provider))
             user = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/identity/", token=response).json()
             domains = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/user_domains?feature_flag=superset-analytics", token=response).json()
-            session["user_hq_domains"] = domains
+            session[SESSION_USER_DOMAINS_KEY] = domains
             logging.debug("user - {}".format(user))
             return user
 
@@ -38,7 +38,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
         #     'refresh_token': 'kXU2Xo4RLn1UCYJMX2KWaic1kxI0PP',
         #     'expires_at': 1650872906
         # }
-        session["oauth_response"] = oauth_response
+        session[SESSION_OAUTH_RESPONSE_KEY] = oauth_response
 
     def ensure_domain_role_created(self, domain):
         # This inbuilt method creates only if the role doesn't exist.
@@ -81,7 +81,7 @@ def get_valid_cchq_oauth_token():
     # Returns a valid working oauth access_token
     #   May raise `OAuthSessionExpired`, if a valid working token is not found
     #   The user needs to re-auth using CommCareHQ to get valid tokens
-    oauth_response = session["oauth_response"]
+    oauth_response = session[SESSION_OAUTH_RESPONSE_KEY]
     if "access_token" not in oauth_response:
         raise OAuthSessionExpired(
             "access_token not found in oauth_response, possibly because "

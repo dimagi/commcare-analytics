@@ -114,9 +114,6 @@ def refresh_hq_datasource(domain, datasource_id):
         raise ex
 
     superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
-    # Todo;
-    # Assign the datasource:view access for the user's domain-role
-    # Todo; could return the ID of the created datasource
     return "success"
 
 

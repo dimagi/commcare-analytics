@@ -21,6 +21,8 @@ def create_schema_if_not_exists(domain):
 
 
 DOMAIN_PREFIX = "hqdomain_"
+SESSION_USER_DOMAINS_KEY = "user_hq_domains"
+SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 
 
 def get_schema_name_for_domain(domain):

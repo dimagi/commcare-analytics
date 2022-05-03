@@ -5,7 +5,7 @@ import jinja2
 from flask import flash, g, redirect, request, url_for, session
 from flask_login import current_user
 from superset.views.base import is_user_admin
-
+from .utils import SESSION_USER_DOMAINS_KEY
 
 def before_request_hook():
     override_jinja2_template_loader()
@@ -45,7 +45,6 @@ def ensure_domain_selected():
         return
     hq_domain = request.cookies.get('hq_domain')
     valid_domains = user_domains(current_user)
-    # Todo; Handle no superset enabled domains case
     if is_valid_user_domain(hq_domain):
         g.hq_domain = hq_domain
     elif len(valid_domains) == 1:
@@ -66,7 +65,7 @@ def user_domains(user):
         return []
     return [
         d["domain_name"]
-        for d in session["user_hq_domains"]["objects"]
+        for d in session[SESSION_USER_DOMAINS_KEY]["objects"]
     ]
 
 
