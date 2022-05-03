@@ -141,16 +141,16 @@ class SelectDomainView(BaseView):
         return self.render_template(
             'select_domain.html',
             next=request.args.get('next'),
-            domains=hq_domain.user_domains(current_user)
+            domains=user_domains(current_user)
         )
 
     @has_access
     @permission_name("profile")
     @expose('/select/<hq_domain>', methods=['GET'])
     def select(self, hq_domain):
-        import pdb; pdb.set_trace()
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
-        # Todo validate domain permission
+        assert hq_domain in user_domains(current_user)
         response.set_cookie('hq_domain', hq_domain)
+        superset.appbuilder.sm.sync_domain_role(hq_domain)
         return response
 
