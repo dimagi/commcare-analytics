@@ -7,9 +7,7 @@ from flask_login import current_user
 
 def before_request_hook():
     override_jinja2_template_loader()
-    # Check if a hq_domain cookie is set
-    # If not redirect to domain_list view
-    return redirect_to_select_domain_view()
+    return ensure_domain_selected()
 
 
 def override_jinja2_template_loader():
@@ -37,7 +35,10 @@ DOMAIN_EXCLUDED_VIEWS = [
     "appbuilder.static",
 ]
 
-def redirect_to_select_domain_view():
+def ensure_domain_selected():
+    # Check if a hq_domain cookie is set
+    #   Ensure necessary roles, permissions and DB schemas are created for the domain
+    import superset
     if request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS:
         return
     hq_domain = request.cookies.get('hq_domain')
