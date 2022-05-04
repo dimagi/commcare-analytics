@@ -1,0 +1,27 @@
+<div class="superset-list-view">
+	<h2>Import From CommCareHQ</h2>
+	<table class="table table-hover" role="table">
+		<thead >
+		<tr role="row">
+			<th>
+				UCR Name
+			</th>
+			<th>
+				Import into Superset
+			</th>
+		</tr>
+		</thead>
+		<tbody role="rowgroup">
+			{% for ds in datasources.objects %}
+			<tr role="row" class="table-row">
+				<td class="table-cell" role="cell">
+					{{ ds.display_name }} ({{ds.id}})
+				</td>
+				<td class="table-cell" role="cell">
+					<a href="/hq_datasource/update/{{ds.id}}">Import</a>
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>

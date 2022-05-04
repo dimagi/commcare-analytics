@@ -3,6 +3,8 @@ import sqlalchemy
 def get_datasource_export_url(domain, datasource_id):
     return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}?format=csv"
 
+def get_datasource_list_url(domain):
+    return f"a/{domain}/api/v0.5/ucr_data_source/"
 
 def get_ucr_database():
     from superset import db

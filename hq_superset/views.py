@@ -10,7 +10,8 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.sql_parse import Table
 from superset.models.core import Database
 from zipfile import ZipFile
-from .utils import get_datasource_export_url, get_ucr_database, get_schema_name_for_domain
+from .utils import (get_datasource_export_url, get_ucr_database, get_schema_name_for_domain,
+    get_datasource_list_url)
 from .oauth import get_valid_cchq_oauth_token
 from .hq_domain import user_domains
 
@@ -18,17 +19,27 @@ from .hq_domain import user_domains
 class HQDatasourceView(BaseView):
 
     def __init__(self):
-        self.route_base = "/a/<domain>/datasource/"
+        self.route_base = "/hq_datasource/"
         super().__init__()
 
-    @expose("/update/<datasource_id>", methods=["POST"])
-    def create_or_update(self, domain, datasource_id):
+    @expose("/update/<datasource_id>", methods=["GET"])
+    def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
         from .oauth import get_valid_cchq_oauth_token
-        if not domain == g.hq_domain:
-            return f"You can only refresh for your selected domain {g.hq_domain}", 400
-        res = refresh_hq_datasource(domain, datasource_id)
+        res = refresh_hq_datasource(g.hq_domain, datasource_id)
         return res
+
+    @expose("/list/", methods=["GET"])
+    def list_hq_datasources(self):
+        datasource_list_url = get_datasource_list_url(g.hq_domain)
+        provider = superset.appbuilder.sm.oauth_remotes["commcare"]
+        oauth_token = get_valid_cchq_oauth_token()
+        response = provider.get(datasource_list_url, token=oauth_token)
+        return self.render_template(
+            "hq_datasource_list.html",
+            datasources=response.json(),
+        )
+
 
 
 class CCHQApiException(Exception):
@@ -113,8 +124,8 @@ def refresh_hq_datasource(domain, datasource_id):
         db.session.rollback()
         raise ex
 
-    superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
-    return "success"
+    # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
+    return redirect("/tablemodelview/list/")
 
 
 class SelectDomainView(BaseView):
