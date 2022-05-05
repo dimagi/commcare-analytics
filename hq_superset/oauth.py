@@ -105,7 +105,7 @@ def get_valid_cchq_oauth_token():
             provider.access_token_url,
             refresh_token=refresh_token
         )
-        superset.appbuilder.sm.set_oauth_session(provider, refresh_response)
+        superset.appbuilder.sm.set_oauth_session("commcare", refresh_response)
         return refresh_response
     except HTTPError:
         # If the refresh token too expired raise exception.
