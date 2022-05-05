@@ -35,6 +35,7 @@ DOMAIN_EXCLUDED_VIEWS = [
     "AuthDBView.login",
     "SelectDomainView.list",
     "appbuilder.static",
+    "static",
 ]
 
 def ensure_domain_selected():
@@ -61,7 +62,7 @@ def is_valid_user_domain(hq_domain):
 
 def user_domains(user):
     # This should be set by oauth_user_info after OAuth
-    if is_user_admin():
+    if is_user_admin() or SESSION_USER_DOMAINS_KEY not in session:
         return []
     return [
         d["domain_name"]
