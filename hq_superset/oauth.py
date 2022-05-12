@@ -2,8 +2,13 @@ import logging
 import superset
 import time
 from flask import session
+from flask_login import current_user
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
+from .utils import (
+    get_ucr_database, get_role_name_for_domain, DOMAIN_PREFIX, create_schema_if_not_exists,
+    get_schema_name_for_domain, SESSION_USER_DOMAINS_KEY, SESSION_OAUTH_RESPONSE_KEY
+)
 
 class CommCareSecurityManager(SupersetSecurityManager):
 
@@ -12,6 +17,8 @@ class CommCareSecurityManager(SupersetSecurityManager):
         if provider == 'commcare':
             logging.debug("Getting user info from {}".format(provider))
             user = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/identity/", token=response).json()
+            domains = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/user_domains?feature_flag=superset-analytics", token=response).json()
+            session[SESSION_USER_DOMAINS_KEY] = domains
             logging.debug("user - {}".format(user))
             return user
 
@@ -31,7 +38,39 @@ class CommCareSecurityManager(SupersetSecurityManager):
         #     'refresh_token': 'kXU2Xo4RLn1UCYJMX2KWaic1kxI0PP',
         #     'expires_at': 1650872906
         # }
-        session["oauth_response"] = oauth_response
+        session[SESSION_OAUTH_RESPONSE_KEY] = oauth_response
+
+    def ensure_domain_role_created(self, domain):
+        # This inbuilt method creates only if the role doesn't exist.
+        return self.add_role(get_role_name_for_domain(domain))
+
+    def ensure_schema_perm_created(self, domain):
+        menu_name = self.get_schema_perm(get_ucr_database(), get_schema_name_for_domain(domain))
+        permission = self.find_permission_view_menu("schema_access", menu_name)
+        if not permission:
+            permission = self.add_permission_view_menu("schema_access", menu_name)
+        return permission
+
+    def ensure_schema_created(self, domain):
+        create_schema_if_not_exists(domain)
+
+    def sync_domain_role(self, domain):
+        # This creates DB schema, role and schema permissions for the domain and
+        #   assigns the role to the current_user
+        self.ensure_schema_created(domain)
+        permission = self.ensure_schema_perm_created(domain)
+        role = self.ensure_domain_role_created(domain)
+        self.add_permission_role(role, permission)
+        # Filter out other domain roles
+        filtered_roles = [
+            r
+            for r in current_user.roles
+            if not r.name.startswith(DOMAIN_PREFIX)
+        ]
+        # Add the domain's role
+        current_user.roles = filtered_roles + [role]
+        self.get_session.add(current_user)
+        self.get_session.commit()
 
 
 class OAuthSessionExpired(Exception):
@@ -42,7 +81,7 @@ def get_valid_cchq_oauth_token():
     # Returns a valid working oauth access_token
     #   May raise `OAuthSessionExpired`, if a valid working token is not found
     #   The user needs to re-auth using CommCareHQ to get valid tokens
-    oauth_response = session["oauth_response"]
+    oauth_response = session[SESSION_OAUTH_RESPONSE_KEY]
     if "access_token" not in oauth_response:
         raise OAuthSessionExpired(
             "access_token not found in oauth_response, possibly because "
@@ -66,7 +105,7 @@ def get_valid_cchq_oauth_token():
             provider.access_token_url,
             refresh_token=refresh_token
         )
-        superset.appbuilder.sm.set_oauth_session(provider, refresh_response)
+        superset.appbuilder.sm.set_oauth_session("commcare", refresh_response)
         return refresh_response
     except HTTPError:
         # If the refresh token too expired raise exception.

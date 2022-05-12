@@ -1,0 +1,29 @@
+<!-- extend base layout -->
+{% extends "superset/base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div id="loginbox" style="margin-top:50px;" class="mainbox col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="panel-title">Select a Domain</div>
+            </div>
+            <div style="padding-top:30px" class="panel-body">
+                <div>
+                    {% for domain in domains %}
+                    <a
+                        href="{{ url_for('SelectDomainView.select', hq_domain=domain, next=next) }}"
+                        class="btn btn-primary btn-block"
+                        type="submit"
+                    >
+                        {{ domain }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
