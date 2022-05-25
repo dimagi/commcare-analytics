@@ -1,7 +1,7 @@
 import logging
 import superset
 import time
-from flask import session
+from flask import flash, session
 from flask_login import current_user
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
@@ -10,17 +10,32 @@ from .utils import (
     get_schema_name_for_domain, SESSION_USER_DOMAINS_KEY, SESSION_OAUTH_RESPONSE_KEY
 )
 
+
+logger = logging.getLogger(__name__)
+
+
 class CommCareSecurityManager(SupersetSecurityManager):
 
     def oauth_user_info(self, provider, response=None):
-        logging.debug("Oauth2 provider: {0}.".format(provider))
+        logger.debug("Oauth2 provider: {0}.".format(provider))
         if provider == 'commcare':
-            logging.debug("Getting user info from {}".format(provider))
-            user = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/identity/", token=response).json()
-            domains = self.appbuilder.sm.oauth_remotes[provider].get("api/v0.5/user_domains?feature_flag=superset-analytics", token=response).json()
+            logger.debug("Getting user info from {}".format(provider))
+            user = self._get_hq_response("api/v0.5/identity/", provider, response)
+            domains = self._get_hq_response("api/v0.5/user_domains?feature_flag=superset-analytics", provider, response)
             session[SESSION_USER_DOMAINS_KEY] = domains
-            logging.debug("user - {}".format(user))
+            logger.debug("user - {}".format(user))
             return user
+
+    def _get_hq_response(self, endpoint, provider, token):
+        response = self.appbuilder.sm.oauth_remotes[provider].get(endpoint, token=token)
+        if response.status_code != 200:
+            url = f"{self.appbuilder.sm.oauth_remotes[provider].api_base_url}{endpoint}"
+            message = f"There was an error accessing the CommCareHQ endpoint at {url}"
+            logger.exception(message)
+            flash(message, "danger")
+            raise HTTPError(message)
+        else:
+            return response.json()
 
     def set_oauth_session(self, provider, oauth_response):
         super().set_oauth_session(provider, oauth_response)

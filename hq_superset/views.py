@@ -35,6 +35,9 @@ class HQDatasourceView(BaseView):
         provider = superset.appbuilder.sm.oauth_remotes["commcare"]
         oauth_token = get_valid_cchq_oauth_token()
         response = provider.get(datasource_list_url, token=oauth_token)
+        if response.status_code != 200:
+            url = f"{provider.api_base_url}{datasource_list_url}"
+            raise HTTPError(f"There was an error in fetching datasources from CommCareHQ for {url}")
         return self.render_template(
             "hq_datasource_list.html",
             datasources=response.json(),

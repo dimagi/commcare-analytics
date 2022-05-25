@@ -51,7 +51,7 @@ def ensure_domain_selected():
     elif len(valid_domains) == 1:
         g.hq_domain = valid_domains[0]
     else:
-        flash('You need to select a domain to access this page', 'error')
+        flash('Please select a domain to access this page.', 'warning')
         return redirect(url_for('SelectDomainView.list', next=request.url))
 
 
