@@ -12,6 +12,7 @@ setup(
     author_email='sreddy@dimagi.com',
     url='https://github.com/dimagi/hq_superset',
     packages=find_packages(exclude=['docs', 'tests']),
+    include_package_data=True,
     install_requires=[
         'apache-superset==1.4.1',
         'authlib',
