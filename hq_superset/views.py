@@ -5,9 +5,11 @@ from flask_appbuilder import expose, BaseView
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
 from io import BytesIO
+from requests.exceptions import HTTPError
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
 from superset.sql_parse import Table
+from superset.views.base import BaseSupersetView
 from superset.models.core import Database
 from zipfile import ZipFile
 from .utils import (get_datasource_export_url, get_ucr_database, get_schema_name_for_domain,
@@ -16,7 +18,7 @@ from .oauth import get_valid_cchq_oauth_token
 from .hq_domain import user_domains
 
 
-class HQDatasourceView(BaseView):
+class HQDatasourceView(BaseSupersetView):
 
     def __init__(self):
         self.route_base = "/hq_datasource/"
@@ -131,7 +133,7 @@ def refresh_hq_datasource(domain, datasource_id):
     return redirect("/tablemodelview/list/")
 
 
-class SelectDomainView(BaseView):
+class SelectDomainView(BaseSupersetView):
 
     """
     Select a Domain view, all roles that have 'profile' access on 'core.Superset' view can access this
@@ -143,9 +145,9 @@ class SelectDomainView(BaseView):
         self.route_base = "/domain"
         super().__init__()
 
+    @expose('/list/', methods=['GET'])
     @has_access
     @permission_name("profile")
-    @expose('/list/', methods=['GET'])
     def list(self):
         return self.render_template(
             'select_domain.html',
@@ -153,9 +155,9 @@ class SelectDomainView(BaseView):
             domains=user_domains(current_user)
         )
 
+    @expose('/select/<hq_domain>', methods=['GET'])
     @has_access
     @permission_name("profile")
-    @expose('/select/<hq_domain>', methods=['GET'])
     def select(self, hq_domain):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
         assert hq_domain in user_domains(current_user)
