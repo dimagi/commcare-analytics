@@ -7,6 +7,7 @@ from flask_login import current_user
 from superset.views.base import is_user_admin
 from .utils import SESSION_USER_DOMAINS_KEY
 
+
 def before_request_hook():
     override_jinja2_template_loader()
     return ensure_domain_selected()
@@ -34,6 +35,7 @@ DOMAIN_EXCLUDED_VIEWS = [
     "AuthDBView.logout",
     "AuthDBView.login",
     "SelectDomainView.list",
+    "SelectDomainView.select",
     "appbuilder.static",
     "static",
 ]

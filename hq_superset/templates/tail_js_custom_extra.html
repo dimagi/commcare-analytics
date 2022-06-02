@@ -25,13 +25,19 @@
 #}
 
 <script>
-    window.onload = function() {
+    var updateHQDatasources = function() {
         if (window.location.pathname !== "/tablemodelview/list/") {
             return;
         }
         $.get("/hq_datasource/list", function(result) {
             $(".dataset-list-view").after(result); // Or whatever you need to insert the result
         },'html');
-
     };
+    (function(){
+        var original = history.replaceState;
+        history.replaceState = function(){
+            original.apply(history, arguments); // preserve normal functionality
+            updateHQDatasources();
+        };
+    }());
 </script>

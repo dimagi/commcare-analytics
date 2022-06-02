@@ -155,7 +155,7 @@ class SelectDomainView(BaseSupersetView):
             domains=user_domains(current_user)
         )
 
-    @expose('/select/<hq_domain>', methods=['GET'])
+    @expose('/select/<hq_domain>/', methods=['GET'])
     @has_access
     @permission_name("profile")
     def select(self, hq_domain):
