@@ -1,7 +1,3 @@
-import os
-
-import jinja2
-
 from flask import flash, g, redirect, request, url_for, session
 from flask_login import current_user
 from superset.views.base import is_user_admin
@@ -9,23 +5,7 @@ from .utils import SESSION_USER_DOMAINS_KEY
 
 
 def before_request_hook():
-    override_jinja2_template_loader()
     return ensure_domain_selected()
-
-
-def override_jinja2_template_loader():
-    # Allow loading templates from the templates directory in this project as well
-    from superset import app
-
-    template_path = os.sep.join((
-        os.path.dirname(os.path.abspath(__file__)),
-        'templates'
-    ))
-    my_loader = jinja2.ChoiceLoader([
-            jinja2.FileSystemLoader([template_path]),
-            app.jinja_loader,
-        ])
-    app.jinja_loader = my_loader
 
 
 DOMAIN_EXCLUDED_VIEWS = [
