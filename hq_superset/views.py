@@ -22,6 +22,7 @@ class HQDatasourceView(BaseSupersetView):
 
     def __init__(self):
         self.route_base = "/hq_datasource/"
+        self.default_view = "list_hq_datasources"
         super().__init__()
 
     @expose("/update/<datasource_id>", methods=["GET"])
