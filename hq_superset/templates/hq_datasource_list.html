@@ -3,23 +3,41 @@
 	<table class="table table-hover" role="table">
 		<thead >
 		<tr role="row">
-			<th>
-				UCR Name
-			</th>
-			<th>
-				Import into Superset
-			</th>
+			<th>UCR Name</th>
+			<th>Import/Refresh</th>
+			<th>View in Superset</th>
+			<th>Delete</th>
 		</tr>
 		</thead>
 		<tbody role="rowgroup">
-			{% for ds in datasources.objects %}
+			{% for ds in hq_datasources.objects %}
 			<tr role="row" class="table-row">
 				<td class="table-cell" role="cell">
-					{{ ds.display_name }} ({{ds.id}})
+					<a href="{{hq_base_url}}a/{{g.hq_domain}}/configurable_reports/data_sources/edit/{{ds.id}}">{{ds.display_name}}</a>
+
 				</td>
-				<td class="table-cell" role="cell">
-					<a href="/hq_datasource/update/{{ds.id}}">Import</a>
-				</td>
+				{% if ucr_id_to_pks.get(ds.id, None) %}
+					<td class="table-cell" role="cell">
+						<a href="/hq_datasource/update/{{ds.id}}">Refresh</a>
+					</td>
+					<td class="table-cell" role="cell">
+						<a href="/superset/explore/table/{{ ucr_id_to_pks.get(ds.id) }}/">{{ds.id}}</a>
+					</td>
+					<td class="table-cell" role="cell">
+						<!-- Todo; make a DELETE form -->
+						<a href="/hq_datasource/delete/{{ucr_id_to_pks.get(ds.id)}}">Delete</a>
+					</td>
+				{% else %}
+					<td class="table-cell" role="cell">
+						<a href="/hq_datasource/update/{{ds.id}}">Import</a>
+					</td>
+					<td class="table-cell alert alert-warning" role="cell">
+						Not Imported yet
+					</td>
+					<td class="table-cell alert alert-warning" role="cell">
+						Not Imported yet
+					</td>
+				{% endif %}
 			</tr>
 			{% endfor %}
 		</tbody>

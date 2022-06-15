@@ -1,6 +1,7 @@
+import logging
 import pandas as pd
 import superset
-from flask import url_for, render_template, redirect, request, session, g
+from flask import url_for, render_template, redirect, request, session, g, abort
 from flask_appbuilder import expose, BaseView
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
@@ -8,6 +9,12 @@ from io import BytesIO
 from requests.exceptions import HTTPError
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
+from superset.datasets.commands.delete import DeleteDatasetCommand
+from superset.datasets.commands.exceptions import (
+    DatasetForbiddenError,
+    DatasetNotFoundError,
+    DatasetDeleteFailedError
+)
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
 from superset.models.core import Database
@@ -18,12 +25,28 @@ from .oauth import get_valid_cchq_oauth_token
 from .hq_domain import user_domains
 
 
+logger = logging.getLogger(__name__)
+
+
 class HQDatasourceView(BaseSupersetView):
 
     def __init__(self):
         self.route_base = "/hq_datasource/"
         self.default_view = "list_hq_datasources"
         super().__init__()
+
+    def _ucr_id_to_pks(self):
+        tables = (
+            db.session.query(SqlaTable)
+            .filter_by(
+                schema=get_schema_name_for_domain(g.hq_domain),
+                database_id=get_ucr_database().id,
+            )
+        )
+        return {
+            table.table_name: table.id
+            for table in tables.all()
+        }
 
     @expose("/update/<datasource_id>", methods=["GET"])
     def create_or_update(self, datasource_id):
@@ -43,9 +66,28 @@ class HQDatasourceView(BaseSupersetView):
             raise HTTPError(f"There was an error in fetching datasources from CommCareHQ for {url}")
         return self.render_template(
             "hq_datasource_list.html",
-            datasources=response.json(),
+            hq_datasources=response.json(),
+            ucr_id_to_pks=self._ucr_id_to_pks(),
+            hq_base_url=provider.api_base_url
         )
 
+    @expose("/delete/<datasource_pk>", methods=["GET"])
+    def delete(self, datasource_pk):
+        try:
+            DeleteDatasetCommand(g.user, datasource_pk).run()
+        except DatasetNotFoundError:
+            return abort(404)
+        except DatasetForbiddenError:
+            return abort(403)
+        except DatasetDeleteFailedError as ex:
+            logger.error(
+                "Error deleting model %s: %s",
+                self.__class__.__name__,
+                str(ex),
+                exc_info=True,
+            )
+            return abort(description=str(ex))
+        return redirect("/tablemodelview/list/")
 
 
 class CCHQApiException(Exception):
@@ -144,6 +186,7 @@ class SelectDomainView(BaseSupersetView):
 
     def __init__(self):
         self.route_base = "/domain"
+        self.default_view = "list"
         super().__init__()
 
     @expose('/list/', methods=['GET'])

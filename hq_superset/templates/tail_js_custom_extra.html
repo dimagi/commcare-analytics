@@ -40,7 +40,7 @@
         }
 
         $.get("/hq_datasource/list", function(result) {
-            $(".dataset-list-view").after(result);
+            $(".dataset-list-view").before(result);
         },'html').fail(function() {
             // When Oauth expires.
             var element = `
