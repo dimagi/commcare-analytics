@@ -41,14 +41,22 @@
 
         $.get("/hq_datasource/list", function(result) {
             $(".dataset-list-view").before(result);
-        },'html').fail(function() {
-            // When Oauth expires.
-            var element = `
-                <div class="alert alert-danger">
-                    <button type="button" class="close" data-dismiss="alert">×</button>
-                    There was an error communicating with CommCareHQ, please <a href="/logout/">logout</a> and login in again
-                </div>
-            `;
+        },'html').fail(function(jqXHR) {
+            if (jqXHR.status == 403) {
+                // User doesn't have permissions to list datasources on HQ
+                return;
+            }
+            if (jqXHR.status == 400) {
+                var msg = jqXHR.responseText;
+            }
+            else {
+                // Possible that the Oauth has expired.
+                var msg = 'There was an error communicating with CommCareHQ, you may have to <a href="/logout/">logout</a> and login in again';
+            }
+            var element = '<div class="alert alert-danger">' +
+                          '<button type="button" class="close" data-dismiss="alert">×</button>' +
+                          msg +
+                          '</div>';
             $("header").after(element);
         });
     };

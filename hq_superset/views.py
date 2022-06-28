@@ -1,7 +1,8 @@
 import logging
 import pandas as pd
+from sqlalchemy.sql import sqltypes
 import superset
-from flask import url_for, render_template, redirect, request, session, g, abort
+from flask import url_for, render_template, redirect, request, session, g, abort, Response
 from flask_appbuilder import expose, BaseView
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
@@ -61,9 +62,11 @@ class HQDatasourceView(BaseSupersetView):
         provider = superset.appbuilder.sm.oauth_remotes["commcare"]
         oauth_token = get_valid_cchq_oauth_token()
         response = provider.get(datasource_list_url, token=oauth_token)
+        if response.status_code == 403:
+            return Response(status=403)
         if response.status_code != 200:
             url = f"{provider.api_base_url}{datasource_list_url}"
-            raise HTTPError(f"There was an error in fetching datasources from CommCareHQ for {url}")
+            return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
         return self.render_template(
             "hq_datasource_list.html",
             hq_datasources=response.json(),
