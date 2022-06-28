@@ -22,6 +22,9 @@ def flask_app_mutator(app):
     app.before_request_funcs.setdefault(None, []).append(
         hq_domain.before_request_hook
     )
+    app.after_request_funcs.setdefault(None, []).append(
+        hq_domain.after_request_hook
+    )
     app.strict_slashes = False
     override_jinja2_template_loader(app)
 

@@ -7,6 +7,11 @@ from .utils import SESSION_USER_DOMAINS_KEY
 def before_request_hook():
     return ensure_domain_selected()
 
+def after_request_hook(response):
+    # On logout clear domain cookie
+    if (request.url_rule and request.url_rule.endpoint == "AuthOAuthView.logout"):
+        response.set_cookie('hq_domain', '', expires=0)
+    return response
 
 DOMAIN_EXCLUDED_VIEWS = [
     "AuthOAuthView.login",
