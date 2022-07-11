@@ -25,13 +25,46 @@
 #}
 
 <script>
-    window.onload = function() {
+    {% if g.hq_domain %}
+        window.onload = function() {
+            var element = `
+                <a href="/domain/list" class="navbar-brand"><img src="/static/images/commcare-hq-logo.png" style="max-width:100% ; max-height:100% ;"></a>
+                <a href="/domain/list" class="navbar-brand" title="Click to select a different domain">{{g.hq_domain}}</a>
+            `;
+            $($(".navbar-brand")[0]).after(element);
+        };
+    {% endif %}
+    var updateHQDatasources = function() {
         if (window.location.pathname !== "/tablemodelview/list/") {
             return;
         }
-        $.get("/hq_datasource/list", function(result) {
-            $(".dataset-list-view").after(result); // Or whatever you need to insert the result
-        },'html');
 
+        $.get("/hq_datasource/list", function(result) {
+            $(".dataset-list-view").before(result);
+        },'html').fail(function(jqXHR) {
+            if (jqXHR.status == 403) {
+                // User doesn't have permissions to list datasources on HQ
+                return;
+            }
+            if (jqXHR.status == 400) {
+                var msg = jqXHR.responseText;
+            }
+            else {
+                // Possible that the Oauth has expired.
+                var msg = 'There was an error communicating with CommCareHQ, you may have to <a href="/logout/">logout</a> and login in again';
+            }
+            var element = '<div class="alert alert-danger">' +
+                          '<button type="button" class="close" data-dismiss="alert">×</button>' +
+                          msg +
+                          '</div>';
+            $("header").after(element);
+        });
     };
+    (function(){
+        var original = history.replaceState;
+        history.replaceState = function(){
+            original.apply(history, arguments); // preserve normal functionality
+            updateHQDatasources();
+        };
+    }());
 </script>

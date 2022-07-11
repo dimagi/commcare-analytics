@@ -1,13 +1,23 @@
+import logging
 import pandas as pd
+from sqlalchemy.sql import sqltypes
 import superset
-from flask import url_for, render_template, redirect, request, session, g
+from flask import url_for, render_template, redirect, request, session, g, abort, Response
 from flask_appbuilder import expose, BaseView
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
 from io import BytesIO
+from requests.exceptions import HTTPError
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
+from superset.datasets.commands.delete import DeleteDatasetCommand
+from superset.datasets.commands.exceptions import (
+    DatasetForbiddenError,
+    DatasetNotFoundError,
+    DatasetDeleteFailedError
+)
 from superset.sql_parse import Table
+from superset.views.base import BaseSupersetView
 from superset.models.core import Database
 from zipfile import ZipFile
 from .utils import (get_datasource_export_url, get_ucr_database, get_schema_name_for_domain,
@@ -16,11 +26,28 @@ from .oauth import get_valid_cchq_oauth_token
 from .hq_domain import user_domains
 
 
-class HQDatasourceView(BaseView):
+logger = logging.getLogger(__name__)
+
+
+class HQDatasourceView(BaseSupersetView):
 
     def __init__(self):
         self.route_base = "/hq_datasource/"
+        self.default_view = "list_hq_datasources"
         super().__init__()
+
+    def _ucr_id_to_pks(self):
+        tables = (
+            db.session.query(SqlaTable)
+            .filter_by(
+                schema=get_schema_name_for_domain(g.hq_domain),
+                database_id=get_ucr_database().id,
+            )
+        )
+        return {
+            table.table_name: table.id
+            for table in tables.all()
+        }
 
     @expose("/update/<datasource_id>", methods=["GET"])
     def create_or_update(self, datasource_id):
@@ -35,14 +62,35 @@ class HQDatasourceView(BaseView):
         provider = superset.appbuilder.sm.oauth_remotes["commcare"]
         oauth_token = get_valid_cchq_oauth_token()
         response = provider.get(datasource_list_url, token=oauth_token)
+        if response.status_code == 403:
+            return Response(status=403)
         if response.status_code != 200:
             url = f"{provider.api_base_url}{datasource_list_url}"
-            raise HTTPError(f"There was an error in fetching datasources from CommCareHQ for {url}")
+            return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
         return self.render_template(
             "hq_datasource_list.html",
-            datasources=response.json(),
+            hq_datasources=response.json(),
+            ucr_id_to_pks=self._ucr_id_to_pks(),
+            hq_base_url=provider.api_base_url
         )
 
+    @expose("/delete/<datasource_pk>", methods=["GET"])
+    def delete(self, datasource_pk):
+        try:
+            DeleteDatasetCommand(g.user, datasource_pk).run()
+        except DatasetNotFoundError:
+            return abort(404)
+        except DatasetForbiddenError:
+            return abort(403)
+        except DatasetDeleteFailedError as ex:
+            logger.error(
+                "Error deleting model %s: %s",
+                self.__class__.__name__,
+                str(ex),
+                exc_info=True,
+            )
+            return abort(description=str(ex))
+        return redirect("/tablemodelview/list/")
 
 
 class CCHQApiException(Exception):
@@ -131,7 +179,7 @@ def refresh_hq_datasource(domain, datasource_id):
     return redirect("/tablemodelview/list/")
 
 
-class SelectDomainView(BaseView):
+class SelectDomainView(BaseSupersetView):
 
     """
     Select a Domain view, all roles that have 'profile' access on 'core.Superset' view can access this
@@ -141,11 +189,12 @@ class SelectDomainView(BaseView):
 
     def __init__(self):
         self.route_base = "/domain"
+        self.default_view = "list"
         super().__init__()
 
+    @expose('/list/', methods=['GET'])
     @has_access
     @permission_name("profile")
-    @expose('/list/', methods=['GET'])
     def list(self):
         return self.render_template(
             'select_domain.html',
@@ -153,9 +202,9 @@ class SelectDomainView(BaseView):
             domains=user_domains(current_user)
         )
 
+    @expose('/select/<hq_domain>/', methods=['GET'])
     @has_access
     @permission_name("profile")
-    @expose('/select/<hq_domain>', methods=['GET'])
     def select(self, hq_domain):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
         assert hq_domain in user_domains(current_user)

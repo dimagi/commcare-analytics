@@ -1,3 +1,8 @@
+import os
+import jinja2
+
+from flask import Blueprint
+
 
 def patch_superset_config(config):
     from . import oauth
@@ -5,15 +10,41 @@ def patch_superset_config(config):
     config.FLASK_APP_MUTATOR = flask_app_mutator
     config.CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager
 
+
 def flask_app_mutator(app):
     # Import the views (which assumes the app is initialized) here
     # return
     from . import views
     from . import hq_domain
     from superset.extensions import appbuilder
-    appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource')
-    appbuilder.add_view(views.SelectDomainView, 'Select a Domain')
+    appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource', menu_cond=lambda *_: False)
+    appbuilder.add_view(views.SelectDomainView, 'Select a Domain', menu_cond=lambda *_: False)
     app.before_request_funcs.setdefault(None, []).append(
         hq_domain.before_request_hook
     )
+    app.after_request_funcs.setdefault(None, []).append(
+        hq_domain.after_request_hook
+    )
     app.strict_slashes = False
+    override_jinja2_template_loader(app)
+
+
+def override_jinja2_template_loader(app):
+    # Allow loading templates from the templates directory in this project as well
+
+    template_path = os.sep.join((
+        os.path.dirname(os.path.abspath(__file__)),
+        'templates'
+    ))
+    my_loader = jinja2.ChoiceLoader([
+            jinja2.FileSystemLoader([template_path]),
+            app.jinja_loader,
+        ])
+    app.jinja_loader = my_loader
+
+    images_path = os.sep.join((
+        os.path.dirname(os.path.abspath(__file__)),
+        'images'
+    ))
+    blueprint = Blueprint('Static', __name__, static_url_path='/static/images', static_folder=images_path)
+    app.register_blueprint(blueprint)

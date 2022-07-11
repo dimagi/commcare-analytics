@@ -1,31 +1,17 @@
-import os
-
-import jinja2
-
 from flask import flash, g, redirect, request, url_for, session
 from flask_login import current_user
 from superset.views.base import is_user_admin
 from .utils import SESSION_USER_DOMAINS_KEY
 
+
 def before_request_hook():
-    override_jinja2_template_loader()
     return ensure_domain_selected()
 
-
-def override_jinja2_template_loader():
-    # Allow loading templates from the templates directory in this project as well
-    from superset import app
-
-    template_path = os.sep.join((
-        os.path.dirname(os.path.abspath(__file__)),
-        'templates'
-    ))
-    my_loader = jinja2.ChoiceLoader([
-            jinja2.FileSystemLoader([template_path]),
-            app.jinja_loader,
-        ])
-    app.jinja_loader = my_loader
-
+def after_request_hook(response):
+    # On logout clear domain cookie
+    if (request.url_rule and request.url_rule.endpoint == "AuthOAuthView.logout"):
+        response.set_cookie('hq_domain', '', expires=0)
+    return response
 
 DOMAIN_EXCLUDED_VIEWS = [
     "AuthOAuthView.login",
@@ -34,6 +20,7 @@ DOMAIN_EXCLUDED_VIEWS = [
     "AuthDBView.logout",
     "AuthDBView.login",
     "SelectDomainView.list",
+    "SelectDomainView.select",
     "appbuilder.static",
     "static",
 ]
@@ -48,8 +35,6 @@ def ensure_domain_selected():
     valid_domains = user_domains(current_user)
     if is_valid_user_domain(hq_domain):
         g.hq_domain = hq_domain
-    elif len(valid_domains) == 1:
-        g.hq_domain = valid_domains[0]
     else:
         flash('Please select a domain to access this page.', 'warning')
         return redirect(url_for('SelectDomainView.list', next=request.url))
