@@ -21,7 +21,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
         if provider == 'commcare':
             logger.debug("Getting user info from {}".format(provider))
             user = self._get_hq_response("api/v0.5/identity/", provider, response)
-            domains = self._get_hq_response("api/v0.5/user_domains?feature_flag=superset-analytics", provider, response)
+            domains = self._get_hq_response("api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true", provider, response)
             session[SESSION_USER_DOMAINS_KEY] = domains
             logger.debug(f"user - {user}, domain - {domains}")
             return user
