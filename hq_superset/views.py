@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -101,34 +102,29 @@ class CCHQApiException(Exception):
 
 
 def refresh_hq_datasource(domain, datasource_id, display_name):
-    # This method pulls the data from CommCareHQ and creates/replaces the
-    #   corresponding Superset dataset
-    datasource_url = get_datasource_export_url(domain, datasource_id)
+    """
+    Pulls the data from CommCare HQ and creates/replaces the
+    corresponding Superset dataset
+    """
     provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    oauth_token = get_valid_cchq_oauth_token()
-    response = provider.get(datasource_url, token=oauth_token)
-    if response.status_code != 200:
-        # Todo; logging
-        raise CCHQApiException("Error downloading the UCR export from HQ")
-    zipfile = ZipFile(BytesIO(response.content))
-    filename = zipfile.namelist()[0]
-    # Upload to table
+    token = get_valid_cchq_oauth_token()
     database = get_ucr_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
 
     try:
-        df = pd.concat(
-            pd.read_csv(
-                chunksize=1000,
-                filepath_or_buffer=zipfile.open(filename),
-                encoding="utf-8",
-                # Todo; make date parsing work
-                parse_dates=True,
-                infer_datetime_format=True,
-                keep_default_na=True,
+        with get_csv_file(provider, token, domain, datasource_id) as csv_file:
+            df = pd.concat(
+                pd.read_csv(
+                    chunksize=1000,
+                    filepath_or_buffer=csv_file,
+                    encoding="utf-8",
+                    # Todo; make date parsing work
+                    parse_dates=True,
+                    infer_datetime_format=True,
+                    keep_default_na=True,
+                )
             )
-        )
 
         database.db_engine_spec.df_to_sql(
             database,
@@ -184,6 +180,19 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
 
     # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     return redirect("/tablemodelview/list/")
+
+
+@contextmanager
+def get_csv_file(provider, oauth_token, domain, datasource_id):
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.get(datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        # Todo; logging
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    with ZipFile(BytesIO(response.content)) as zipfile:
+        filename = zipfile.namelist()[0]
+        yield zipfile.open(filename)
 
 
 class SelectDomainView(BaseSupersetView):
