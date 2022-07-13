@@ -1,30 +1,33 @@
 import logging
+from io import BytesIO
+from zipfile import ZipFile
+
 import pandas as pd
-from sqlalchemy.sql import sqltypes
 import superset
-from flask import url_for, render_template, redirect, request, session, g, abort, Response
-from flask_appbuilder import expose, BaseView
+from flask import Response, abort, g, redirect, request
+from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
-from io import BytesIO
-from requests.exceptions import HTTPError
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
 from superset.datasets.commands.delete import DeleteDatasetCommand
 from superset.datasets.commands.exceptions import (
+    DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
-    DatasetDeleteFailedError
 )
+from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
-from superset.models.core import Database
-from zipfile import ZipFile
-from .utils import (get_datasource_export_url, get_ucr_database, get_schema_name_for_domain,
-    get_datasource_list_url)
-from .oauth import get_valid_cchq_oauth_token
-from .hq_domain import user_domains
 
+from .hq_domain import user_domains
+from .oauth import get_valid_cchq_oauth_token
+from .utils import (
+    get_datasource_export_url,
+    get_datasource_list_url,
+    get_schema_name_for_domain,
+    get_ucr_database,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +55,6 @@ class HQDatasourceView(BaseSupersetView):
     @expose("/update/<datasource_id>", methods=["GET"])
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
-        from .oauth import get_valid_cchq_oauth_token
         display_name = request.args.get("name")
         res = refresh_hq_datasource(g.hq_domain, datasource_id, display_name)
         return res

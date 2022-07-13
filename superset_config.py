@@ -1,7 +1,7 @@
-import hq_superset
 from flask_appbuilder.security.manager import AUTH_OAUTH
 from superset import config as superset_config
 
+import hq_superset
 
 hq_superset.patch_superset_config(superset_config)
 
