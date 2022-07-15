@@ -4,13 +4,36 @@ This is a python package that can be installed alongside of `apache-superset` to
 
 ## Local Development
 
+Follow below instructions.
+
+### Setup env
+
 While doing development on top of this integration, it's useful to install this via `pip -e` option so that any changes made get reflected directly without another `pip install`.
 
 - Setup a virtual environment.
 - Clone this repo and cd into the directory of this repo.
 - Run `pip install -e .`
 
-## CommCareHQ OAuth Integration
+### CommCareHQ OAuth Integration
 
 - Create an OAuth application on CommCareHQ using Django Admin `<hq_host>/admin/oauth2_provider/application/`. Use `<superset_host>/oauth-authorized/commcare` as the redirect URL.
 - Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth client credentials obtained from HQ.
+
+
+### Initialize Superset
+
+Run through the initialization instructions at https://superset.apache.org/docs/installation/installing-superset-from-scratch/#installing-and-initializing-superset. You may skip `superset load_examples`. 
+
+You should now be able to run superset using the `superset run` command from the above docs. However OAuth login does not work yet as hq-superset needs a postgres database created to store CommCare HQ data.
+
+
+### Create a Postgres Database Connection for storing HQ data
+
+- Create a Postgres database
+- Login to superset as the admin user created in the last step. Note that you will need to update `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be otherwise set to `AUTH_OAUTH`.
+- Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
+- Create a Database connection by clicking '+ DATABASE' button at the top.
+- The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is the name by which this codebase refers to the postgres DB.
+
+OAuth integration should now start working.
+
