@@ -18,7 +18,7 @@
 				</td>
 				{% if ucr_id_to_pks.get(ds.id, None) %}
 					<td class="table-cell" role="cell">
-						<a href="/hq_datasource/update/{{ds.id}}">Refresh</a>
+						<a href="/hq_datasource/update/{{ds.id}}?name={{ ds.display_name | urlencode}}">Refresh</a>
 					</td>
 					<td class="table-cell" role="cell">
 						<a href="/superset/explore/table/{{ ucr_id_to_pks.get(ds.id) }}/">{{ds.id}}</a>
@@ -29,7 +29,7 @@
 					</td>
 				{% else %}
 					<td class="table-cell" role="cell">
-						<a href="/hq_datasource/update/{{ds.id}}">Import</a>
+						<a href="/hq_datasource/update/{{ds.id}}?name={{ ds.display_name | urlencode}}">Import</a>
 					</td>
 					<td class="table-cell alert alert-warning" role="cell">
 						Not Imported yet
