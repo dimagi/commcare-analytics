@@ -53,7 +53,8 @@ class HQDatasourceView(BaseSupersetView):
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
         from .oauth import get_valid_cchq_oauth_token
-        res = refresh_hq_datasource(g.hq_domain, datasource_id)
+        display_name = request.args.get("name")
+        res = refresh_hq_datasource(g.hq_domain, datasource_id, display_name)
         return res
 
     @expose("/list/", methods=["GET"])
@@ -97,7 +98,7 @@ class CCHQApiException(Exception):
     pass
 
 
-def refresh_hq_datasource(domain, datasource_id):
+def refresh_hq_datasource(domain, datasource_id, display_name):
     # This method pulls the data from CommCareHQ and creates/replaces the
     #   corresponding Superset dataset
     datasource_url = get_datasource_export_url(domain, datasource_id)
@@ -153,7 +154,7 @@ def refresh_hq_datasource(domain, datasource_id):
         sqla_table = (
             db.session.query(SqlaTable)
             .filter_by(
-                table_name=csv_table.table,
+                table_name=datasource_id,
                 schema=csv_table.schema,
                 database_id=expore_database.id,
             )
@@ -161,9 +162,13 @@ def refresh_hq_datasource(domain, datasource_id):
         )
 
         if sqla_table:
+            sqla_table.description = display_name
             sqla_table.fetch_metadata()
         if not sqla_table:
-            sqla_table = SqlaTable(table_name=csv_table.table)
+            sqla_table = SqlaTable(table_name=datasource_id)
+            # Store display name from HQ into description since
+            #   sqla_table.table_name stores datasource_id
+            sqla_table.description = display_name
             sqla_table.database = expore_database
             sqla_table.database_id = database.id
             sqla_table.user_id = g.user.get_id()
