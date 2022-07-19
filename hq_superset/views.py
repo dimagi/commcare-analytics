@@ -24,6 +24,8 @@ from superset.views.base import BaseSupersetView
 from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
 from .utils import (
+    get_column_dtypes,
+    get_datasource_details_url,
     get_datasource_export_url,
     get_datasource_list_url,
     get_schema_name_for_domain,
@@ -111,7 +113,8 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     database = get_ucr_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
-
+    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
+    column_dtypes = get_column_dtypes(datasource_defn)
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
             df = pd.concat(
@@ -123,6 +126,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
                     parse_dates=True,
                     infer_datetime_format=True,
                     keep_default_na=True,
+                    dtype=column_dtypes,
                 )
             )
 
@@ -193,6 +197,14 @@ def get_csv_file(provider, oauth_token, domain, datasource_id):
     with ZipFile(BytesIO(response.content)) as zipfile:
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
+
+
+def get_datasource_defn(provider, oauth_token, domain, datasource_id):
+    url = get_datasource_details_url(domain, datasource_id)
+    response = provider.get(url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR definition from HQ")
+    return response.json()
 
 
 class SelectDomainView(BaseSupersetView):

@@ -9,6 +9,10 @@ def get_datasource_list_url(domain):
     return f"a/{domain}/api/v0.5/ucr_data_source/"
 
 
+def get_datasource_details_url(domain, datasource_id):
+    return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
+
+
 def get_ucr_database():
     # Todo; cache to avoid multiple lookups in single request
     from superset import db
@@ -41,3 +45,26 @@ def get_role_name_for_domain(domain):
     # Prefix in-case domain name matches with known role names such as admin
     # Same prefix pattern as schema only by coincidence, not a must.
     return f"{DOMAIN_PREFIX}{domain}"
+
+
+def get_column_dtypes(datasource_defn):
+    """
+    Maps UCR column data types to Pandas data types.
+
+    See corehq/apps/userreports/datatypes.py for possible data types.
+    """
+    # TODO: How are array indicators handled in CSV export?
+
+    COL_ATTR = 'column_id'
+    pandas_dtypes = {
+        'date': 'datetime64[ns]',
+        'datetime': 'datetime64[ns]',
+        'string': 'string',
+        'integer': 'int64',
+        'decimal': 'float64',
+        'small_integer': 'int8',  # TODO: Is this true?
+    }
+    return {
+        ind[COL_ATTR]: pandas_dtypes[ind['datatype']]
+        for ind in datasource_defn['configured_indicators']
+    }

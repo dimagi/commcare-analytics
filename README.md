@@ -37,3 +37,14 @@ You should now be able to run superset using the `superset run` command from the
 
 OAuth integration should now start working.
 
+
+### Testing
+
+Tests use pytest, which is included in `requirements_dev.txt`:
+
+    $ pip install -r requirements_dev.txt
+    $ pytest
+
+The test runner can only run tests that do not import from Superset. The
+code you want to test will need to be in a module whose dependencies
+don't include Superset.
