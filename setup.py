@@ -17,7 +17,7 @@ setup(
         # Werkzeug 2.1 doesn't work, so pin it
         'Werkzeug==2.0.0',
         'jinja2==3.0.3',
-        'dimagi-superset==2.0.0',
+        'dimagi-superset==2.0.1',
         'authlib==1.0.1',
         'requests==2.28.1',
         'psycopg2==2.9.3',
