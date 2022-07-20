@@ -30,7 +30,7 @@ You should now be able to run superset using the `superset run` command from the
 ### Create a Postgres Database Connection for storing HQ data
 
 - Create a Postgres database
-- Login to superset as the admin user created in the last step. Note that you will need to update `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be otherwise set to `AUTH_OAUTH`.
+- Login to superset as the admin user created in the Superset installation and initialization. Note that you will need to update `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be otherwise set to `AUTH_OAUTH`.
 - Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
 - Create a Database connection by clicking '+ DATABASE' button at the top.
 - The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is the name by which this codebase refers to the postgres DB.
