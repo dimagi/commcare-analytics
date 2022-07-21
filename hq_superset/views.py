@@ -1,30 +1,37 @@
 import logging
+from contextlib import contextmanager
+from io import BytesIO
+from zipfile import ZipFile
+
 import pandas as pd
-from sqlalchemy.sql import sqltypes
 import superset
-from flask import url_for, render_template, redirect, request, session, g, abort, Response
-from flask_appbuilder import expose, BaseView
+from flask import Response, abort, g, redirect, request
+from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
-from io import BytesIO
-from requests.exceptions import HTTPError
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
 from superset.datasets.commands.delete import DeleteDatasetCommand
 from superset.datasets.commands.exceptions import (
+    DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
-    DatasetDeleteFailedError
 )
+from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
-from superset.models.core import Database
-from zipfile import ZipFile
-from .utils import (get_datasource_export_url, get_ucr_database, get_schema_name_for_domain,
-    get_datasource_list_url)
-from .oauth import get_valid_cchq_oauth_token
-from .hq_domain import user_domains
 
+from .hq_domain import user_domains
+from .oauth import get_valid_cchq_oauth_token
+from .utils import (
+    get_column_dtypes,
+    get_datasource_details_url,
+    get_datasource_export_url,
+    get_datasource_list_url,
+    get_schema_name_for_domain,
+    get_ucr_database,
+    parse_date,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +59,6 @@ class HQDatasourceView(BaseSupersetView):
     @expose("/update/<datasource_id>", methods=["GET"])
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
-        from .oauth import get_valid_cchq_oauth_token
         display_name = request.args.get("name")
         res = refresh_hq_datasource(g.hq_domain, datasource_id, display_name)
         return res
@@ -99,34 +105,30 @@ class CCHQApiException(Exception):
 
 
 def refresh_hq_datasource(domain, datasource_id, display_name):
-    # This method pulls the data from CommCareHQ and creates/replaces the
-    #   corresponding Superset dataset
-    datasource_url = get_datasource_export_url(domain, datasource_id)
+    """
+    Pulls the data from CommCare HQ and creates/replaces the
+    corresponding Superset dataset
+    """
     provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    oauth_token = get_valid_cchq_oauth_token()
-    response = provider.get(datasource_url, token=oauth_token)
-    if response.status_code != 200:
-        # Todo; logging
-        raise CCHQApiException("Error downloading the UCR export from HQ")
-    zipfile = ZipFile(BytesIO(response.content))
-    filename = zipfile.namelist()[0]
-    # Upload to table
+    token = get_valid_cchq_oauth_token()
     database = get_ucr_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
-
+    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
+    column_dtypes, date_columns = get_column_dtypes(datasource_defn)
     try:
-        df = pd.concat(
-            pd.read_csv(
-                chunksize=1000,
-                filepath_or_buffer=zipfile.open(filename),
-                encoding="utf-8",
-                # Todo; make date parsing work
-                parse_dates=True,
-                infer_datetime_format=True,
-                keep_default_na=True,
+        with get_csv_file(provider, token, domain, datasource_id) as csv_file:
+            df = pd.concat(
+                pd.read_csv(
+                    chunksize=1000,
+                    filepath_or_buffer=csv_file,
+                    encoding="utf-8",
+                    parse_dates=date_columns,
+                    date_parser=parse_date,
+                    keep_default_na=True,
+                    dtype=column_dtypes,
+                )
             )
-        )
 
         database.db_engine_spec.df_to_sql(
             database,
@@ -182,6 +184,27 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
 
     # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     return redirect("/tablemodelview/list/")
+
+
+@contextmanager
+def get_csv_file(provider, oauth_token, domain, datasource_id):
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.get(datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        # Todo; logging
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    with ZipFile(BytesIO(response.content)) as zipfile:
+        filename = zipfile.namelist()[0]
+        yield zipfile.open(filename)
+
+
+def get_datasource_defn(provider, oauth_token, domain, datasource_id):
+    url = get_datasource_details_url(domain, datasource_id)
+    response = provider.get(url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR definition from HQ")
+    return response.json()
 
 
 class SelectDomainView(BaseSupersetView):

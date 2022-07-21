@@ -1,6 +1,7 @@
-from flask import flash, g, redirect, request, url_for, session
+from flask import flash, g, redirect, request, session, url_for
 from flask_login import current_user
 from superset.views.base import is_user_admin
+
 from .utils import SESSION_USER_DOMAINS_KEY
 
 
