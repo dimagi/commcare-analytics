@@ -30,6 +30,7 @@ from .utils import (
     get_datasource_list_url,
     get_schema_name_for_domain,
     get_ucr_database,
+    parse_date,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,7 +115,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
-    column_dtypes = get_column_dtypes(datasource_defn)
+    column_dtypes, date_columns = get_column_dtypes(datasource_defn)
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
             df = pd.concat(
@@ -122,9 +123,8 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
                     chunksize=1000,
                     filepath_or_buffer=csv_file,
                     encoding="utf-8",
-                    # Todo; make date parsing work
-                    parse_dates=True,
-                    infer_datetime_format=True,
+                    parse_dates=date_columns,
+                    date_parser=parse_date,
                     keep_default_na=True,
                     dtype=column_dtypes,
                 )

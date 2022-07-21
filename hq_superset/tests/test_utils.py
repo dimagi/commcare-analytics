@@ -1,3 +1,4 @@
+import doctest
 import json
 
 from hq_superset.utils import get_column_dtypes
@@ -5,13 +6,23 @@ from hq_superset.utils import get_column_dtypes
 
 def test_get_column_dtypes():
     datasource_defn = json.loads(datasource_defn_str)
-    column_dtypes = get_column_dtypes(datasource_defn)
+    column_dtypes, date_columns = get_column_dtypes(datasource_defn)
     assert column_dtypes == {
-        'data_lmp_date_5e24b993': 'datetime64[ns]',
+        'doc_id': 'string',
         'data_visit_comment_fb984fda': 'string',
-        'data_visit_date_eaece89e': 'datetime64[ns]',
         'data_visit_number_33d63739': 'int64'
     }
+    assert set(date_columns) == {
+        'inserted_at',
+        'data_lmp_date_5e24b993',
+        'data_visit_date_eaece89e'
+    }
+
+
+def test_doctests():
+    import hq_superset.utils
+    results = doctest.testmod(hq_superset.utils)
+    assert results.failed == 0
 
 
 datasource_defn_str = """{

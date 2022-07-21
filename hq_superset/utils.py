@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 import sqlalchemy
 
 
@@ -54,8 +56,6 @@ def get_column_dtypes(datasource_defn):
     See corehq/apps/userreports/datatypes.py for possible data types.
     """
     # TODO: How are array indicators handled in CSV export?
-
-    COL_ATTR = 'column_id'
     pandas_dtypes = {
         'date': 'datetime64[ns]',
         'datetime': 'datetime64[ns]',
@@ -64,7 +64,34 @@ def get_column_dtypes(datasource_defn):
         'decimal': 'float64',
         'small_integer': 'int8',  # TODO: Is this true?
     }
-    return {
-        ind[COL_ATTR]: pandas_dtypes[ind['datatype']]
-        for ind in datasource_defn['configured_indicators']
-    }
+    column_dtypes = {'doc_id': 'string'}
+    date_columns = ['inserted_at']
+    for ind in datasource_defn['configured_indicators']:
+        if pandas_dtypes[ind['datatype']] == 'datetime64[ns]':
+            # the dtype datetime64[ns] is not supported for parsing,
+            # pass this column using parse_dates instead
+            date_columns.append(ind['column_id'])
+        else:
+            column_dtypes[ind['column_id']] = pandas_dtypes[ind['datatype']]
+    return column_dtypes, date_columns
+
+
+def parse_date(date_str):
+    """
+    Simple, fast date parser for dates formatted by CommCare HQ.
+
+    >>> parse_date('2022-02-24 12:29:19.450137')
+    datetime.datetime(2022, 2, 24, 12, 29, 19, 450137)
+    >>> parse_date('2022-02-22')
+    datetime.date(2022, 2, 22)
+    >>> parse_date('not a date')
+    'not a date'
+
+    """
+    try:
+        if len(date_str) > 10:
+            return datetime.fromisoformat(date_str)
+        else:
+            return date.fromisoformat(date_str)
+    except ValueError:
+        return date_str
