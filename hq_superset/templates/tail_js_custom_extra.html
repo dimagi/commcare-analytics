@@ -39,7 +39,7 @@
             return;
         }
 
-        $.get("/hq_datasource/list", function(result) {
+        $.get("/hq_datasource/list/", function(result) {
             $(".dataset-list-view").before(result);
         },'html').fail(function(jqXHR) {
             if (jqXHR.status == 403) {
