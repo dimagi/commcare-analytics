@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+import pandas
 import sqlalchemy
 
 
@@ -88,6 +89,9 @@ def parse_date(date_str):
     'not a date'
 
     """
+    if pandas.isna(date_str):
+        # data is missing/None
+        return None
     try:
         if len(date_str) > 10:
             return datetime.fromisoformat(date_str)
