@@ -10,7 +10,7 @@ def test_get_column_dtypes():
     assert column_dtypes == {
         'doc_id': 'string',
         'data_visit_comment_fb984fda': 'string',
-        'data_visit_number_33d63739': 'int64'
+        'data_visit_number_33d63739': 'Int64'
     }
     assert set(date_columns) == {
         'inserted_at',

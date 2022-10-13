@@ -61,9 +61,9 @@ def get_column_dtypes(datasource_defn):
         'date': 'datetime64[ns]',
         'datetime': 'datetime64[ns]',
         'string': 'string',
-        'integer': 'int64',
-        'decimal': 'float64',
-        'small_integer': 'int8',  # TODO: Is this true?
+        'integer': 'Int64',
+        'decimal': 'Float64',
+        'small_integer': 'Int8',  # TODO: Is this true?
     }
     column_dtypes = {'doc_id': 'string'}
     date_columns = ['inserted_at']
