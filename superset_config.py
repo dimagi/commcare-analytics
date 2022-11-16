@@ -38,6 +38,6 @@ AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
 try:
     # Overwrite repo settings with local settings
-    from local_settings import *
+    from local_config import *
 except:
     pass
