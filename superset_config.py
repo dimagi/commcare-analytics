@@ -37,7 +37,8 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
 try:
-    # Overwrite repo settings with local settings
+    # Overwrite repo settings with local settings (local_config.py) which is only
+    # for development
     from local_config import *
 except ModuleNotFoundError:
     pass
