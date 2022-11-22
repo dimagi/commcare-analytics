@@ -30,3 +30,15 @@ AUTH_USER_REGISTRATION = True
 
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
+
+# Any other additional roles to be assigned to the user on top of the base role
+# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
+# specify more than one role
+AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+
+try:
+    # Overwrite repo settings with local settings (local_config.py) which is only
+    # for development
+    from local_config import *
+except ModuleNotFoundError:
+    pass

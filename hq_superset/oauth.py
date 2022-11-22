@@ -76,6 +76,7 @@ class CommCareSecurityManager(SupersetSecurityManager):
         create_schema_if_not_exists(domain)
 
     def sync_domain_role(self, domain):
+        from superset_config import AUTH_USER_ADDITIONAL_ROLES
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
         self.ensure_schema_created(domain)
@@ -88,8 +89,12 @@ class CommCareSecurityManager(SupersetSecurityManager):
             for r in current_user.roles
             if not r.name.startswith(DOMAIN_PREFIX)
         ]
+        additional_roles = [
+            self.add_role(r)
+            for r in AUTH_USER_ADDITIONAL_ROLES
+        ]
         # Add the domain's role
-        current_user.roles = filtered_roles + [role]
+        current_user.roles = filtered_roles + [role] + additional_roles
         self.get_session.add(current_user)
         self.get_session.commit()
 
