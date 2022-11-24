@@ -67,15 +67,19 @@ def get_column_dtypes(datasource_defn):
     }
     column_dtypes = {'doc_id': 'string'}
     date_columns = ['inserted_at']
+    array_type_columns = []
     for ind in datasource_defn['configured_indicators']:
         indicator_datatype = ind.get('datatype', 'string')
-        if pandas_dtypes[indicator_datatype] == 'datetime64[ns]':
+
+        if indicator_datatype == "array":
+            array_type_columns.append(ind['column_id'])
+        elif pandas_dtypes[indicator_datatype] == 'datetime64[ns]':
             # the dtype datetime64[ns] is not supported for parsing,
             # pass this column using parse_dates instead
             date_columns.append(ind['column_id'])
         else:
             column_dtypes[ind['column_id']] = pandas_dtypes[indicator_datatype]
-    return column_dtypes, date_columns
+    return column_dtypes, date_columns, array_type_columns
 
 
 def parse_date(date_str):

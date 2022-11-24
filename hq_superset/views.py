@@ -1,10 +1,13 @@
 import logging
+import ast
+import pandas as pd
+import superset
+import sqlalchemy
+
 from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
-
-import pandas as pd
-import superset
+from sqlalchemy.dialects import postgresql
 from flask import Response, abort, g, redirect, request
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
@@ -104,6 +107,13 @@ class CCHQApiException(Exception):
     pass
 
 
+def convert_to_array(string_array):
+    array_values = ast.literal_eval(string_array)
+    if array_values and array_values[0] is None:
+        return []
+    return array_values
+
+
 def refresh_hq_datasource(domain, datasource_id, display_name):
     """
     Pulls the data from CommCare HQ and creates/replaces the
@@ -115,7 +125,12 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
-    column_dtypes, date_columns = get_column_dtypes(datasource_defn)
+    column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
+
+    converters = {column: convert_to_array for column in array_columns}
+    # TODO: can we assume all array values will be of type TEXT?
+    sqlconverters = {column: postgresql.ARRAY(sqlalchemy.types.TEXT) for column in array_columns}
+
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
             df = pd.concat(
@@ -127,9 +142,9 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
                     date_parser=parse_date,
                     keep_default_na=True,
                     dtype=column_dtypes,
+                    converters=converters,
                 )
             )
-
         database.db_engine_spec.df_to_sql(
             database,
             csv_table,
@@ -137,6 +152,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             to_sql_kwargs={
                 "chunksize": 1000,
                 "if_exists": "replace",
+                "dtype": sqlconverters,
             },
         )
 
@@ -147,10 +163,10 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
         explore_database_id = database.explore_database_id
         if explore_database_id:
             expore_database = (
-                db.session.query(Database)
-                .filter_by(id=explore_database_id)
-                .one_or_none()
-                or database
+                    db.session.query(Database)
+                    .filter_by(id=explore_database_id)
+                    .one_or_none()
+                    or database
             )
 
         sqla_table = (
@@ -208,7 +224,6 @@ def get_datasource_defn(provider, oauth_token, domain, datasource_id):
 
 
 class SelectDomainView(BaseSupersetView):
-
     """
     Select a Domain view, all roles that have 'profile' access on 'core.Superset' view can access this
     """
@@ -239,4 +254,3 @@ class SelectDomainView(BaseSupersetView):
         response.set_cookie('hq_domain', hq_domain)
         superset.appbuilder.sm.sync_domain_role(hq_domain)
         return response
-
