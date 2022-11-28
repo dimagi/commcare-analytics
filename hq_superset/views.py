@@ -108,9 +108,40 @@ class CCHQApiException(Exception):
 
 
 def convert_to_array(string_array):
-    array_values = ast.literal_eval(string_array)
-    if array_values and array_values[0] is None:
+    """
+    Converts the string representation of a list to a list.
+    >>> convert_to_array("['hello', 'world']")
+    ['hello', 'world']
+
+    >>> convert_to_array("'hello', 'world'")
+    ['hello', 'world']
+
+    >>> convert_to_array("[None]")
+    []
+
+    >>> convert_to_array("hello, world")
+    []
+    """
+
+    def array_is_falsy(array_values):
+        if not array_values:
+            return True
+        if array_values[0] is None:
+            return True
+        return False
+
+    try:
+        array_values = ast.literal_eval(string_array)
+    except ValueError:
         return []
+
+    if isinstance(array_values, tuple):
+        array_values = list(array_values)
+
+    # Test for corner cases
+    if array_is_falsy(array_values):
+        return []
+
     return array_values
 
 
@@ -127,9 +158,9 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
     column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
 
-    converters = {column: convert_to_array for column in array_columns}
+    converters = {column_name: convert_to_array for column_name in array_columns}
     # TODO: can we assume all array values will be of type TEXT?
-    sqlconverters = {column: postgresql.ARRAY(sqlalchemy.types.TEXT) for column in array_columns}
+    sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
