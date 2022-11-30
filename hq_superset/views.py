@@ -126,7 +126,7 @@ def convert_to_array(string_array):
     def array_is_falsy(array_values):
         if not array_values:
             return True
-        if array_values[0] is None:
+        if len(array_values) == 1 and array_values[0] is None:
             return True
         return False
 
