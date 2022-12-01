@@ -124,11 +124,7 @@ def convert_to_array(string_array):
     """
 
     def array_is_falsy(array_values):
-        if not array_values:
-            return True
-        if len(array_values) == 1 and array_values[0] is None:
-            return True
-        return False
+        return not array_values or array_values == [None]
 
     try:
         array_values = ast.literal_eval(string_array)
