@@ -12,6 +12,7 @@ While doing development on top of this integration, it's useful to install this 
 
 - Setup a virtual environment.
 - Clone this repo and cd into the directory of this repo.
+- Run `cp superset_config.example.py superset_config.py` and override the config appropriately.
 - Run `pip install -e .`
 
 ### CommCareHQ OAuth Integration

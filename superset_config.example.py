@@ -7,6 +7,11 @@ hq_superset.patch_superset_config(superset_config)
 
 
 AUTH_TYPE = AUTH_OAUTH
+
+# Override this to reflect your local Postgres DB
+SQLALCHEMY_DATABASE_URI = 'postgresql://commcarehq:commcarehq@localhost:5432/superset_meta'
+
+# Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
     {
         'name': 'commcare',
@@ -35,10 +40,3 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 # Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
-
-try:
-    # Overwrite repo settings with local settings (local_config.py) which is only
-    # for development
-    from local_config import *
-except ModuleNotFoundError:
-    pass
