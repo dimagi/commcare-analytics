@@ -114,4 +114,4 @@ tests/.superset/
 # Sublime
 *.sublime-project
 *.sublime-workspace
-local_config.py
+superset_config.py
