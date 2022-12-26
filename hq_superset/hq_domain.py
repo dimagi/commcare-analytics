@@ -1,5 +1,4 @@
 from flask import flash, g, redirect, request, session, url_for
-from flask_login import current_user
 from superset.views.base import is_user_admin
 
 from .utils import SESSION_USER_DOMAINS_KEY
@@ -33,7 +32,7 @@ def ensure_domain_selected():
     if is_user_admin() or (request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS):
         return
     hq_domain = request.cookies.get('hq_domain')
-    valid_domains = user_domains(current_user)
+    valid_domains = user_domains()
     if is_valid_user_domain(hq_domain):
         g.hq_domain = hq_domain
     else:
@@ -43,16 +42,16 @@ def ensure_domain_selected():
 
 def is_valid_user_domain(hq_domain):
     # Admins have access to all domains
-    return is_user_admin() or hq_domain in user_domains(current_user)
+    return is_user_admin() or hq_domain in user_domains()
 
 
-def user_domains(user):
+def user_domains():
     # This should be set by oauth_user_info after OAuth
     if is_user_admin() or SESSION_USER_DOMAINS_KEY not in session:
         return []
     return [
         d["domain_name"]
-        for d in session[SESSION_USER_DOMAINS_KEY]["objects"]
+        for d in session[SESSION_USER_DOMAINS_KEY]
     ]
 
 
