@@ -11,7 +11,6 @@ from sqlalchemy.dialects import postgresql
 from flask import Response, abort, g, redirect, request
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
-from flask_login import current_user
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
 from superset.datasets.commands.delete import DeleteDatasetCommand
@@ -269,7 +268,7 @@ class SelectDomainView(BaseSupersetView):
         return self.render_template(
             'select_domain.html',
             next=request.args.get('next'),
-            domains=user_domains(current_user)
+            domains=user_domains()
         )
 
     @expose('/select/<hq_domain>/', methods=['GET'])
@@ -277,7 +276,7 @@ class SelectDomainView(BaseSupersetView):
     @permission_name("profile")
     def select(self, hq_domain):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
-        assert hq_domain in user_domains(current_user)
+        assert hq_domain in user_domains()
         response.set_cookie('hq_domain', hq_domain)
         superset.appbuilder.sm.sync_domain_role(hq_domain)
         return response
