@@ -6,7 +6,7 @@ from hq_superset.utils import get_column_dtypes
 
 def test_get_column_dtypes():
     datasource_defn = json.loads(datasource_defn_str)
-    column_dtypes, date_columns = get_column_dtypes(datasource_defn)
+    column_dtypes, date_columns, _ = get_column_dtypes(datasource_defn)
     assert column_dtypes == {
         'doc_id': 'string',
         'data_visit_comment_fb984fda': 'string',
