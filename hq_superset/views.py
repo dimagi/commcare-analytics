@@ -23,7 +23,7 @@ from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
 
-from .hq_domain import user_domains
+from .hq_domain import user_domains, DomainSyncUtil
 from .oauth import get_valid_cchq_oauth_token
 from .utils import (
     get_column_dtypes,
@@ -278,5 +278,5 @@ class SelectDomainView(BaseSupersetView):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
         assert hq_domain in user_domains()
         response.set_cookie('hq_domain', hq_domain)
-        superset.appbuilder.sm.sync_domain_role(hq_domain)
+        DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response

@@ -61,43 +61,6 @@ class CommCareSecurityManager(SupersetSecurityManager):
         # }
         session[SESSION_OAUTH_RESPONSE_KEY] = oauth_response
 
-    def ensure_domain_role_created(self, domain):
-        # This inbuilt method creates only if the role doesn't exist.
-        return self.add_role(get_role_name_for_domain(domain))
-
-    def ensure_schema_perm_created(self, domain):
-        menu_name = self.get_schema_perm(get_ucr_database(), get_schema_name_for_domain(domain))
-        permission = self.find_permission_view_menu("schema_access", menu_name)
-        if not permission:
-            permission = self.add_permission_view_menu("schema_access", menu_name)
-        return permission
-
-    def ensure_schema_created(self, domain):
-        create_schema_if_not_exists(domain)
-
-    def sync_domain_role(self, domain):
-        from superset_config import AUTH_USER_ADDITIONAL_ROLES
-        # This creates DB schema, role and schema permissions for the domain and
-        #   assigns the role to the current_user
-        self.ensure_schema_created(domain)
-        permission = self.ensure_schema_perm_created(domain)
-        role = self.ensure_domain_role_created(domain)
-        self.add_permission_role(role, permission)
-        # Filter out other domain roles
-        filtered_roles = [
-            r
-            for r in current_user.roles
-            if not r.name.startswith(DOMAIN_PREFIX)
-        ]
-        additional_roles = [
-            self.add_role(r)
-            for r in AUTH_USER_ADDITIONAL_ROLES
-        ]
-        # Add the domain's role
-        current_user.roles = filtered_roles + [role] + additional_roles
-        self.get_session.add(current_user)
-        self.get_session.commit()
-
 
 class OAuthSessionExpired(Exception):
     pass
