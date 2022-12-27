@@ -13,7 +13,7 @@ from superset.app import create_app
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
 shutil.rmtree(superset_test_home, ignore_errors=True)
 os.environ["SUPERSET_HOME"] = superset_test_home
-os.environ["SUPERSET_CONFIG"] = "hq_superset.tests.test_config.superset_config"
+os.environ["SUPERSET_CONFIG"] = "hq_superset.tests.config_for_tests.superset_config"
 app = create_app()
 
 
