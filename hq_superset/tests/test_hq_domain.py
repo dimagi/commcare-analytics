@@ -1,16 +1,13 @@
-import doctest
-import json
-
 from parametrized import parametrized
 from unittest.mock import patch
 
 from flask import g
 
-from .base_test import SupersetTestCase
 from hq_superset.hq_domain import (user_domains,
     is_valid_user_domain, ensure_domain_selected,
     DOMAIN_EXCLUDED_VIEWS, before_request_hook, after_request_hook)
 from hq_superset.utils import SESSION_USER_DOMAINS_KEY
+from .base_test import SupersetTestCase
 
 
 MOCK_DOMAIN_SESSION = {
@@ -61,14 +58,12 @@ class TestEnsureDomainSelected(SupersetTestCase):
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_does_not_redirect_for_special_urls(self, *args):
         with patch('hq_superset.hq_domain.request') as request_mock:
-            # request_mock.url_rule.endpoint = superset.app.url_map.bind('localhost').match('/login/')
             request_mock.url_rule.endpoint = DOMAIN_EXCLUDED_VIEWS[0]
             self.assertEqual(ensure_domain_selected(), None)
 
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_if_domain_is_set_does_not_redirect(self, *args):
         with patch('hq_superset.hq_domain.request') as request_mock:
-            # request_mock.url_rule.endpoint = superset.app.url_map.bind('localhost').match('/login/')
             request_mock.url_rule.endpoint = 'any'
             domain = 'test1'
             request_mock.cookies = {'hq_domain': domain}
@@ -79,7 +74,6 @@ class TestEnsureDomainSelected(SupersetTestCase):
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_if_invalid_domain_redirects(self, *args):
         with patch('hq_superset.hq_domain.request') as request_mock:
-            # request_mock.url_rule.endpoint = superset.app.url_map.bind('localhost').match('/login/')
             request_mock.url_rule.endpoint = 'any'
             request_mock.cookies = {'hq_domain': 'not-user-domain'}
             response = ensure_domain_selected()
@@ -89,7 +83,6 @@ class TestEnsureDomainSelected(SupersetTestCase):
     @patch('hq_superset.hq_domain.is_user_admin', return_value=True)
     def test_does_not_redirect_for_admin(self, *args):
         with patch('hq_superset.hq_domain.request') as request_mock:
-            # request_mock.url_rule.endpoint = superset.app.url_map.bind('localhost').match('/login/')
             request_mock.url_rule.endpoint = 'any'
             self.assertEqual(ensure_domain_selected(), None)
 
