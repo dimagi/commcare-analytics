@@ -9,7 +9,7 @@ from flask import g
 from .base_test import SupersetTestCase
 from hq_superset.hq_domain import (user_domains,
     is_valid_user_domain, ensure_domain_selected,
-    DOMAIN_EXCLUDED_VIEWS)
+    DOMAIN_EXCLUDED_VIEWS, before_request_hook, after_request_hook)
 from hq_superset.utils import SESSION_USER_DOMAINS_KEY
 
 
@@ -93,6 +93,20 @@ class TestEnsureDomainSelected(SupersetTestCase):
             request_mock.url_rule.endpoint = 'any'
             self.assertEqual(ensure_domain_selected(), None)
 
+
+class TestCustomHooks(SupersetTestCase):
+
+    def test_hooks_are_registered(self):
+        import superset
+        self.assertEqual(
+            superset.app.before_request_funcs[None][-1],
+            before_request_hook
+        )
+
+        self.assertEqual(
+            superset.app.after_request_funcs[None][-1],
+            after_request_hook
+        )
 
 # @patch('hq_superset.hq_domain.session', new=MOCK_DOMAIN_SESSION)
 # class TestEnsureDomainSelected(SupersetTestCase):
