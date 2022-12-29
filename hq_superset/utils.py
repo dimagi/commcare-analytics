@@ -4,6 +4,12 @@ import pandas
 import sqlalchemy
 
 
+DOMAIN_PREFIX = "hqdomain_"
+SESSION_USER_DOMAINS_KEY = "user_hq_domains"
+SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
+HQ_DB_CONNECTION_NAME = "HQ Data"
+
+
 def get_datasource_export_url(domain, datasource_id):
     return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}?format=csv"
 
@@ -22,7 +28,7 @@ def get_ucr_database():
     from superset.models.core import Database
 
     # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name="HQ Data").one()
+    return db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
 
 
 def create_schema_if_not_exists(domain):
@@ -32,11 +38,6 @@ def create_schema_if_not_exists(domain):
     engine = database.get_sqla_engine()
     if not engine.dialect.has_schema(engine, schema_name):
         engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
-
-
-DOMAIN_PREFIX = "hqdomain_"
-SESSION_USER_DOMAINS_KEY = "user_hq_domains"
-SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 
 
 def get_schema_name_for_domain(domain):
