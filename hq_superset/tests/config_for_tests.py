@@ -7,6 +7,9 @@ superset_config.WTF_CSRF_ENABLED = False
 superset_config.TESTING = True
 superset_config.SECRET_KEY = 'abc'
 
+# Todo; add to github workflow
+superset_config.HQ_DATA_DB = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
+
 hq_superset.patch_superset_config(superset_config)
 
 SECRET_KEY = superset_config.SECRET_KEY

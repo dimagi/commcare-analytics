@@ -6,7 +6,9 @@ from flask import g
 from hq_superset.hq_domain import (user_domains,
     is_valid_user_domain, ensure_domain_selected,
     DOMAIN_EXCLUDED_VIEWS, before_request_hook, after_request_hook)
-from hq_superset.utils import SESSION_USER_DOMAINS_KEY
+from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, create_schema_if_not_exists,
+        get_ucr_database, get_schema_name_for_domain)
+from .utils import setup_hq_db
 from .base_test import SupersetTestCase
 
 
@@ -100,6 +102,34 @@ class TestCustomHooks(SupersetTestCase):
             superset.app.after_request_funcs[None][-1],
             after_request_hook
         )
+
+
+class TestEnsureSchemaCreated(SupersetTestCase):
+
+    def setUp(self):
+        super(TestEnsureSchemaCreated, self).setUp()
+        self.domain = 'test-domain'
+        self.schema_name = get_schema_name_for_domain(self.domain)
+        setup_hq_db()
+        self.hq_db = get_ucr_database()
+
+    def tearDown(self):
+        from sqlalchemy.sql import text
+        engine = self.hq_db.get_sqla_engine()
+        with engine.connect() as connection:
+            connection.execute(text(f'DROP SCHEMA IF EXISTS "{self.schema_name}" CASCADE'))
+
+    def test_schema_gets_created(self):
+
+        engine = self.hq_db.get_sqla_engine()
+        self.assertFalse(
+            engine.dialect.has_schema(engine, self.schema_name),
+        )
+        create_schema_if_not_exists(self.domain)
+        self.assertTrue(
+            engine.dialect.has_schema(engine, self.schema_name),
+        )
+
 
 # @patch('hq_superset.hq_domain.session', new=MOCK_DOMAIN_SESSION)
 # class TestEnsureDomainSelected(SupersetTestCase):
