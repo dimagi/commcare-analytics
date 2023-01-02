@@ -29,6 +29,7 @@ class SupersetTestCase(TestCase):
         return app
 
     def setUp(self):
+        # Resetup app, in case test-client destroys it
         self.db.create_all()
 
     def tearDown(self):

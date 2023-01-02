@@ -3,6 +3,12 @@ from superset import config as superset_config
 
 import hq_superset
 
+
+# Any other additional roles to be assigned to the user on top of the base role
+# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
+# specify more than one role
+superset_config.AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+
 hq_superset.patch_superset_config(superset_config)
 
 
@@ -36,7 +42,3 @@ AUTH_USER_REGISTRATION = True
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
-# Any other additional roles to be assigned to the user on top of the base role
-# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
-# specify more than one role
-AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]

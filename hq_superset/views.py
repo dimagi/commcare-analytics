@@ -23,7 +23,7 @@ from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
 
-from .hq_domain import user_domains, DomainSyncUtil
+from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
 from .utils import (
     get_column_dtypes,
@@ -31,8 +31,9 @@ from .utils import (
     get_datasource_export_url,
     get_datasource_list_url,
     get_schema_name_for_domain,
-    get_ucr_database,
+    get_hq_database,
     parse_date,
+    DomainSyncUtil
 )
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class HQDatasourceView(BaseSupersetView):
             db.session.query(SqlaTable)
             .filter_by(
                 schema=get_schema_name_for_domain(g.hq_domain),
-                database_id=get_ucr_database().id,
+                database_id=get_hq_database().id,
             )
         )
         return {
@@ -147,7 +148,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     """
     provider = superset.appbuilder.sm.oauth_remotes["commcare"]
     token = get_valid_cchq_oauth_token()
-    database = get_ucr_database()
+    database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)

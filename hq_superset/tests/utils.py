@@ -1,6 +1,6 @@
 from functools import wraps
 from sqlalchemy.orm.exc import NoResultFound
-from hq_superset.utils import get_ucr_database, HQ_DB_CONNECTION_NAME
+from hq_superset.utils import get_hq_database, HQ_DB_CONNECTION_NAME
 
 # @pytest.fixture(scope="session", autouse=True)
 # def manage_ucr_db(request):
@@ -24,7 +24,7 @@ def setup_hq_db():
     from superset.databases.commands.create import CreateDatabaseCommand
     import superset
     try:
-        get_ucr_database()
+        get_hq_database()
     except NoResultFound:
         CreateDatabaseCommand(
             None, 

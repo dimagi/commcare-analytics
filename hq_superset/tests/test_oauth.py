@@ -1,4 +1,5 @@
 import datetime
+import jwt
 
 from unittest.mock import patch, MagicMock
 from flask import session
@@ -22,7 +23,10 @@ class OAuthMock():
 
     def __init__(self):
         self.user_json = {
-            'username': 'any'
+            'username': 'testuser1',
+            'first_name': 'user',
+            'last_name': '1',
+            'email': 'test@example.com',
         }
         self.domain_json = {
             "objects": [
@@ -36,6 +40,9 @@ class OAuthMock():
                 },
             ]
         }
+
+    def authorize_access_token(self):
+        return {"access_token": "some-key"}
 
     def get(self, url, token):
         return {
@@ -101,3 +108,62 @@ class TestGetOAuthTokenGetter(SupersetTestCase):
                 "commcare", {"access_token": "new key"}
             )
 
+
+class TestViews(SupersetTestCase):
+
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self.app.appbuilder.add_permissions(update_perms=True)
+        self.app.appbuilder.sm.sync_role_definitions()
+
+        self.oauth_mock = OAuthMock()
+        self.oauth_mock = OAuthMock()
+        appbuilder = self.app.appbuilder
+        appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
+
+        gamma_role = self.app.appbuilder.sm.find_role('Gamma')
+        self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+
+    # def tearDown(self):
+    #     self.app.appbuilder.get_session.close()
+    #     engine = self.db.session.get_bind(mapper=None, clause=None)
+    #     engine.dispose()
+    #     super(TestViews, self).tearDown()
+
+    def login(self, client):
+        # bypass oauth-workflow by skipping login and oauth flow
+        state = jwt.encode({}, self.app.config["SECRET_KEY"], algorithm="HS256")
+        return client.get(f"/oauth-authorized/commcare?state={state}", follow_redirects=True)
+
+    @staticmethod
+    def logout(client):
+        return client.get("/logout/")
+
+    # def test_unauthenticated_users_redirects_to_login(self):
+    #     with self.app.test_client() as client:
+    #         response = client.get('/', follow_redirects=True)
+    #         self.assertEqual(response.status, 200)
+    #         self.assertEqual(
+    #             response.request.path,
+    #             '/login/'
+    #         )
+
+    def test_redirects_to_domain_select_after_login(self):
+        with self.app.test_client() as client:
+            assert SESSION_USER_DOMAINS_KEY not in session
+            import pdb; pdb.set_trace()
+            self.login(client)
+            response = client.get('/', follow_redirects=True)
+            self.assertEqual(response.status, 200)
+            self.assertTrue('/domain/list' in response.request.path)
+            self.assertEqual(
+                session[SESSION_USER_DOMAINS_KEY],
+                self.oauth_mock.domain_json["objects"]
+            )
+
+    # def test_domain_select_works(self):
+    #     with self.app.test_client() as client, self.app.app_context():
+    #         self.login(client)
+    #         response = client.get('/domain/select/test1', follow_redirects=True)
+    #         self.assertEqual(response.status, 200)
+    #         self.assertTrue('/superset/welcome/' in response.request.path)
