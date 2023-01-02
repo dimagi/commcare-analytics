@@ -1,22 +1,15 @@
-from hq_superset.utils import SESSION_USER_DOMAINS_KEY
-
-import json
+import datetime
 import jwt
-import logging
-import os
-from typing import List
 
-from flask import Flask, session
-from flask_appbuilder import AppBuilder
-from flask_appbuilder import SQLA
-from flask_appbuilder.security.sqla.models import Permission, Role, User, ViewMenu
-from flask_appbuilder.tests.base import FABTestCase
-from flask_appbuilder.tests.const import PASSWORD_ADMIN, USERNAME_ADMIN
-import prison
-from werkzeug.security import generate_password_hash
+from unittest.mock import patch, MagicMock
+from flask import session
 
+from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
+from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, 
+    SESSION_OAUTH_RESPONSE_KEY)
+from .base_test import SupersetTestCase
+from .utils import setup_hq_db
 
-log = logging.getLogger(__name__)
 
 class MockResponse:
     def __init__(self, json_data, status_code):
@@ -58,23 +51,23 @@ class OAuthMock():
             'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true': MockResponse(self.domain_json, 200)
         }[url]
 
-class UserAPITestCase(FABTestCase):
-    def setUp(self) -> None:
-        self.app = Flask('__name__')
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
-        self.app.config.from_object("hq_superset.tests.config_for_tests.superset_config")
-        self.db = SQLA(self.app)
 
-        self.session = self.db.session
-        self.appbuilder = AppBuilder(self.app, self.session)
+class TestViews(SupersetTestCase):
+
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self.app.testing = True
+        self.app.appbuilder.add_permissions(update_perms=True)
+        self.app.appbuilder.sm.sync_role_definitions()
 
         self.oauth_mock = OAuthMock()
         self.oauth_mock = OAuthMock()
-        appbuilder = self.appbuilder
+        appbuilder = self.app.appbuilder
         appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
 
-        gamma_role = self.appbuilder.sm.find_role('Gamma')
-        self.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+        gamma_role = self.app.appbuilder.sm.find_role('Gamma')
+        self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+        setup_hq_db()
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
@@ -88,17 +81,18 @@ class UserAPITestCase(FABTestCase):
     def test_unauthenticated_users_redirects_to_login(self):
         client = self.app.test_client()
         response = client.get('/', follow_redirects=True)
+        self.assertEqual(response.status, "200 OK")
         self.assertEqual(
             response.request.path,
             '/login/'
         )
 
     def test_redirects_to_domain_select_after_login(self):
-        client = self.app.test_client()
-        with self.app.app_context():
+        with self.app.test_client() as client:
             assert SESSION_USER_DOMAINS_KEY not in session
             self.login(client)
             response = client.get('/', follow_redirects=True)
+            self.assertEqual(response.status, "200 OK")
             self.assertTrue('/domain/list' in response.request.path)
             self.assertEqual(
                 session[SESSION_USER_DOMAINS_KEY],
@@ -109,14 +103,6 @@ class UserAPITestCase(FABTestCase):
     def test_domain_select_works(self):
         client = self.app.test_client()
         self.login(client)
-        response = client.get('/domain/select/test1', follow_redirects=True)
+        response = client.get('/domain/select/test1/', follow_redirects=True)
         self.assertTrue('/superset/welcome/' in response.request.path)
         self.logout(client)
-
-    def tearDown(self):
-        self.appbuilder.session.close()
-        engine = self.appbuilder.session.get_bind(mapper=None, clause=None)
-        for baseview in self.appbuilder.baseviews:
-            if hasattr(baseview, "datamodel"):
-                baseview.datamodel.session = None
-        engine.dispose()
