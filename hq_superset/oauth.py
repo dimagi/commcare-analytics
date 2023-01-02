@@ -3,7 +3,6 @@ import time
 
 import superset
 from flask import flash, session
-from flask_login import current_user
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
 
@@ -11,10 +10,6 @@ from .utils import (
     DOMAIN_PREFIX,
     SESSION_OAUTH_RESPONSE_KEY,
     SESSION_USER_DOMAINS_KEY,
-    create_schema_if_not_exists,
-    get_role_name_for_domain,
-    get_schema_name_for_domain,
-    get_ucr_database,
 )
 
 logger = logging.getLogger(__name__)

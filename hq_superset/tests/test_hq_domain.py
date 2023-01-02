@@ -6,8 +6,8 @@ from flask import g
 from hq_superset.hq_domain import (user_domains,
     is_valid_user_domain, ensure_domain_selected,
     DOMAIN_EXCLUDED_VIEWS, before_request_hook, after_request_hook)
-from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, create_schema_if_not_exists,
-        get_ucr_database, get_schema_name_for_domain)
+from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, DomainSyncUtil,
+        get_hq_database, get_schema_name_for_domain)
 from .utils import setup_hq_db
 from .base_test import SupersetTestCase
 
@@ -104,14 +104,14 @@ class TestCustomHooks(SupersetTestCase):
         )
 
 
-class TestEnsureSchemaCreated(SupersetTestCase):
+class TestDomainSyncUtil(SupersetTestCase):
 
     def setUp(self):
-        super(TestEnsureSchemaCreated, self).setUp()
+        super(TestDomainSyncUtil, self).setUp()
         self.domain = 'test-domain'
         self.schema_name = get_schema_name_for_domain(self.domain)
         setup_hq_db()
-        self.hq_db = get_ucr_database()
+        self.hq_db = get_hq_database()
 
     def tearDown(self):
         from sqlalchemy.sql import text
@@ -125,7 +125,7 @@ class TestEnsureSchemaCreated(SupersetTestCase):
         self.assertFalse(
             engine.dialect.has_schema(engine, self.schema_name),
         )
-        create_schema_if_not_exists(self.domain)
+        DomainSyncUtil._ensure_schema_created(self.domain)
         self.assertTrue(
             engine.dialect.has_schema(engine, self.schema_name),
         )
