@@ -32,6 +32,6 @@ class SupersetTestCase(TestCase):
         # Resetup app, in case test-client destroys it
         self.db.create_all()
 
-    def tearDown(self):
-        self.db.session.remove()
-        self.db.drop_all()
+    # def tearDown(self):
+    #     self.db.session.remove()
+    #     self.db.drop_all()
