@@ -8,7 +8,11 @@ def before_request_hook():
 
 def after_request_hook(response):
     # On logout clear domain cookie
-    if (request.url_rule and request.url_rule.endpoint == "AuthOAuthView.logout"):
+    logout_views = [
+        "AuthDBView.login",
+        "AuthOAuthView.logout",
+    ]
+    if (request.url_rule and request.url_rule.endpoint in logout_views):
         response.set_cookie('hq_domain', '', expires=0)
     return response
 

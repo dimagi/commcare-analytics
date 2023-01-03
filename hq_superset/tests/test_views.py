@@ -6,8 +6,8 @@ from flask import session
 
 from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
 from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, 
-    SESSION_OAUTH_RESPONSE_KEY)
-from .base_test import SupersetTestCase
+    SESSION_OAUTH_RESPONSE_KEY, get_schema_name_for_domain)
+from .base_test import SupersetTestCase, HQDBTestCase
 from .utils import setup_hq_db
 
 
@@ -52,7 +52,7 @@ class OAuthMock():
         }[url]
 
 
-class TestViews(SupersetTestCase):
+class TestViews(HQDBTestCase):
 
     def setUp(self):
         super(TestViews, self).setUp()
@@ -87,6 +87,20 @@ class TestViews(SupersetTestCase):
             '/login/'
         )
 
+    def _assert_hq_domain_cookie(self, client, response, domain):
+        response = client.get('/', follow_redirects=True)
+        if domain:
+            self.assertEqual(response.request.cookies['hq_domain'], domain)
+        else:
+            self.assertTrue('hq_domain' not in response.request.cookies)
+
+    def _assert_pg_schema_exists(self, domain, exists):
+        engine = self.hq_db.get_sqla_engine()
+        self.assertEqual(
+            engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
+            exists
+        )
+
     def test_redirects_to_domain_select_after_login(self):
         with self.app.test_client() as client:
             assert SESSION_USER_DOMAINS_KEY not in session
@@ -103,6 +117,28 @@ class TestViews(SupersetTestCase):
     def test_domain_select_works(self):
         client = self.app.test_client()
         self.login(client)
+
+        self._assert_pg_schema_exists('test1', False)
         response = client.get('/domain/select/test1/', follow_redirects=True)
+        self.assertEqual(response.status, "200 OK")
         self.assertTrue('/superset/welcome/' in response.request.path)
+        self._assert_hq_domain_cookie(client, response, 'test1')
+        self._assert_pg_schema_exists('test1', True)
+
+        # Check that hq_domain cookie gets updated after domain switch
+        response = client.get('/domain/select/test2/', follow_redirects=True)
+        self.assertEqual(response.status, "200 OK")
+        self._assert_hq_domain_cookie(client, response, 'test2')
+
+        # Check that hq_domain cookie gets unset after logout
+        response = self.logout(client)
+
+        self._assert_hq_domain_cookie(client, response, None)
+
+    def test_non_user_domain_cant_be_selected(self):
+        client = self.app.test_client()
+        self.login(client)
+        response = client.get('/domain/select/wrong_domain/', follow_redirects=True)
+        self.assertEqual(response.status, "200 OK")
+        self.assertTrue('/domain/list' in response.request.path)
         self.logout(client)
