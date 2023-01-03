@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
-from flask import Response, abort, g, redirect, request
+from flask import Response, abort, g, redirect, request, flash, url_for
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
@@ -277,7 +277,9 @@ class SelectDomainView(BaseSupersetView):
     @permission_name("profile")
     def select(self, hq_domain):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
-        assert hq_domain in user_domains()
+        if hq_domain not in user_domains():
+            flash('Please select a valid domain to access this page.', 'warning')
+            return redirect(url_for('SelectDomainView.list', next=request.url))
         response.set_cookie('hq_domain', hq_domain)
         DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response
