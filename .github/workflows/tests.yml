@@ -1,0 +1,60 @@
+# Python integration tests
+name: Python-Integration
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+
+jobs:
+
+  tests:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      REDIS_PORT: 16379
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: commcarehq
+          POSTGRES_PASSWORD: commcarehq
+          POSTGRES_DB: test_superset_hq
+        ports:
+          # Use custom ports for services to avoid accidentally connecting to
+          # GitHub action runner's default installations
+          - 15432:5432
+      redis:
+        image: redis:5-alpine
+        ports:
+          - 16379:6379
+    steps:
+      - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Python
+        if: steps.check.outcome == 'failure'
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'requirements_dev.txt'
+      - name: Install dependencies
+        if: steps.check.outcome == 'failure'
+        uses: ./.github/actions/cached-dependencies
+        with:
+          run: |
+            apt-get-install
+            pip-upgrade
+            pip install wheel
+            pip install -r requirements_dev.txt
+            pip install .
+            setup-postgres
+      - name: Python integration tests (PostgreSQL)
+        run: |
+          pytest -W ignore::DeprecationWarning
