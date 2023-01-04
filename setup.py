@@ -21,6 +21,8 @@ setup(
         'authlib==1.0.1',
         'requests==2.28.1',
         'psycopg2==2.9.3',
+        'WTForms==2.3.3',
+        'cryptography==37.0.4',
     ],
     classifiers=[
         'Programming Language :: Python',
