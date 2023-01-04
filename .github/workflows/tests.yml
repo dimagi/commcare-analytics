@@ -38,14 +38,12 @@ jobs:
           persist-credentials: false
           submodules: recursive
       - name: Setup Python
-        if: steps.check.outcome == 'failure'
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: 'requirements_dev.txt'
       - name: Install dependencies
-        if: steps.check.outcome == 'failure'
         uses: ./.github/actions/cached-dependencies
         with:
           run: |
