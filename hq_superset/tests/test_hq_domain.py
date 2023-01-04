@@ -1,4 +1,3 @@
-from parametrized import parametrized
 from unittest.mock import patch
 
 from flask import g
@@ -121,52 +120,3 @@ class TestDomainSyncUtil(HQDBTestCase):
         self.assertTrue(
             engine.dialect.has_schema(engine, schema_name),
         )
-
-
-# @patch('hq_superset.hq_domain.session', new=MOCK_DOMAIN_SESSION)
-# class TestEnsureDomainSelected(SupersetTestCase):
-
-#     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
-#     def test_normal_urls(self, mock):
-#         # with patch('hq_superset.hq_domain.ensure_domain_selected') as selection_mock:
-#         client = self.app.test_client()
-#         response = client.get("/", follow_redirects=True)
-#         self.assertEqual(response.history[1].request.path, '/domain/list/')
-#         self.assertEqual(response.request.path, '/login/')
-
-#     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
-#     def test_flow(self, *args):
-#         with patch('hq_superset.hq_domain.request') as request_mock:
-#             request_mock.url_rule.endpoint = 'home'
-#             request_mock.cookies = {'hq_domain': domain}
-#             ensure_domain_selected()
-
-#     # @parametrized([
-#     #     '/login/',
-#     #     '/logout',
-#     #     '/domain/list',
-#     # ])
-#     # @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
-#     # def test_special_urls(self, url, *args):
-#     #     # with patch('hq_superset.hq_domain.ensure_domain_selected') as selection_mock:
-#     #     client = self.app.test_client()
-#     #     response = client.get("/", follow_redirects=True)
-#     #     self.assertEqual(response.request.path, url)
-
-#     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
-#     def test_normal_urls_redirect_to_domain_select_page(self, admin_mock, *args):
-#         # with patch('hq_superset.hq_domain.ensure_domain_selected') as selection_mock:
-#         client = self.app.test_client()
-#         response = client.get("/", follow_redirects=True)
-#         self.assertEqual(len(response.history), 2)
-#         self.assertEqual(response.history[1].request.path, '/domain/list/')
-#         self.assertEqual(response.request.path, '/login/')
-
-
-#     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
-#     def test_any_urls_dont_redirect_for_admins(self, admin_mock, *args):
-#         # with patch('hq_superset.hq_domain.ensure_domain_selected') as selection_mock:
-#         client = self.app.test_client()
-#         response = client.get("/", follow_redirects=True)
-#         self.assertEqual(len(response.history), 1)
-#         self.assertEqual(response.request.path, '/login/')
