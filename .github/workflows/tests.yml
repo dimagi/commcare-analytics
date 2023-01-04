@@ -42,15 +42,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        uses: ./.github/actions/cached-dependencies
-        with:
-          run: |
-            apt-get-install
-            pip-upgrade
-            pip install wheel
-            pip install -r requirements_dev.txt
-            pip install .
-            setup-postgres
-      - name: Python integration tests (PostgreSQL)
+        run: |
+          apt-get-install
+          pip-upgrade
+          pip install .
+          pip install -r requirements_test.txt
+          setup-postgres
+      - name: Run Tests
         run: |
           pytest -W ignore::DeprecationWarning
