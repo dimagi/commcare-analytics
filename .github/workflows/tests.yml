@@ -25,7 +25,7 @@ jobs:
         ports:
           # Use custom ports for services to avoid accidentally connecting to
           # GitHub action runner's default installations
-          - 15432:5432
+          - 5432:5432
     steps:
       - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
         uses: actions/checkout@v2
