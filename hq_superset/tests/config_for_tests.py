@@ -35,7 +35,7 @@ superset_config.OAUTH_PROVIDERS = [
 ]
 
 # This is set by 
-superset_config.SQLALCHEMY_DATABASE_URI = "sqlite:///test.db"
+superset_config.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 
 superset_config.AUTH_USER_REGISTRATION = True

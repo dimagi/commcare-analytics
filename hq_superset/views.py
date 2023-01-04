@@ -205,7 +205,6 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             )
             .one_or_none()
         )
-
         if sqla_table:
             sqla_table.description = display_name
             sqla_table.fetch_metadata()
@@ -216,6 +215,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             sqla_table.description = display_name
             sqla_table.database = expore_database
             sqla_table.database_id = database.id
+            sqla_table.owners = [g.user]
             sqla_table.user_id = g.user.get_id()
             sqla_table.schema = csv_table.schema
             sqla_table.fetch_metadata()
