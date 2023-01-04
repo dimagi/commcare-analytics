@@ -41,9 +41,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
           pip install -r requirements_test.txt
-      - name: Run Tests
-        run: |
-          pytest -W ignore::DeprecationWarning
       - name: Setup upterm session
         uses: lhotari/action-upterm@v1
         with:
@@ -51,3 +48,6 @@ jobs:
           limit-access-to-actor: true
           ## limits ssh access and adds the ssh public keys of the listed GitHub users
           limit-access-to-users: sravfeyn
+      - name: Run Tests
+        run: |
+          pytest -W ignore::DeprecationWarning
