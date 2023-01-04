@@ -108,7 +108,9 @@ class TestViews(HQDBTestCase):
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
-        state = jwt.encode({}, self.app.config["SECRET_KEY"], algorithm="HS256")
+        with client.session_transaction() as session_:
+            session_["oauth_state"] = "mock_state"
+        state = jwt.encode({}, "mock_state", algorithm="HS256")
         return client.get(f"/oauth-authorized/commcare?state={state}", follow_redirects=True)
 
     @staticmethod
@@ -245,6 +247,12 @@ class TestViews(HQDBTestCase):
                 # Check that updated dataset is reflected in the list view
                 client.get('/hq_datasource/list/', follow_redirects=True)
                 self.assert_context('ucr_id_to_pks', {'test1_ucr1': 1})
+                # Check that switching to other domains doesn't display the datasets
+                client.get('/domain/select/test2/', follow_redirects=True)
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                self.assert_context('ucr_id_to_pks', {})
+                client.get('/domain/select/test1/', follow_redirects=True)
+
             # Test Create
             _test_upload(TEST_UCR_CSV_V1, [('a1', ), ('a2', )])
             # Test Update
@@ -252,6 +260,7 @@ class TestViews(HQDBTestCase):
             # Test Delete
             datasets = json.loads(client.get('/api/v1/dataset/').data)
             _id = datasets['result'][0]['id']
-            client.get(f'/hq_datasource/delete/{_id}')
+            response = client.get(f'/hq_datasource/delete/{_id}')
+            self.assertEqual(response.status, "302 FOUND")
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
