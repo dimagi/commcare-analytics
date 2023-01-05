@@ -21,6 +21,7 @@ setup(
         'authlib==1.0.1',
         'requests==2.28.1',
         'psycopg2==2.9.3',
+        'sentry-sdk==1.9.10'
     ],
     classifiers=[
         'Programming Language :: Python',
