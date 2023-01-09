@@ -40,3 +40,14 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 # Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+
+
+# Enable below for sentry integration
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+sentry_sdk.init(
+    dsn='',
+    integrations=[FlaskIntegration()],
+    environment='test',
+    send_default_pii=True,
+)
