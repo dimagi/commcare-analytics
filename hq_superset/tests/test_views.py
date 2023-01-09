@@ -254,6 +254,7 @@ class TestViews(HQDBTestCase):
             # Test Delete
             datasets = json.loads(client.get('/api/v1/dataset/').data)
             _id = datasets['result'][0]['id']
-            client.get(f'/hq_datasource/delete/{_id}')
+            response = client.get(f'/hq_datasource/delete/{_id}')
+            self.assertEqual(response.status, "302 FOUND")
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
