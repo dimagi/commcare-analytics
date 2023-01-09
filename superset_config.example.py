@@ -42,3 +42,13 @@ AUTH_USER_REGISTRATION = True
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
+
+# Enable below for sentry integration
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+sentry_sdk.init(
+    dsn='',
+    integrations=[FlaskIntegration()],
+    environment='test',
+    send_default_pii=True,
+)

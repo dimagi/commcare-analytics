@@ -23,6 +23,7 @@ setup(
         'psycopg2==2.9.3',
         'WTForms==2.3.3',
         'cryptography==37.0.4',
+        'sentry-sdk==1.9.10',
     ],
     classifiers=[
         'Programming Language :: Python',
