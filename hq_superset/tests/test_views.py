@@ -108,7 +108,9 @@ class TestViews(HQDBTestCase):
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
-        state = jwt.encode({}, self.app.config["SECRET_KEY"], algorithm="HS256")
+        with client.session_transaction() as session_:
+            session_["oauth_state"] = "mock_state"
+        state = jwt.encode({}, "mock_state", algorithm="HS256")
         return client.get(f"/oauth-authorized/commcare?state={state}", follow_redirects=True)
 
     @staticmethod
