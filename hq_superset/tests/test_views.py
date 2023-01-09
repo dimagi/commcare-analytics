@@ -247,6 +247,12 @@ class TestViews(HQDBTestCase):
                 # Check that updated dataset is reflected in the list view
                 client.get('/hq_datasource/list/', follow_redirects=True)
                 self.assert_context('ucr_id_to_pks', {'test1_ucr1': 1})
+                # Check that switching to other domains doesn't display the datasets
+                client.get('/domain/select/test2/', follow_redirects=True)
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                self.assert_context('ucr_id_to_pks', {})
+                client.get('/domain/select/test1/', follow_redirects=True)
+
             # Test Create
             _test_upload(TEST_UCR_CSV_V1, [('a1', ), ('a2', )])
             # Test Update
