@@ -1,7 +1,14 @@
 from datetime import date, datetime
+from flask_login import current_user
 
 import pandas
 import sqlalchemy
+
+
+DOMAIN_PREFIX = "hqdomain_"
+SESSION_USER_DOMAINS_KEY = "user_hq_domains"
+SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
+HQ_DB_CONNECTION_NAME = "HQ Data"
 
 
 def get_datasource_export_url(domain, datasource_id):
@@ -16,27 +23,13 @@ def get_datasource_details_url(domain, datasource_id):
     return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
 
 
-def get_ucr_database():
+def get_hq_database():
     # Todo; cache to avoid multiple lookups in single request
     from superset import db
     from superset.models.core import Database
 
     # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name="HQ Data").one()
-
-
-def create_schema_if_not_exists(domain):
-    # Create a schema in the database where HQ's UCR data is stored
-    schema_name = get_schema_name_for_domain(domain)
-    database = get_ucr_database()
-    engine = database.get_sqla_engine()
-    if not engine.dialect.has_schema(engine, schema_name):
-        engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
-
-
-DOMAIN_PREFIX = "hqdomain_"
-SESSION_USER_DOMAINS_KEY = "user_hq_domains"
-SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
+    return db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
 
 
 def get_schema_name_for_domain(domain):
@@ -104,3 +97,52 @@ def parse_date(date_str):
             return date.fromisoformat(date_str)
     except ValueError:
         return date_str
+
+
+class DomainSyncUtil:
+
+    def __init__(self, security_manager):
+        self.sm = security_manager
+
+    def _ensure_domain_role_created(self, domain):
+        # This inbuilt method creates only if the role doesn't exist.
+        return self.sm.add_role(get_role_name_for_domain(domain))
+
+    def _ensure_schema_perm_created(self, domain):
+        menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
+        permission = self.sm.find_permission_view_menu("schema_access", menu_name)
+        if not permission:
+            permission = self.sm.add_permission_view_menu("schema_access", menu_name)
+        return permission
+
+    @staticmethod
+    def _ensure_schema_created(domain):
+        schema_name = get_schema_name_for_domain(domain)
+        database = get_hq_database()
+        engine = database.get_sqla_engine()
+        if not engine.dialect.has_schema(engine, schema_name):
+            engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
+
+    def re_eval_roles(self, existing_roles, new_domain_role):
+        # Filter out other domain roles
+        new_domain_roles = [
+            r
+            for r in existing_roles
+            if not r.name.startswith(DOMAIN_PREFIX)
+        ] + [new_domain_role]
+        additional_roles = [
+            self.sm.add_role(r)
+            for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']
+        ]
+        return new_domain_roles + additional_roles
+
+    def sync_domain_role(self, domain):
+        # This creates DB schema, role and schema permissions for the domain and
+        #   assigns the role to the current_user
+        self._ensure_schema_created(domain)
+        permission = self._ensure_schema_perm_created(domain)
+        role = self._ensure_domain_role_created(domain)
+        self.sm.add_permission_role(role, permission)
+        current_user.roles = self.re_eval_roles(current_user.roles, role)
+        self.sm.get_session.add(current_user)
+        self.sm.get_session.commit()

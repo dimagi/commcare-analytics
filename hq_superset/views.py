@@ -8,10 +8,9 @@ from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
-from flask import Response, abort, g, redirect, request
+from flask import Response, abort, g, redirect, request, flash, url_for
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
-from flask_login import current_user
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
 from superset.datasets.commands.delete import DeleteDatasetCommand
@@ -32,8 +31,9 @@ from .utils import (
     get_datasource_export_url,
     get_datasource_list_url,
     get_schema_name_for_domain,
-    get_ucr_database,
+    get_hq_database,
     parse_date,
+    DomainSyncUtil
 )
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class HQDatasourceView(BaseSupersetView):
             db.session.query(SqlaTable)
             .filter_by(
                 schema=get_schema_name_for_domain(g.hq_domain),
-                database_id=get_ucr_database().id,
+                database_id=get_hq_database().id,
             )
         )
         return {
@@ -148,7 +148,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     """
     provider = superset.appbuilder.sm.oauth_remotes["commcare"]
     token = get_valid_cchq_oauth_token()
-    database = get_ucr_database()
+    database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
@@ -205,7 +205,6 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             )
             .one_or_none()
         )
-
         if sqla_table:
             sqla_table.description = display_name
             sqla_table.fetch_metadata()
@@ -216,6 +215,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             sqla_table.description = display_name
             sqla_table.database = expore_database
             sqla_table.database_id = database.id
+            sqla_table.owners = [g.user]
             sqla_table.user_id = g.user.get_id()
             sqla_table.schema = csv_table.schema
             sqla_table.fetch_metadata()
@@ -269,7 +269,7 @@ class SelectDomainView(BaseSupersetView):
         return self.render_template(
             'select_domain.html',
             next=request.args.get('next'),
-            domains=user_domains(current_user)
+            domains=user_domains()
         )
 
     @expose('/select/<hq_domain>/', methods=['GET'])
@@ -277,7 +277,9 @@ class SelectDomainView(BaseSupersetView):
     @permission_name("profile")
     def select(self, hq_domain):
         response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
-        assert hq_domain in user_domains(current_user)
+        if hq_domain not in user_domains():
+            flash('Please select a valid domain to access this page.', 'warning')
+            return redirect(url_for('SelectDomainView.list', next=request.url))
         response.set_cookie('hq_domain', hq_domain)
-        superset.appbuilder.sm.sync_domain_role(hq_domain)
+        DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response
