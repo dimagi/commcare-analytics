@@ -160,9 +160,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
 
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
-            df = pd.concat(
-                pd.read_csv(
-                    chunksize=1000,
+            df = pd.read_csv(
                     filepath_or_buffer=csv_file,
                     encoding="utf-8",
                     parse_dates=date_columns,
@@ -171,7 +169,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
                     dtype=column_dtypes,
                     converters=converters,
                 )
-            )
+                
         database.db_engine_spec.df_to_sql(
             database,
             csv_table,
