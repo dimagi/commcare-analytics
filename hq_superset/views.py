@@ -158,6 +158,17 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     # TODO: can we assume all array values will be of type TEXT?
     sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
+    def to_sql(df, replace=False):
+        database.db_engine_spec.df_to_sql(
+            database,
+            csv_table,
+            df,
+            to_sql_kwargs={
+                "if_exists": "replace" if replace else "append",
+                "dtype": sqlconverters,
+            },
+        )
+
     try:
         with get_csv_file(provider, token, domain, datasource_id) as csv_file:
 
@@ -174,21 +185,10 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
                 low_memory=True,
             )
 
-        def to_sql(df, replace=False):
-            database.db_engine_spec.df_to_sql(
-                database,
-                csv_table,
-                df,
-                to_sql_kwargs={
-                    "if_exists": "replace" if replace else "append",
-                    "dtype": sqlconverters,
-                },
-            )
+            to_sql(next(_iter), replace=True)
 
-        to_sql(next(_iter), replace=True)
-
-        for df in _iter:
-            to_sql(df, replace=False)
+            for df in _iter:
+                to_sql(df, replace=False)
 
 
         # Connect table to the database that should be used for exploration.
