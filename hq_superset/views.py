@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
-from flask import Response, abort, g, redirect, request
+from flask import Response, abort, flash, g, redirect, request
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from flask_login import current_user
@@ -23,9 +23,11 @@ from superset.datasets.commands.exceptions import (
 from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
+from superset.extensions import cache_manager
 
 from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
+from .tasks import refresh_hq_datasource_task
 from .utils import (
     get_column_dtypes,
     get_datasource_details_url,
@@ -34,6 +36,7 @@ from .utils import (
     get_schema_name_for_domain,
     get_ucr_database,
     parse_date,
+    AsyncImportHelper,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,7 +66,7 @@ class HQDatasourceView(BaseSupersetView):
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
         display_name = request.args.get("name")
-        res = refresh_hq_datasource(g.hq_domain, datasource_id, display_name)
+        res = trigger_datasource_refresh(g.hq_domain, datasource_id, display_name)
         return res
 
     @expose("/list/", methods=["GET"])
@@ -140,6 +143,31 @@ def convert_to_array(string_array):
 
     return array_values
 
+# 10MB
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 10000000
+
+def trigger_datasource_refresh(domain, datasource_id, display_name):
+    if AsyncImportHelper(domain, datasource_id).is_import_in_progress():
+        flash("There is an active datasource import. "
+              "Please wait for it to finish before before retrying")
+        return redirect("/tablemodelview/list/")
+
+    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
+    token = get_valid_cchq_oauth_token()
+    size = get_datasource_size(provider, token, domain, datasource_id)
+    if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
+        return refresh_hq_datasource(domain, datasource_id, display_name)
+    else:
+        return queue_refresh_task(domain, datasource_id, display_name)
+
+
+def queue_refresh_task(domain, datasource_id, display_name):
+    task_id = refresh_hq_datasource_task(domain, datasource_id, display_name).delay()
+    AsyncImportHelper(domain, datasource_id).mark_as_in_progress(task_id)
+    flash("The datasource is being refreshed in the background as it is larger than 10MB. "
+          "This may take a while, please wait for it to finish")
+    return redirect("/tablemodelview/list/")
+
 
 def refresh_hq_datasource(domain, datasource_id, display_name):
     """
@@ -159,7 +187,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
     try:
-        with get_csv_file(provider, token, domain, datasource_id) as csv_file:
+        with get_datasource_file(provider, token, domain, datasource_id) as csv_file:
             df = pd.concat(
                 pd.read_csv(
                     chunksize=1000,
@@ -230,8 +258,9 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
 
 
 @contextmanager
-def get_csv_file(provider, oauth_token, domain, datasource_id):
+def get_datasource_file(provider, oauth_token, domain, datasource_id):
     datasource_url = get_datasource_export_url(domain, datasource_id)
+    import pdb; pdb.set_trace()
     response = provider.get(datasource_url, token=oauth_token)
     if response.status_code != 200:
         # Todo; logging
@@ -241,6 +270,15 @@ def get_csv_file(provider, oauth_token, domain, datasource_id):
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
 
+
+def get_datasource_size(provider, oauth_token, domain, datasource_id):
+    return 20
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.request('HEAD', datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    return int(response.headers['Content-Length'])
 
 def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     url = get_datasource_details_url(domain, datasource_id)
