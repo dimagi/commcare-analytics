@@ -6,7 +6,7 @@ import sqlalchemy
 
 
 def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}?format=csv"
+    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
 
 
 def get_datasource_list_url(domain):
