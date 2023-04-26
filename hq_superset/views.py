@@ -10,11 +10,8 @@ from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
-<<<<<<< HEAD
-from flask import Response, abort, flash, g, redirect, request
-=======
 from flask import Response, abort, g, redirect, request, flash, url_for
->>>>>>> master
+
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
@@ -41,11 +38,8 @@ from .utils import (
     get_schema_name_for_domain,
     get_hq_database,
     parse_date,
-<<<<<<< HEAD
     AsyncImportHelper,
-=======
-    DomainSyncUtil
->>>>>>> master
+    DomainSyncUtil,
 )
 
 logger = logging.getLogger(__name__)
@@ -184,13 +178,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name, file_path, dataso
     Pulls the data from CommCare HQ and creates/replaces the
     corresponding Superset dataset
     """
-<<<<<<< HEAD
     database = get_ucr_database()
-=======
-    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    token = get_valid_cchq_oauth_token()
-    database = get_hq_database()
->>>>>>> master
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)

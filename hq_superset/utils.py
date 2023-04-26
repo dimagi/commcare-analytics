@@ -1,9 +1,6 @@
 from datetime import date, datetime
-<<<<<<< HEAD
 from superset.extensions import cache_manager
-=======
 from flask_login import current_user
->>>>>>> master
 
 import pandas
 import sqlalchemy
@@ -103,8 +100,6 @@ def parse_date(date_str):
         return date_str
 
 
-<<<<<<< HEAD
-
 class AsyncImportHelper:
     def __init__(self, domain, datasource_id):
         self.domain = domain
@@ -130,7 +125,8 @@ class AsyncImportHelper:
 
     def mark_as_complete(self):
         cache_manager.cache.delete(self.progress_key)
-=======
+
+
 class DomainSyncUtil:
 
     def __init__(self, security_manager):
@@ -178,4 +174,3 @@ class DomainSyncUtil:
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
->>>>>>> master
