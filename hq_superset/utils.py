@@ -125,11 +125,11 @@ class AsyncImportHelper:
         if not self.task_id:
             return False
         from celery.result import AsyncResult
-        res = AsyncResult(task_id)
+        res = AsyncResult(self.task_id)
         return not res.ready()
 
     def mark_as_in_progress(self, task_id):
         cache_manager.cache.set(self.progress_key, task_id)
 
     def mark_as_complete(self):
-        cache_manager.cache.delete(self.progress_key, self.task_id)
+        cache_manager.cache.delete(self.progress_key)

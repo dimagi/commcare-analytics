@@ -115,3 +115,4 @@ tests/.superset/
 *.sublime-project
 *.sublime-workspace
 superset_config.py
+shared_dir/

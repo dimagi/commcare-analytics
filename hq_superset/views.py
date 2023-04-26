@@ -1,10 +1,12 @@
 import logging
 import ast
+import os
 import pandas as pd
 import superset
 import sqlalchemy
 
 from contextlib import contextmanager
+from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
@@ -154,32 +156,30 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
 
     provider = superset.appbuilder.sm.oauth_remotes["commcare"]
     token = get_valid_cchq_oauth_token()
-    size = get_datasource_size(provider, token, domain, datasource_id)
+    path, size = download_datasource(provider, token, domain, datasource_id)
+    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
-        return refresh_hq_datasource(domain, datasource_id, display_name)
+        return refresh_hq_datasource(domain, datasource_id, display_name, path, datasource_defn)
     else:
-        return queue_refresh_task(domain, datasource_id, display_name)
+        return queue_refresh_task(domain, datasource_id, display_name, path, datasource_defn)
 
 
-def queue_refresh_task(domain, datasource_id, display_name):
-    task_id = refresh_hq_datasource_task(domain, datasource_id, display_name).delay()
+def queue_refresh_task(domain, datasource_id, display_name, export_path, datasource_defn):
+    task_id = refresh_hq_datasource_task.delay(domain, datasource_id, display_name, export_path, datasource_defn).task_id
     AsyncImportHelper(domain, datasource_id).mark_as_in_progress(task_id)
     flash("The datasource is being refreshed in the background as it is larger than 10MB. "
           "This may take a while, please wait for it to finish")
     return redirect("/tablemodelview/list/")
 
 
-def refresh_hq_datasource(domain, datasource_id, display_name):
+def refresh_hq_datasource(domain, datasource_id, display_name, file_path, datasource_defn):
     """
     Pulls the data from CommCare HQ and creates/replaces the
     corresponding Superset dataset
     """
-    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    token = get_valid_cchq_oauth_token()
     database = get_ucr_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
-    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
     column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
 
     converters = {column_name: convert_to_array for column_name in array_columns}
@@ -187,7 +187,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
     try:
-        with get_datasource_file(provider, token, domain, datasource_id) as csv_file:
+        with get_datasource_file(file_path) as csv_file:
             df = pd.concat(
                 pd.read_csv(
                     chunksize=1000,
@@ -253,32 +253,30 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
         db.session.rollback()
         raise ex
 
+    os.remove(file_path)
     # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     return redirect("/tablemodelview/list/")
 
 
 @contextmanager
-def get_datasource_file(provider, oauth_token, domain, datasource_id):
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    import pdb; pdb.set_trace()
-    response = provider.get(datasource_url, token=oauth_token)
-    if response.status_code != 200:
-        # Todo; logging
-        raise CCHQApiException("Error downloading the UCR export from HQ")
-
-    with ZipFile(BytesIO(response.content)) as zipfile:
+def get_datasource_file(path):
+    with ZipFile(path) as zipfile:
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
 
 
-def get_datasource_size(provider, oauth_token, domain, datasource_id):
-    return 20
+def download_datasource(provider, oauth_token, domain, datasource_id):
     datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.request('HEAD', datasource_url, token=oauth_token)
+    response = provider.get(datasource_url, token=oauth_token)
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR export from HQ")
 
-    return int(response.headers['Content-Length'])
+    filename = f"{datasource_id}_{datetime.now()}.zip"
+    path = os.path.join(superset.config.SHARED_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(response.content)
+
+    return path, len(response.content)
 
 def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     url = get_datasource_details_url(domain, datasource_id)

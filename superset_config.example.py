@@ -41,6 +41,7 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
+SHARED_DIR = 'shared_dir'
 
 # Enable below for sentry integration
 import sentry_sdk
