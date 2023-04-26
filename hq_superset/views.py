@@ -178,7 +178,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name, file_path, dataso
     Pulls the data from CommCare HQ and creates/replaces the
     corresponding Superset dataset
     """
-    database = get_ucr_database()
+    database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
     column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
