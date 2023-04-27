@@ -215,6 +215,46 @@ class TestViews(HQDBTestCase):
             )
 
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.views.os.remove')
+    def test_trigger_datasource_refresh(self, *args):
+        from hq_superset.views import (
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+            trigger_datasource_refresh
+        )
+        domain = 'test1'
+        ds_name = 'ds_name'
+        file_path = '/file_path'
+        ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+
+        def _test_sync_or_async(ds_size, routing_method):
+            with patch("hq_superset.views.download_datasource") as download_ds_mock, \
+                patch("hq_superset.views.get_datasource_defn") as ds_defn_mock, \
+                patch(routing_method) as refresh_mock:
+                download_ds_mock.return_value = file_path, ds_size
+                ds_defn_mock.return_value = TEST_DATASOURCE
+                trigger_datasource_refresh(domain, ucr_id, ds_name)
+                refresh_mock.assert_called_once_with(
+                    domain,
+                    ucr_id,
+                    ds_name,
+                    file_path,
+                    TEST_DATASOURCE
+                )
+
+        # When datasource size is more than the limit, it should get
+        #   queued via celery
+        _test_sync_or_async(
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES + 1,
+            "hq_superset.views.queue_refresh_task"
+        )
+        # When datasource size is within the limit, it should get
+        #   refreshed directly
+        _test_sync_or_async(
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES - 1,
+            "hq_superset.views.refresh_hq_datasource"
+        )
+
+    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
 
         from hq_superset.views import refresh_hq_datasource
