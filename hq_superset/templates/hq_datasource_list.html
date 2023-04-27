@@ -18,7 +18,11 @@
 				</td>
 				{% if ucr_id_to_pks.get(ds.id, None) %}
 					<td class="table-cell" role="cell">
+						{% if ds.is_import_in_progress %}
+							<p class="alert alert-warning" title="This is being imported in the background">Refreshing</p>
+						{% else %}
 						<a href="/hq_datasource/update/{{ds.id}}?name={{ ds.display_name | urlencode}}">Refresh</a>
+						{% endif %}
 					</td>
 					<td class="table-cell" role="cell">
 						<a href="/superset/explore/table/{{ ucr_id_to_pks.get(ds.id) }}/">{{ds.id}}</a>
@@ -29,7 +33,11 @@
 					</td>
 				{% else %}
 					<td class="table-cell" role="cell">
+						{% if ds.is_import_in_progress %}
+							<p class="alert alert-warning" title="This is being imported in the background">Importing</p>
+						{% else %}
 						<a href="/hq_datasource/update/{{ds.id}}?name={{ ds.display_name | urlencode}}">Import</a>
+						{% endif %}
 					</td>
 					<td class="table-cell alert alert-warning" role="cell">
 						Not Imported yet

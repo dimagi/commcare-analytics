@@ -1,14 +1,17 @@
 import logging
 import ast
+import os
 import pandas as pd
 import superset
 import sqlalchemy
 
 from contextlib import contextmanager
+from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
 from flask import Response, abort, g, redirect, request, flash, url_for
+
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
@@ -22,9 +25,11 @@ from superset.datasets.commands.exceptions import (
 from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
+from superset.extensions import cache_manager
 
 from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
+from .tasks import refresh_hq_datasource_task
 from .utils import (
     get_column_dtypes,
     get_datasource_details_url,
@@ -33,7 +38,8 @@ from .utils import (
     get_schema_name_for_domain,
     get_hq_database,
     parse_date,
-    DomainSyncUtil
+    AsyncImportHelper,
+    DomainSyncUtil,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,7 +69,7 @@ class HQDatasourceView(BaseSupersetView):
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a superset table
         display_name = request.args.get("name")
-        res = refresh_hq_datasource(g.hq_domain, datasource_id, display_name)
+        res = trigger_datasource_refresh(g.hq_domain, datasource_id, display_name)
         return res
 
     @expose("/list/", methods=["GET"])
@@ -77,9 +83,12 @@ class HQDatasourceView(BaseSupersetView):
         if response.status_code != 200:
             url = f"{provider.api_base_url}{datasource_list_url}"
             return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
+        hq_datasources = response.json()
+        for ds in hq_datasources['objects']:
+            ds['is_import_in_progress'] = AsyncImportHelper(g.hq_domain, ds['id']).is_import_in_progress()
         return self.render_template(
             "hq_datasource_list.html",
-            hq_datasources=response.json(),
+            hq_datasources=hq_datasources,
             ucr_id_to_pks=self._ucr_id_to_pks(),
             hq_base_url=provider.api_base_url
         )
@@ -140,18 +149,50 @@ def convert_to_array(string_array):
 
     return array_values
 
+# ~5MB
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5000000
 
-def refresh_hq_datasource(domain, datasource_id, display_name):
+def trigger_datasource_refresh(domain, datasource_id, display_name):
+    if AsyncImportHelper(domain, datasource_id).is_import_in_progress():
+        flash("The datasource is already being imported in the background. "
+              "Please wait for it to finish before retrying",
+              "warning")
+        return redirect("/tablemodelview/list/")
+
+    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
+    token = get_valid_cchq_oauth_token()
+    path, size = download_datasource(provider, token, domain, datasource_id)
+    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
+    if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
+        response = refresh_hq_datasource(
+            domain, datasource_id, display_name, path, datasource_defn, None
+            )
+        os.remove(path)
+        return response
+    else:
+        limit_in_mb = int(ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES / 1000000)
+        flash(f"The datasource is being refreshed in the background as it is"
+              " larger than {limit_in_mb} MB. This may take a while, please wait for it to finish",
+              "info")
+        return queue_refresh_task(domain, datasource_id, display_name, path, datasource_defn, g.user.get_id())
+
+
+def queue_refresh_task(domain, datasource_id, display_name, export_path, datasource_defn, user_id):
+    task_id = refresh_hq_datasource_task.delay(
+        domain, datasource_id, display_name, export_path, datasource_defn, g.user.get_id()
+    ).task_id
+    AsyncImportHelper(domain, datasource_id).mark_as_in_progress(task_id)
+    return redirect("/tablemodelview/list/")
+
+
+def refresh_hq_datasource(domain, datasource_id, display_name, file_path, datasource_defn, user_id=None):
     """
     Pulls the data from CommCare HQ and creates/replaces the
     corresponding Superset dataset
     """
-    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    token = get_valid_cchq_oauth_token()
     database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
-    datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
     column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
 
     converters = {column_name: convert_to_array for column_name in array_columns}
@@ -159,7 +200,7 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
     sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
     try:
-        with get_csv_file(provider, token, domain, datasource_id) as csv_file:
+        with get_datasource_file(file_path) as csv_file:
             df = pd.concat(
                 pd.read_csv(
                     chunksize=1000,
@@ -215,8 +256,12 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
             sqla_table.description = display_name
             sqla_table.database = expore_database
             sqla_table.database_id = database.id
-            sqla_table.owners = [g.user]
-            sqla_table.user_id = g.user.get_id()
+            if user_id:
+                user = superset.appbuilder.sm.get_user_by_id(user_id)
+            else:
+                user = g.user
+            sqla_table.owners = [user]
+            sqla_table.user_id = user.get_id()
             sqla_table.schema = csv_table.schema
             sqla_table.fetch_metadata()
             db.session.add(sqla_table)
@@ -230,17 +275,24 @@ def refresh_hq_datasource(domain, datasource_id, display_name):
 
 
 @contextmanager
-def get_csv_file(provider, oauth_token, domain, datasource_id):
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.get(datasource_url, token=oauth_token)
-    if response.status_code != 200:
-        # Todo; logging
-        raise CCHQApiException("Error downloading the UCR export from HQ")
-
-    with ZipFile(BytesIO(response.content)) as zipfile:
+def get_datasource_file(path):
+    with ZipFile(path) as zipfile:
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
 
+
+def download_datasource(provider, oauth_token, domain, datasource_id):
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.get(datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    filename = f"{datasource_id}_{datetime.now()}.zip"
+    path = os.path.join(superset.config.SHARED_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(response.content)
+
+    return path, len(response.content)
 
 def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     url = get_datasource_details_url(domain, datasource_id)

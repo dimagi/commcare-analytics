@@ -35,7 +35,14 @@ superset_config.OAUTH_PROVIDERS = [
 ]
 
 superset_config.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-
+superset_config.SHARED_DIR = "shared_dir"
+superset_config.ENABLE_ASYNC_UCR_IMPORTS = True
+superset_config.CACHE_CONFIG = {
+      'CACHE_TYPE': 'RedisCache',
+      'CACHE_DEFAULT_TIMEOUT': 300,
+      'CACHE_KEY_PREFIX': 'superset_',
+      'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+}
 
 superset_config.AUTH_USER_REGISTRATION = True
 superset_config.AUTH_USER_REGISTRATION_ROLE = "Gamma"

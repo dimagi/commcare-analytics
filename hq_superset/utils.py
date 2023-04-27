@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from superset.extensions import cache_manager
 from flask_login import current_user
 
 import pandas
@@ -12,7 +13,7 @@ HQ_DB_CONNECTION_NAME = "HQ Data"
 
 
 def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}?format=csv"
+    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
 
 
 def get_datasource_list_url(domain):
@@ -97,6 +98,33 @@ def parse_date(date_str):
             return date.fromisoformat(date_str)
     except ValueError:
         return date_str
+
+
+class AsyncImportHelper:
+    def __init__(self, domain, datasource_id):
+        self.domain = domain
+        self.datasource_id = datasource_id
+
+    @property
+    def progress_key(self):
+        return f"{self.domain}_{self.datasource_id}_import_task_id"
+
+    @property
+    def task_id(self):
+        return cache_manager.cache.get(self.progress_key)
+
+    def is_import_in_progress(self):
+        if not self.task_id:
+            return False
+        from celery.result import AsyncResult
+        res = AsyncResult(self.task_id)
+        return not res.ready()
+
+    def mark_as_in_progress(self, task_id):
+        cache_manager.cache.set(self.progress_key, task_id)
+
+    def mark_as_complete(self):
+        cache_manager.cache.delete(self.progress_key)
 
 
 class DomainSyncUtil:
