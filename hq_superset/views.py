@@ -160,7 +160,9 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
     path, size = download_datasource(provider, token, domain, datasource_id)
     datasource_defn = get_datasource_defn(provider, token, domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
-        return refresh_hq_datasource(domain, datasource_id, display_name, path, datasource_defn)
+        response = refresh_hq_datasource(domain, datasource_id, display_name, path, datasource_defn)
+        os.remove(path)
+        return response
     else:
         return queue_refresh_task(domain, datasource_id, display_name, path, datasource_defn)
 
@@ -254,7 +256,6 @@ def refresh_hq_datasource(domain, datasource_id, display_name, file_path, dataso
         db.session.rollback()
         raise ex
 
-    os.remove(file_path)
     # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     return redirect("/tablemodelview/list/")
 

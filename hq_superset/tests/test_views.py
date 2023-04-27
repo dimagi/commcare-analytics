@@ -205,7 +205,7 @@ class TestViews(HQDBTestCase):
         self.login(client)
         client.get('/domain/select/test1/', follow_redirects=True)
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-        with patch("hq_superset.views.refresh_hq_datasource") as refresh_mock:
+        with patch("hq_superset.views.trigger_datasource_refresh") as refresh_mock:
             refresh_mock.return_value = redirect("/tablemodelview/list/")
             client.get(f'/hq_datasource/update/{ucr_id}?name=ds1', follow_redirects=True)
             refresh_mock.assert_called_once_with(
@@ -222,14 +222,14 @@ class TestViews(HQDBTestCase):
         
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = "ds1"
-        with patch("hq_superset.views.get_csv_file") as csv_mock, \
+        with patch("hq_superset.views.get_datasource_file") as csv_mock, \
             self.app.test_client() as client:
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
             
             def _test_upload(test_data, expected_output):
                 csv_mock.return_value = StringIO(test_data)
-                refresh_hq_datasource('test1', ucr_id, ds_name)
+                refresh_hq_datasource('test1', ucr_id, ds_name, '_', TEST_DATASOURCE)
                 datasets = json.loads(client.get('/api/v1/dataset/').data)
                 self.assertEqual(len(datasets['result']), 1)
                 self.assertEqual(datasets['result'][0]['schema'], get_schema_name_for_domain('test1'))
