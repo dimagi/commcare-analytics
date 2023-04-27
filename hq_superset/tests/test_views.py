@@ -1,6 +1,8 @@
 import datetime
 import json
 import jwt
+import os
+import pickle
 
 from io import StringIO
 from unittest.mock import patch, MagicMock
@@ -22,6 +24,10 @@ class MockResponse:
 
     def json(self):
         return self.json_data
+
+    @property
+    def content(self):
+        return pickle.dumps(self.json_data)
 
 
 class OAuthMock():
@@ -77,6 +83,7 @@ class OAuthMock():
             'a/test1/api/v0.5/ucr_data_source/': MockResponse(self.test1_datasources, 200),
             'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
             'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
+            'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(TEST_UCR_CSV_V1, 200),
         }[url]
 
 
@@ -253,6 +260,16 @@ class TestViews(HQDBTestCase):
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES - 1,
             "hq_superset.views.refresh_hq_datasource"
         )
+
+    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    def test_download_datasource(self, *args):
+        from hq_superset.views import download_datasource
+        ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+        path, size = download_datasource(self.oauth_mock, '_', 'test1', ucr_id)
+        with open(path, 'rb') as f:
+            self.assertEqual(pickle.load(f), TEST_UCR_CSV_V1)
+            self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
+        os.remove(path)
 
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
