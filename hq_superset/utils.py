@@ -1,16 +1,22 @@
+import os
+import pandas
+import sqlalchemy
+
+
+from contextlib import contextmanager
 from datetime import date, datetime
 from superset.extensions import cache_manager
 from flask_login import current_user
+from zipfile import ZipFile
 
-import pandas
-import sqlalchemy
 
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 HQ_DB_CONNECTION_NAME = "HQ Data"
-
+# ~5MB
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5000000
 
 def get_datasource_export_url(domain, datasource_id):
     return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
@@ -174,3 +180,34 @@ class DomainSyncUtil:
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+
+
+
+
+@contextmanager
+def get_datasource_file(path):
+    with ZipFile(path) as zipfile:
+        filename = zipfile.namelist()[0]
+        yield zipfile.open(filename)
+
+
+def download_datasource(provider, oauth_token, domain, datasource_id):
+    import superset
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.get(datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    filename = f"{datasource_id}_{datetime.now()}.zip"
+    path = os.path.join(superset.config.SHARED_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(response.content)
+
+    return path, len(response.content)
+
+def get_datasource_defn(provider, oauth_token, domain, datasource_id):
+    url = get_datasource_details_url(domain, datasource_id)
+    response = provider.get(url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR definition from HQ")
+    return response.json()

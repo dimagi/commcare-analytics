@@ -5,10 +5,8 @@ import pandas as pd
 import superset
 import sqlalchemy
 
-from contextlib import contextmanager
 from datetime import datetime
 from io import BytesIO
-from zipfile import ZipFile
 from sqlalchemy.dialects import postgresql
 from flask import Response, abort, g, redirect, request, flash, url_for
 
@@ -40,6 +38,10 @@ from .utils import (
     parse_date,
     AsyncImportHelper,
     DomainSyncUtil,
+    get_datasource_file,
+    download_datasource,
+    get_datasource_defn,
+    ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
 )
 
 logger = logging.getLogger(__name__)
@@ -149,8 +151,6 @@ def convert_to_array(string_array):
 
     return array_values
 
-# ~5MB
-ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5000000
 
 def trigger_datasource_refresh(domain, datasource_id, display_name):
     if AsyncImportHelper(domain, datasource_id).is_import_in_progress():
@@ -272,34 +272,6 @@ def refresh_hq_datasource(domain, datasource_id, display_name, file_path, dataso
 
     # superset.appbuilder.sm.add_permission_role(role, sqla_table.get_perm())
     return redirect("/tablemodelview/list/")
-
-
-@contextmanager
-def get_datasource_file(path):
-    with ZipFile(path) as zipfile:
-        filename = zipfile.namelist()[0]
-        yield zipfile.open(filename)
-
-
-def download_datasource(provider, oauth_token, domain, datasource_id):
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.get(datasource_url, token=oauth_token)
-    if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR export from HQ")
-
-    filename = f"{datasource_id}_{datetime.now()}.zip"
-    path = os.path.join(superset.config.SHARED_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(response.content)
-
-    return path, len(response.content)
-
-def get_datasource_defn(provider, oauth_token, domain, datasource_id):
-    url = get_datasource_details_url(domain, datasource_id)
-    response = provider.get(url, token=oauth_token)
-    if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR definition from HQ")
-    return response.json()
 
 
 class SelectDomainView(BaseSupersetView):
