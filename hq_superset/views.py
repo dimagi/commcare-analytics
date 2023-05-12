@@ -199,30 +199,38 @@ def refresh_hq_datasource(domain, datasource_id, display_name, file_path, dataso
     # TODO: can we assume all array values will be of type TEXT?
     sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
 
-    try:
-        with get_datasource_file(file_path) as csv_file:
-            df = pd.concat(
-                pd.read_csv(
-                    chunksize=1000,
-                    filepath_or_buffer=csv_file,
-                    encoding="utf-8",
-                    parse_dates=date_columns,
-                    date_parser=parse_date,
-                    keep_default_na=True,
-                    dtype=column_dtypes,
-                    converters=converters,
-                )
-            )
+    def to_sql(df, replace=False):
         database.db_engine_spec.df_to_sql(
             database,
             csv_table,
             df,
             to_sql_kwargs={
-                "chunksize": 1000,
-                "if_exists": "replace",
+                "if_exists": "replace" if replace else "append",
                 "dtype": sqlconverters,
             },
         )
+
+    try:
+        with get_datasource_file(file_path) as csv_file:
+
+            _iter = pd.read_csv(
+                chunksize=10000,
+                filepath_or_buffer=csv_file,
+                encoding="utf-8",
+                parse_dates=date_columns,
+                date_parser=parse_date,
+                keep_default_na=True,
+                dtype=column_dtypes,
+                converters=converters,
+                iterator=True,
+                low_memory=True,
+            )
+
+            to_sql(next(_iter), replace=True)
+
+            for df in _iter:
+                to_sql(df, replace=False)
+
 
         # Connect table to the database that should be used for exploration.
         # E.g. if hive was used to upload a csv, presto will be a better option
