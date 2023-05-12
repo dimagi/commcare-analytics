@@ -171,8 +171,8 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
         return response
     else:
         limit_in_mb = int(ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES / 1000000)
-        flash(f"The datasource is being refreshed in the background as it is"
-              " larger than {limit_in_mb} MB. This may take a while, please wait for it to finish",
+        flash("The datasource is being refreshed in the background as it is"
+              f" larger than {limit_in_mb} MB. This may take a while, please wait for it to finish",
               "info")
         return queue_refresh_task(domain, datasource_id, display_name, path, datasource_defn, g.user.get_id())
 
