@@ -50,10 +50,6 @@ AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 # This is where async UCR imports are stored temporarily
 SHARED_DIR = 'shared_dir'
 
-# If this is enabled, UCRs larger than
-#   hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES
-#   are imported via Celery/Redis.
-ENABLE_ASYNC_UCR_IMPORTS = False
 
 # Enable below for sentry integration
 import sentry_sdk
