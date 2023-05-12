@@ -1,18 +1,25 @@
-from datetime import date, datetime
-from flask_login import current_user
-
+import os
 import pandas
 import sqlalchemy
+
+
+from contextlib import contextmanager
+from datetime import date, datetime
+from superset.extensions import cache_manager
+from flask_login import current_user
+from zipfile import ZipFile
+
 
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 HQ_DB_CONNECTION_NAME = "HQ Data"
-
+# ~5MB
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5000000
 
 def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}?format=csv"
+    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
 
 
 def get_datasource_list_url(domain):
@@ -99,6 +106,33 @@ def parse_date(date_str):
         return date_str
 
 
+class AsyncImportHelper:
+    def __init__(self, domain, datasource_id):
+        self.domain = domain
+        self.datasource_id = datasource_id
+
+    @property
+    def progress_key(self):
+        return f"{self.domain}_{self.datasource_id}_import_task_id"
+
+    @property
+    def task_id(self):
+        return cache_manager.cache.get(self.progress_key)
+
+    def is_import_in_progress(self):
+        if not self.task_id:
+            return False
+        from celery.result import AsyncResult
+        res = AsyncResult(self.task_id)
+        return not res.ready()
+
+    def mark_as_in_progress(self, task_id):
+        cache_manager.cache.set(self.progress_key, task_id)
+
+    def mark_as_complete(self):
+        cache_manager.cache.delete(self.progress_key)
+
+
 class DomainSyncUtil:
 
     def __init__(self, security_manager):
@@ -146,3 +180,34 @@ class DomainSyncUtil:
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+
+
+
+
+@contextmanager
+def get_datasource_file(path):
+    with ZipFile(path) as zipfile:
+        filename = zipfile.namelist()[0]
+        yield zipfile.open(filename)
+
+
+def download_datasource(provider, oauth_token, domain, datasource_id):
+    import superset
+    datasource_url = get_datasource_export_url(domain, datasource_id)
+    response = provider.get(datasource_url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR export from HQ")
+
+    filename = f"{datasource_id}_{datetime.now()}.zip"
+    path = os.path.join(superset.config.SHARED_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(response.content)
+
+    return path, len(response.content)
+
+def get_datasource_defn(provider, oauth_token, domain, datasource_id):
+    url = get_datasource_details_url(domain, datasource_id)
+    response = provider.get(url, token=oauth_token)
+    if response.status_code != 200:
+        raise CCHQApiException("Error downloading the UCR definition from HQ")
+    return response.json()

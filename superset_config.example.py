@@ -47,6 +47,13 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
+# This is where async UCR imports are stored temporarily
+SHARED_DIR = 'shared_dir'
+
+# If this is enabled, UCRs larger than
+#   hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES
+#   are imported via Celery/Redis.
+ENABLE_ASYNC_UCR_IMPORTS = False
 
 # Enable below for sentry integration
 import sentry_sdk
@@ -57,3 +64,48 @@ sentry_sdk.init(
     environment='test',
     send_default_pii=True,
 )
+
+CACHE_CONFIG = {
+      'CACHE_TYPE': 'RedisCache',
+      'CACHE_DEFAULT_TIMEOUT': 300,
+      'CACHE_KEY_PREFIX': 'superset_',
+      'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+}
+
+from cachelib.redis import RedisCache
+RESULTS_BACKEND = RedisCache(
+    host='localhost', port=6379, key_prefix='superset_results'
+)
+
+from celery.schedules import crontab
+
+class CeleryConfig(object):
+    broker_url = 'redis://localhost:6379/0'
+    imports = (
+        'superset.sql_lab',
+        'superset.tasks',
+        'hq_superset.tasks',
+    )
+    result_backend = 'redis://localhost:6379/0'
+    worker_log_level = 'DEBUG'
+    worker_prefetch_multiplier = 10
+    task_acks_late = True
+    task_annotations = {
+        'sql_lab.get_sql_results': {
+            'rate_limit': '100/s',
+        },
+        'email_reports.send': {
+            'rate_limit': '1/s',
+            'time_limit': 120,
+            'soft_time_limit': 150,
+            'ignore_result': True,
+        },
+    }
+    beat_schedule = {
+        'email_reports.schedule_hourly': {
+            'task': 'email_reports.schedule_hourly',
+            'schedule': crontab(minute=1, hour='*'),
+        },
+    }
+
+CELERY_CONFIG = CeleryConfig

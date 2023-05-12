@@ -24,6 +24,7 @@ setup(
         'WTForms==2.3.3',
         'cryptography==37.0.4',
         'sentry-sdk==1.9.10',
+        'celery==5.2.7',
     ],
     classifiers=[
         'Programming Language :: Python',

@@ -1,6 +1,8 @@
 import datetime
 import json
 import jwt
+import os
+import pickle
 
 from io import StringIO
 from unittest.mock import patch, MagicMock
@@ -23,6 +25,16 @@ class MockResponse:
     def json(self):
         return self.json_data
 
+    @property
+    def content(self):
+        return pickle.dumps(self.json_data)
+
+
+class UserMock():
+    user_id = '123'
+
+    def get_id(self):
+        return self.user_id
 
 class OAuthMock():
 
@@ -77,6 +89,7 @@ class OAuthMock():
             'a/test1/api/v0.5/ucr_data_source/': MockResponse(self.test1_datasources, 200),
             'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
             'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
+            'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(TEST_UCR_CSV_V1, 200),
         }[url]
 
 
@@ -104,7 +117,7 @@ class TestViews(HQDBTestCase):
         self.app.appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
 
         gamma_role = self.app.appbuilder.sm.find_role('Gamma')
-        self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+        self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
@@ -205,7 +218,7 @@ class TestViews(HQDBTestCase):
         self.login(client)
         client.get('/domain/select/test1/', follow_redirects=True)
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-        with patch("hq_superset.views.refresh_hq_datasource") as refresh_mock:
+        with patch("hq_superset.views.trigger_datasource_refresh") as refresh_mock:
             refresh_mock.return_value = redirect("/tablemodelview/list/")
             client.get(f'/hq_datasource/update/{ucr_id}?name=ds1', follow_redirects=True)
             refresh_mock.assert_called_once_with(
@@ -215,6 +228,62 @@ class TestViews(HQDBTestCase):
             )
 
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.views.os.remove')
+    def test_trigger_datasource_refresh(self, *args):
+        from hq_superset.views import (
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+            trigger_datasource_refresh
+        )
+        domain = 'test1'
+        ds_name = 'ds_name'
+        file_path = '/file_path'
+        ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+
+        def _test_sync_or_async(ds_size, routing_method, user_id):
+
+            with patch("hq_superset.views.download_datasource") as download_ds_mock, \
+                patch("hq_superset.views.get_datasource_defn") as ds_defn_mock, \
+                patch(routing_method) as refresh_mock, \
+                patch("hq_superset.views.g") as mock_g:
+                mock_g.user = UserMock()
+                download_ds_mock.return_value = file_path, ds_size
+                ds_defn_mock.return_value = TEST_DATASOURCE
+                trigger_datasource_refresh(domain, ucr_id, ds_name)
+                refresh_mock.assert_called_once_with(
+                    domain,
+                    ucr_id,
+                    ds_name,
+                    file_path,
+                    TEST_DATASOURCE,
+                    user_id
+                )
+
+        # When datasource size is more than the limit, it should get
+        #   queued via celery
+        _test_sync_or_async(
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES + 1,
+            "hq_superset.views.queue_refresh_task",
+            UserMock().user_id
+        )
+        # When datasource size is within the limit, it should get
+        #   refreshed directly
+        _test_sync_or_async(
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES - 1,
+            "hq_superset.views.refresh_hq_datasource",
+            None
+        )
+
+    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    def test_download_datasource(self, *args):
+        from hq_superset.views import download_datasource
+        ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+        path, size = download_datasource(self.oauth_mock, '_', 'test1', ucr_id)
+        with open(path, 'rb') as f:
+            self.assertEqual(pickle.load(f), TEST_UCR_CSV_V1)
+            self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
+        os.remove(path)
+
+    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
 
         from hq_superset.views import refresh_hq_datasource
@@ -222,14 +291,14 @@ class TestViews(HQDBTestCase):
         
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = "ds1"
-        with patch("hq_superset.views.get_csv_file") as csv_mock, \
+        with patch("hq_superset.views.get_datasource_file") as csv_mock, \
             self.app.test_client() as client:
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
             
             def _test_upload(test_data, expected_output):
                 csv_mock.return_value = StringIO(test_data)
-                refresh_hq_datasource('test1', ucr_id, ds_name)
+                refresh_hq_datasource('test1', ucr_id, ds_name, '_', TEST_DATASOURCE)
                 datasets = json.loads(client.get('/api/v1/dataset/').data)
                 self.assertEqual(len(datasets['result']), 1)
                 self.assertEqual(datasets['result'][0]['schema'], get_schema_name_for_domain('test1'))

@@ -26,6 +26,16 @@ jobs:
           # Use custom ports for services to avoid accidentally connecting to
           # GitHub action runner's default installations
           - 5432:5432
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+        ports:
+          - 6379:6379
     steps:
       - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
         uses: actions/checkout@v2
@@ -41,6 +51,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
           pip install -r requirements_test.txt
+      - name: Create shared_dir
+        run: |
+          mkdir shared_dir
       - name: Run Tests
         run: |
           pytest -W ignore::DeprecationWarning

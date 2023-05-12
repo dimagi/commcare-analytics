@@ -39,6 +39,19 @@ You should now be able to run superset using the `superset run` command from the
 OAuth integration should now start working.
 
 
+### Importing UCRs using Redis and Celery
+
+
+Celery is used to import UCRs that are larger than
+`hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES`. If you need
+to import UCRs larger than this, you need to run celery to import them.
+Here is how celery can be run locally.
+
+- Install and run Redis
+- Add Redis and celery config sections from `superset_config.example.py` to your local `superset_config.py`.
+- Run `celery --app=superset.tasks.celery_app:app worker --pool=prefork -O fair -c 4` in the superset virtualenv.
+
+
 ### Testing
 
 Tests use pytest, which is included in `requirements_dev.txt`:
