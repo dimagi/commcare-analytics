@@ -157,6 +157,12 @@ class DomainSyncUtil:
         if not engine.dialect.has_schema(engine, schema_name):
             engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
 
+    def _ensure_datasource_perm_created(self):
+        permission = self.sm.find_permission_view_menu("can_save", "Datasource")
+        if not permission:
+            permission = self.sm.add_permission_view_menu("can_save", "Datasource")
+        return permission
+
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
         new_domain_roles = [
@@ -177,6 +183,10 @@ class DomainSyncUtil:
         permission = self._ensure_schema_perm_created(domain)
         role = self._ensure_domain_role_created(domain)
         self.sm.add_permission_role(role, permission)
+
+        ds_permission = self._ensure_datasource_perm_created()
+        self.sm.add_permission_role(role, ds_permission)
+
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
