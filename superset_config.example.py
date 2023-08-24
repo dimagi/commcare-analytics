@@ -109,3 +109,8 @@ class CeleryConfig(object):
     }
 
 CELERY_CONFIG = CeleryConfig
+
+LANGUAGES = {
+   'en': {'flag':'us', 'name':'English'},
+   'pt': {'flag':'pt', 'name':'Portuguese'}
+}
