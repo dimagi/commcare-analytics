@@ -11,6 +11,7 @@ from sqlalchemy.sql import text
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
+    refresh_hq_datasource,
 )
 
 from .base_test import HQDBTestCase
@@ -287,7 +288,6 @@ class TestViews(HQDBTestCase):
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
 
-        from hq_superset.views import refresh_hq_datasource
         client = self.app.test_client()
         
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
