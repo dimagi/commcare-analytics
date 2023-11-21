@@ -236,6 +236,7 @@ class TestViews(HQDBTestCase):
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
             trigger_datasource_refresh,
         )
+
         domain = 'test1'
         ds_name = 'ds_name'
         file_path = '/file_path'

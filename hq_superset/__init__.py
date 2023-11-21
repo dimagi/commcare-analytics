@@ -10,6 +10,7 @@ def flask_app_mutator(app):
     from superset.extensions import appbuilder
 
     from . import hq_domain, views
+
     appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource', menu_cond=lambda *_: False)
     appbuilder.add_view(views.SelectDomainView, 'Select a Domain', menu_cond=lambda *_: False)
     app.before_request_funcs.setdefault(None, []).append(
