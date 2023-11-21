@@ -5,10 +5,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database
 
 
-# @pytest.fixture(scope="session", autouse=True)
-# def manage_ucr_db(request):
-#     # setup_ucr_db()
-#     request.addfinalizer(clear_ucr_db)
+class UnitTestingRequired(Exception):
+  pass
 
 
 def unit_testing_only(fn):
