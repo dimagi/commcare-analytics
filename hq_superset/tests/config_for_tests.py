@@ -1,7 +1,7 @@
-import hq_superset
-
 from flask_appbuilder.security.manager import AUTH_OAUTH
 from superset import config as superset_config
+
+import hq_superset
 
 superset_config.WTF_CSRF_ENABLED = False
 superset_config.TESTING = True

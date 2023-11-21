@@ -1,12 +1,12 @@
 import os
-import pandas
-import sqlalchemy
-
 from contextlib import contextmanager
 from datetime import date, datetime
-from superset.extensions import cache_manager
-from flask_login import current_user
 from zipfile import ZipFile
+
+import pandas
+import sqlalchemy
+from flask_login import current_user
+from superset.extensions import cache_manager
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
@@ -181,8 +181,6 @@ class DomainSyncUtil:
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
-
-
 
 
 @contextmanager

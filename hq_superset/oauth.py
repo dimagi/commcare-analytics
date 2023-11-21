@@ -7,7 +7,6 @@ from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
 
 from .utils import (
-    DOMAIN_PREFIX,
     SESSION_OAUTH_RESPONSE_KEY,
     SESSION_USER_DOMAINS_KEY,
 )

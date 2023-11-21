@@ -1,19 +1,19 @@
-import datetime
 import json
-import jwt
 import os
 import pickle
-
 from io import StringIO
-from unittest.mock import patch, MagicMock
-from flask import session, redirect
-from sqlalchemy.sql import text
-from superset.connectors.sqla.models import SqlaTable
+from unittest.mock import patch
 
-from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
-from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, 
-    SESSION_OAUTH_RESPONSE_KEY, get_schema_name_for_domain)
-from .base_test import SupersetTestCase, HQDBTestCase
+import jwt
+from flask import redirect, session
+from sqlalchemy.sql import text
+
+from hq_superset.utils import (
+    SESSION_USER_DOMAINS_KEY,
+    get_schema_name_for_domain,
+)
+
+from .base_test import HQDBTestCase
 from .utils import TEST_DATASOURCE
 
 
@@ -232,8 +232,9 @@ class TestViews(HQDBTestCase):
     def test_trigger_datasource_refresh(self, *args):
         from hq_superset.views import (
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
-            trigger_datasource_refresh
+            trigger_datasource_refresh,
         )
+
         domain = 'test1'
         ds_name = 'ds_name'
         file_path = '/file_path'
