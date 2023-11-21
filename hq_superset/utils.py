@@ -16,6 +16,10 @@ HQ_DB_CONNECTION_NAME = "HQ Data"
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 
 
+class CCHQApiException(Exception):
+    pass
+
+
 def get_datasource_export_url(domain, datasource_id):
     return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
 
