@@ -111,10 +111,6 @@ class HQDatasourceView(BaseSupersetView):
         return redirect("/tablemodelview/list/")
 
 
-class CCHQApiException(Exception):
-    pass
-
-
 def convert_to_array(string_array):
     """
     Converts the string representation of a list to a list.
