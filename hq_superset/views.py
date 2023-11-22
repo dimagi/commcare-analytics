@@ -1,6 +1,8 @@
 import ast
+import json
 import logging
 import os
+from http import HTTPStatus
 
 import superset
 from flask import Response, abort, flash, g, redirect, request, url_for
@@ -14,9 +16,11 @@ from superset.datasets.commands.exceptions import (
     DatasetForbiddenError,
     DatasetNotFoundError,
 )
-from superset.views.base import BaseSupersetView
+from superset.superset_typing import FlaskResponse
+from superset.views.base import BaseSupersetView, json_error_response
 
 from .hq_domain import user_domains
+from .models import DataSetChange
 from .oauth import get_valid_cchq_oauth_token
 from .tasks import refresh_hq_datasource_task
 from .utils import (
@@ -236,3 +240,48 @@ class SelectDomainView(BaseSupersetView):
         response.set_cookie('hq_domain', hq_domain)
         DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response
+
+
+class DataSetChangeAPI(BaseSupersetView):
+    """
+    Accepts changes to datasets from CommCare HQ data forwarding
+    """
+
+    MAX_REQUEST_LENGTH = 10_485_760  # reject >10MB JSON requests
+
+    def __init__(self):
+        self.route_base = '/hq_webhook'
+        self.default_view = 'post'
+        super().__init__()
+
+    @expose('/change/', methods=['POST'])
+    # TODO: Authenticate
+    def post(self) -> FlaskResponse:
+        if request.content_length > self.MAX_REQUEST_LENGTH:
+            return json_error_response(
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE.description,
+                status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE.value,
+            )
+
+        try:
+            request_json = json.loads(request.get_data(as_text=True))
+        except json.JSONDecodeError:
+            return json_error_response(
+                'Invalid JSON syntax',
+                status=HTTPStatus.BAD_REQUEST.value,
+            )
+
+        try:
+            change = DataSetChange(**request_json)
+        except TypeError as err:
+            return json_error_response(
+                str(err),
+                status=HTTPStatus.BAD_REQUEST.value,
+            )
+
+        # TODO: SC-3212: Update dataset with change
+
+        return self.json_response(
+            'Request accepted; updating dataset',
+            status=HTTPStatus.ACCEPTED.value,
+        )
