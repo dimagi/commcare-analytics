@@ -265,23 +265,19 @@ class DataSetChangeAPI(BaseSupersetView):
 
         try:
             request_json = json.loads(request.get_data(as_text=True))
+            change = DataSetChange(**request_json)
+            # TODO: update_dataset(change)
+            return self.json_response(
+                'Request accepted; updating dataset',
+                status=HTTPStatus.ACCEPTED.value,
+            )
         except json.JSONDecodeError:
             return json_error_response(
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
-
-        try:
-            change = DataSetChange(**request_json)
         except TypeError as err:
             return json_error_response(
                 str(err),
                 status=HTTPStatus.BAD_REQUEST.value,
             )
-
-        # TODO: SC-3212: Update dataset with change
-
-        return self.json_response(
-            'Request accepted; updating dataset',
-            status=HTTPStatus.ACCEPTED.value,
-        )
