@@ -267,6 +267,8 @@ def refresh_hq_datasource(
     Pulls the data from CommCare HQ and creates/replaces the
     corresponding Superset dataset
     """
+    # See `CsvToDatabaseView.form_post()` in
+    # https://github.com/apache/superset/blob/master/superset/views/database/views.py
     database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
@@ -315,19 +317,7 @@ def refresh_hq_datasource(
             for df in _iter:
                 to_sql(df, replace=False)
 
-        # Connect table to the database that should be used for
-        # exploration. e.g. If Hive was used to upload a CSV, Presto
-        # will be a better option to explore the table.
-        explore_database = database
-        explore_database_id = database.explore_database_id
-        if explore_database_id:
-            explore_database = (
-                db.session.query(Database)
-                .filter_by(id=explore_database_id)
-                .one_or_none()
-                or database
-            )
-
+        explore_database = get_explore_database(database)
         sqla_table = (
             db.session.query(SqlaTable)
             .filter_by(
@@ -360,3 +350,21 @@ def refresh_hq_datasource(
     except Exception as ex:  # pylint: disable=broad-except
         db.session.rollback()
         raise ex
+
+
+def get_explore_database(database):
+    """
+    Returns the database that should be used for exploration. e.g. If
+    Hive was used to upload a CSV, Presto will be a better option to
+    explore its tables.
+    """
+    explore_database_id = database.explore_database_id
+    if explore_database_id:
+        return (
+            db.session.query(Database)
+            .filter_by(id=explore_database_id)
+            .one_or_none()
+            or database
+        )
+    else:
+        return database
