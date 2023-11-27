@@ -315,13 +315,13 @@ def refresh_hq_datasource(
             for df in _iter:
                 to_sql(df, replace=False)
 
-        # Connect table to the database that should be used for exploration.
-        # E.g. if hive was used to upload a csv, presto will be a better option
-        # to explore the table.
-        expore_database = database
+        # Connect table to the database that should be used for
+        # exploration. e.g. If Hive was used to upload a CSV, Presto
+        # will be a better option to explore the table.
+        explore_database = database
         explore_database_id = database.explore_database_id
         if explore_database_id:
-            expore_database = (
+            explore_database = (
                 db.session.query(Database)
                 .filter_by(id=explore_database_id)
                 .one_or_none()
@@ -333,7 +333,7 @@ def refresh_hq_datasource(
             .filter_by(
                 table_name=datasource_id,
                 schema=csv_table.schema,
-                database_id=expore_database.id,
+                database_id=explore_database.id,
             )
             .one_or_none()
         )
@@ -345,7 +345,7 @@ def refresh_hq_datasource(
             # Store display name from HQ into description since
             #   sqla_table.table_name stores datasource_id
             sqla_table.description = display_name
-            sqla_table.database = expore_database
+            sqla_table.database = explore_database
             sqla_table.database_id = database.id
             if user_id:
                 user = superset.appbuilder.sm.get_user_by_id(user_id)
