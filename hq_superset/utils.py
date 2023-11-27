@@ -16,6 +16,8 @@ from superset.extensions import cache_manager
 from superset.models.core import Database
 from superset.sql_parse import Table
 
+from .models import DataSetChange
+
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
@@ -368,3 +370,43 @@ def get_explore_database(database):
         )
     else:
         return database
+
+
+def update_dataset(change: DataSetChange):
+    database = get_hq_database()
+    explore_database = get_explore_database(database)  # TODO: Necessary?
+    sqla_table = (
+        db.session.query(SqlaTable)
+        .filter_by(
+            table_name=change.data_source_id,
+            database_id=explore_database.id,
+        )
+        .one_or_none()
+    )
+    if sqla_table is None:
+        raise ValueError(f'{change.data_source_id} table not found.')
+
+    if change.action == 'delete':
+        stmt = (
+            sqla_table
+            .delete()
+            .where(sqla_table.doc_id == change.data['doc_id'])
+        )
+    elif change.action == 'upsert':
+        stmt = (
+            sqla_table
+            .insert()
+            .values(change.data)  # TODO: Do we need to cast anything?
+            .on_conflict_do_update(
+                index_elements=['doc_id'],
+                set_=change.data,
+            )
+        )
+    else:
+        raise ValueError(f'Invalid DataSetChange action {change.action!r}')
+    try:
+        db.session.execute(stmt)
+        db.session.commit()
+    except Exception:  # pylint: disable=broad-except
+        db.session.rollback()
+        raise

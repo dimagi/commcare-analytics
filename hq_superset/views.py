@@ -32,6 +32,7 @@ from .utils import (
     get_hq_database,
     get_schema_name_for_domain,
     refresh_hq_datasource,
+    update_dataset,
 )
 
 logger = logging.getLogger(__name__)
@@ -221,6 +222,14 @@ class DataSetChangeAPI(BaseSupersetView):
 
     @expose('/change/', methods=['POST'])
     # TODO: Authenticate
+    # e.g. superset.views.datasource.views.Datasource:
+    # @event_logger.log_this_with_context(
+    #     action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.save",
+    #     log_to_statsd=False,
+    # )
+    # @has_access_api
+    # @api
+    # @handle_api_exception
     def post(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
@@ -230,8 +239,8 @@ class DataSetChangeAPI(BaseSupersetView):
 
         try:
             request_json = json.loads(request.get_data(as_text=True))
-            change = DataSetChange(**request_json)
-            # TODO: update_dataset(change)
+            change = DataSetChange(**request_json)  # raises TypeError
+            update_dataset(change)  # raises ValueError
             return self.json_response(
                 'Request accepted; updating dataset',
                 status=HTTPStatus.ACCEPTED.value,
@@ -241,7 +250,7 @@ class DataSetChangeAPI(BaseSupersetView):
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
-        except TypeError as err:
+        except (TypeError, ValueError) as err:
             return json_error_response(
                 str(err),
                 status=HTTPStatus.BAD_REQUEST.value,
