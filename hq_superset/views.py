@@ -1,4 +1,3 @@
-import ast
 import json
 import logging
 import os
@@ -105,40 +104,6 @@ class HQDatasourceView(BaseSupersetView):
             )
             return abort(description=str(ex))
         return redirect("/tablemodelview/list/")
-
-
-def convert_to_array(string_array):
-    """
-    Converts the string representation of a list to a list.
-    >>> convert_to_array("['hello', 'world']")
-    ['hello', 'world']
-
-    >>> convert_to_array("'hello', 'world'")
-    ['hello', 'world']
-
-    >>> convert_to_array("[None]")
-    []
-
-    >>> convert_to_array("hello, world")
-    []
-    """
-
-    def array_is_falsy(array_values):
-        return not array_values or array_values == [None]
-
-    try:
-        array_values = ast.literal_eval(string_array)
-    except ValueError:
-        return []
-
-    if isinstance(array_values, tuple):
-        array_values = list(array_values)
-
-    # Test for corner cases
-    if array_is_falsy(array_values):
-        return []
-
-    return array_values
 
 
 def trigger_datasource_refresh(domain, datasource_id, display_name):

@@ -1,3 +1,4 @@
+import ast
 import os
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -14,8 +15,6 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.models.core import Database
 from superset.sql_parse import Table
-
-from hq_superset.views import convert_to_array
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
@@ -220,6 +219,40 @@ def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR definition from HQ")
     return response.json()
+
+
+def convert_to_array(string_array):
+    """
+    Converts the string representation of a list to a list.
+    >>> convert_to_array("['hello', 'world']")
+    ['hello', 'world']
+
+    >>> convert_to_array("'hello', 'world'")
+    ['hello', 'world']
+
+    >>> convert_to_array("[None]")
+    []
+
+    >>> convert_to_array("hello, world")
+    []
+    """
+
+    def array_is_falsy(array_values):
+        return not array_values or array_values == [None]
+
+    try:
+        array_values = ast.literal_eval(string_array)
+    except ValueError:
+        return []
+
+    if isinstance(array_values, tuple):
+        array_values = list(array_values)
+
+    # Test for corner cases
+    if array_is_falsy(array_values):
+        return []
+
+    return array_values
 
 
 def refresh_hq_datasource(
