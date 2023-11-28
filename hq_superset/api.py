@@ -90,7 +90,7 @@ class OAuth(BaseApi):
         try:
             response = authorization.create_token_response()
         except NoResultFound:
-            return jsonify({"error": "Invalid credentials"}), 401
+            return jsonify({"error": "Invalid client"}), 401
 
         if response.status_code >= 400:
             return response
