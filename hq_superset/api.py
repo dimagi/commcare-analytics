@@ -1,4 +1,6 @@
 import json
+from authlib.oauth2.rfc6749.errors import InvalidScopeError
+from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime, timedelta
 from flask_appbuilder.api import expose, BaseApi
 from flask import jsonify
@@ -60,6 +62,7 @@ def save_token(token, request):
         expires_at=expires_at,
         access_token=token['access_token'],
         token_type=token['token_type'],
+        scope=client.domain,
     )
     db.session.add(tok)
     db.session.commit()
@@ -68,8 +71,8 @@ def save_token(token, request):
 class HQClientCredentialsGrant(grants.ClientCredentialsGrant):
 
     def validate_requested_scope(self, *args, **kwargs):
-        # Todo: check domain
-        return True
+        if not self.request.scope == self.client.domain:
+            raise InvalidScopeError()
 
 
 authorization = AuthorizationServer(
@@ -84,9 +87,13 @@ class OAuth(BaseApi):
 
     @expose("/token", methods=('POST',))
     def issue_access_token(self):
-        response = authorization.create_token_response()
-        if response.status_code == 401:
-            return jsonify({'error': 'Invalid client credentials'}), 401
+        try:
+            response = authorization.create_token_response()
+        except NoResultFound:
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        if response.status_code >= 400:
+            return response
 
         data = json.loads(response.data.decode("utf-8"))
         data['expires_in'] = ONE_DAY_SECONDS
