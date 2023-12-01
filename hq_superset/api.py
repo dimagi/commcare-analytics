@@ -69,13 +69,18 @@ def save_token(token, request):
 
 
 class HQClientCredentialsGrant(grants.ClientCredentialsGrant):
-
     def validate_requested_scope(self, *args, **kwargs):
         if not self.request.scope == self.client.domain:
             raise InvalidScopeError()
 
 
-authorization = AuthorizationServer(
+class HQAuthorizationServer(AuthorizationServer):
+    def generate_token(self, *args, **kwargs):
+        kwargs['expires_in'] = ONE_DAY_SECONDS
+        return super().generate_token(*args, **kwargs)
+
+
+authorization = HQAuthorizationServer(
     app=app,
     query_client=query_client,
     save_token=save_token,

@@ -34,12 +34,12 @@ from .utils import (
     DomainSyncUtil,
     download_datasource,
     get_datasource_defn,
-    get_datasource_list_url,
     get_hq_database,
     get_schema_name_for_domain,
     refresh_hq_datasource,
     update_dataset,
 )
+from .hq_requests import HqUrl, HQRequest
 
 logger = logging.getLogger(__name__)
 
@@ -69,19 +69,14 @@ class HQDatasourceView(BaseSupersetView):
 
     @expose("/list/", methods=["GET"])
     def list_hq_datasources(self):
-        datasource_list_url = get_datasource_list_url(g.hq_domain)
-        provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-        oauth_token = get_valid_cchq_oauth_token()
-        response = provider.get(datasource_list_url, token=oauth_token)
+        hq_request = HQRequest(url=HqUrl.datasource_list_url(g.hq_domain))
+        response = hq_request.get()
+
         if response.status_code == 403:
             return Response(status=403)
         if response.status_code != 200:
-            url = f"{provider.api_base_url}{datasource_list_url}"
-            return Response(
-                response="There was an error in fetching datasources from "
-                         f"CommCare HQ at {url}",
-                status=400,
-            )
+            url = hq_request.absolute_url
+            return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
         hq_datasources = response.json()
         for ds in hq_datasources['objects']:
             ds['is_import_in_progress'] = AsyncImportHelper(
@@ -91,7 +86,7 @@ class HQDatasourceView(BaseSupersetView):
             "hq_datasource_list.html",
             hq_datasources=hq_datasources,
             ucr_id_to_pks=self._ucr_id_to_pks(),
-            hq_base_url=provider.api_base_url,
+            hq_base_url=hq_request.api_base_url
         )
 
     @expose("/delete/<datasource_pk>", methods=["GET"])
@@ -122,12 +117,8 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
         )
         return redirect("/tablemodelview/list/")
 
-    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    token = get_valid_cchq_oauth_token()
-    path, size = download_datasource(provider, token, domain, datasource_id)
-    datasource_defn = get_datasource_defn(
-        provider, token, domain, datasource_id
-    )
+    path, size = download_datasource(domain, datasource_id)
+    datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
         refresh_hq_datasource(
             domain, datasource_id, display_name, path, datasource_defn, None

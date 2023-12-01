@@ -23,17 +23,6 @@ class CCHQApiException(Exception):
     pass
 
 
-def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-
-def get_datasource_list_url(domain):
-    return f"a/{domain}/api/v0.5/ucr_data_source/"
-
-
-def get_datasource_details_url(domain, datasource_id):
-    return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
-
 
 def get_hq_database():
     # Todo; cache to avoid multiple lookups in single request
@@ -208,10 +197,15 @@ def get_datasource_file(path):
         yield zipfile.open(filename)
 
 
-def download_datasource(provider, oauth_token, domain, datasource_id):
+def download_datasource(domain, datasource_id):
     import superset
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.get(datasource_url, token=oauth_token)
+    from hq_superset.hq_requests import HqUrl, HQRequest
+
+    hq_request = HQRequest(
+        url=HqUrl.datasource_export_url(domain, datasource_id),
+    )
+    response = hq_request.get()
+
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR export from HQ")
 
@@ -220,12 +214,17 @@ def download_datasource(provider, oauth_token, domain, datasource_id):
     with open(path, "wb") as f:
         f.write(response.content)
 
+    # subscribe to datasource
+
     return path, len(response.content)
 
 
-def get_datasource_defn(provider, oauth_token, domain, datasource_id):
-    url = get_datasource_details_url(domain, datasource_id)
-    response = provider.get(url, token=oauth_token)
+def get_datasource_defn(domain, datasource_id):
+    from hq_superset.hq_requests import HqUrl, HQRequest
+
+    hq_request = HQRequest(url=HqUrl.datasource_details_url(domain, datasource_id))
+    response = hq_request.get()
+
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR definition from HQ")
     return response.json()
