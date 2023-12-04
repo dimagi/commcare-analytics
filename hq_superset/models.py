@@ -41,6 +41,10 @@ class HQClient(db.Model, OAuth2ClientMixin):
         return db.session.query(HQClient).filter_by(domain=domain).first()
 
     @classmethod
+    def get_by_client_id(cls, client_id):
+        return db.session.query(HQClient).filter_by(client_id=client_id).first()
+
+    @classmethod
     def create_domain_client(cls, domain: str):
         client_secret = str(uuid.uuid4())
         client = HQClient(
@@ -61,7 +65,21 @@ class Token(db.Model):
     client_id = db.Column(db.String(40), nullable=False, index=True)
     token_type = db.Column(db.String(40))
     access_token = db.Column(db.String(255), nullable=False, unique=True)
-    scope = db.Column(db.String(255))  # could be the domain data sources
+    scope = db.Column(db.String(255))
     revoked = db.Column(db.Boolean, default=False)
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime)
+
+    @property
+    def domain(self):
+        client = HQClient.get_by_client_id(self.client_id)
+        return client.domain
+
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at
+
+    def is_revoked(self):
+        return self.revoked
+
+    def get_scope(self):
+        return self.scope

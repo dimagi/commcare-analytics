@@ -5,20 +5,20 @@ from datetime import datetime, timedelta
 from flask_appbuilder.api import expose, BaseApi
 from flask import jsonify
 from superset import db
-from authlib.integrations.flask_oauth2 import AuthorizationServer
+from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector, current_token
 from authlib.oauth2.rfc6749 import grants
+from authlib.oauth2.rfc6750 import BearerTokenValidator
 from superset.extensions import appbuilder
 from hq_superset.models import HQClient, Token
 
-
 ONE_DAY_SECONDS = 60*60*24
+
+require_oauth = ResourceProtector()
 app = appbuilder.app
 
 
 def query_client(client_id):
-    return db.session.execute(
-        db.select(HQClient).filter_by(client_id=client_id)
-    ).scalar_one()
+    return HQClient.get_by_client_id(client_id)
 
 
 def save_token(token, request):
@@ -37,24 +37,25 @@ def save_token(token, request):
     db.session.commit()
 
 
-class HQClientCredentialsGrant(grants.ClientCredentialsGrant):
-    def validate_requested_scope(self, *args, **kwargs):
-        if not self.request.scope == self.client.domain:
-            raise InvalidScopeError()
-
-
 class HQAuthorizationServer(AuthorizationServer):
     def generate_token(self, *args, **kwargs):
         kwargs['expires_in'] = ONE_DAY_SECONDS
         return super().generate_token(*args, **kwargs)
 
 
+class HQBearerTokenValidator(BearerTokenValidator):
+    def authenticate_token(self, token_string):
+        return db.session.query(Token).filter_by(access_token=token_string).first()
+
+
+require_oauth.register_token_validator(HQBearerTokenValidator())
+
 authorization = HQAuthorizationServer(
     app=app,
     query_client=query_client,
     save_token=save_token,
 )
-authorization.register_grant(HQClientCredentialsGrant)
+authorization.register_grant(grants.ClientCredentialsGrant)
 
 
 class OAuth(BaseApi):
