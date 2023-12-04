@@ -65,7 +65,6 @@ class Token(db.Model):
     client_id = db.Column(db.String(40), nullable=False, index=True)
     token_type = db.Column(db.String(40))
     access_token = db.Column(db.String(255), nullable=False, unique=True)
-    scope = db.Column(db.String(255))
     revoked = db.Column(db.Boolean, default=False)
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime)
@@ -82,4 +81,4 @@ class Token(db.Model):
         return self.revoked
 
     def get_scope(self):
-        return self.scope
+        return ''

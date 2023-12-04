@@ -1,11 +1,10 @@
 import json
-from authlib.oauth2.rfc6749.errors import InvalidScopeError
 from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime, timedelta
 from flask_appbuilder.api import expose, BaseApi
 from flask import jsonify
 from superset import db
-from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector, current_token
+from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector
 from authlib.oauth2.rfc6749 import grants
 from authlib.oauth2.rfc6750 import BearerTokenValidator
 from superset.extensions import appbuilder
