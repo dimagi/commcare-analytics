@@ -8,42 +8,11 @@ from superset import db
 from authlib.integrations.flask_oauth2 import AuthorizationServer
 from authlib.oauth2.rfc6749 import grants
 from superset.extensions import appbuilder
-from werkzeug.security import check_password_hash
-from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from hq_superset.models import HQClient, Token
+
 
 ONE_DAY_SECONDS = 60*60*24
 app = appbuilder.app
-
-
-class HQClient(db.Model, OAuth2ClientMixin):
-    __tablename__ = 'hq_oauth_client'
-
-    domain = db.Column(db.String(255), primary_key=True)
-
-    def check_client_secret(self, client_secret):
-        return check_password_hash(self.client_secret, client_secret)
-
-    def revoke_tokens(self):
-        tokens = db.session.execute(
-            db.select(Token).filter_by(client_id=self.client_id, revoked=False)
-        ).all()
-        for token, in tokens:
-            token.revoked = True
-            db.session.add(token)
-        db.session.commit()
-
-
-class Token(db.Model):
-    __tablename__ = 'hq_oauth_token'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    client_id = db.Column(db.String(40), nullable=False, index=True)
-    token_type = db.Column(db.String(40))
-    access_token = db.Column(db.String(255), nullable=False, unique=True)
-    scope = db.Column(db.String(255))  # could be the domain data sources
-    revoked = db.Column(db.Boolean, default=False)
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime)
 
 
 def query_client(client_id):
@@ -89,6 +58,10 @@ authorization.register_grant(HQClientCredentialsGrant)
 
 
 class OAuth(BaseApi):
+
+    def __init__(self):
+        super().__init__()
+        self.route_base = "/oauth"
 
     @expose("/token", methods=('POST',))
     def issue_access_token(self):
