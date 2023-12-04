@@ -41,7 +41,7 @@ def subscribe_to_hq_datasource_task(domain, datasource_id):
             return
         if response.status_code < 500:
             logger.error(
-                f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.content}"
+                f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.data}"
             )
         if response.status_code >= 500:
             logger.exception(
