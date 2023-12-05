@@ -3,6 +3,7 @@ import os
 from contextlib import contextmanager
 from datetime import date, datetime
 from zipfile import ZipFile
+from hq_superset.tasks import subscribe_to_hq_datasource_task
 
 import pandas
 import sqlalchemy
@@ -214,7 +215,7 @@ def download_datasource(domain, datasource_id):
     with open(path, "wb") as f:
         f.write(response.content)
 
-    # subscribe to datasource
+    subscribe_to_hq_datasource_task.delay(domain, datasource_id)
 
     return path, len(response.content)
 
