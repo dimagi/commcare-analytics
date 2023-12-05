@@ -10,8 +10,8 @@ Follow below instructions.
 
 While doing development on top of this integration, it's useful to install this via `pip -e` option so that any changes made get reflected directly without another `pip install`.
 
-- Setup a virtual environment.
-- Clone this repo and cd into the directory of this repo.
+- Set up a virtual environment.
+- Clone this repo and change into the directory of this repo.
 - Run `cp superset_config.example.py superset_config.py` and override the config appropriately.
 - Run `pip install -e .`
 
@@ -23,18 +23,54 @@ While doing development on top of this integration, it's useful to install this 
 
 ### Initialize Superset
 
-Run through the initialization instructions at https://superset.apache.org/docs/installation/installing-superset-from-scratch/#installing-and-initializing-superset. You may skip `superset load_examples`. 
+Read through the initialization instructions at
+https://superset.apache.org/docs/installation/installing-superset-from-scratch/#installing-and-initializing-superset.
 
-You should now be able to run superset using the `superset run` command from the above docs. However OAuth login does not work yet as hq-superset needs a postgres database created to store CommCare HQ data.
+Create the database. These instructions assume that PostgreSQL is
+running on localhost, and that its user is "commcarehq". Adapt
+accordingly:
+```bash
+$ createdb -h localhost -p 5432 -U commcarehq superset_meta
+```
+
+Set the following environment variables:
+```bash
+$ export FLASK_APP=superset
+$ export SUPERSET_CONFIG_PATH=/path/to/superset_config.py
+```
+
+Initialize the database. Create an administrator. Create default roles
+and permissions:
+```bash
+$ superset db upgrade
+$ superset fab create-admin
+$ superset load_examples  # (Optional)
+$ superset init
+```
+You may skip `superset load_examples`, although they could be useful.
+
+You should now be able to run superset using the `superset run` command:
+```bash
+$ superset run -p 8088 --with-threads --reload --debugger
+```
+However, OAuth login does not work yet as hq-superset needs a Postgres
+database created to store CommCare HQ data.
 
 
 ### Create a Postgres Database Connection for storing HQ data
 
-- Create a Postgres database
-- Login to superset as the admin user created in the Superset installation and initialization. Note that you will need to update `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be otherwise set to `AUTH_OAUTH`.
+- Create a Postgres database. e.g.
+  ```bash
+  $ createdb -h localhost -p 5432 -U commcarehq hq_data
+  ```
+- Login to superset as the admin user created in the Superset
+  installation and initialization. Note that you will need to update
+  `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be
+  otherwise set to `AUTH_OAUTH`.
 - Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
 - Create a Database connection by clicking '+ DATABASE' button at the top.
-- The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is the name by which this codebase refers to the postgres DB.
+- The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
+  the name by which this codebase refers to the postgres DB.
 
 OAuth integration should now start working.
 
@@ -56,7 +92,7 @@ Here is how celery can be run locally.
 
 Tests use pytest, which is included in `requirements_dev.txt`:
 
-    $ pip install -r requirements_dev.txt
+    $ pip install -r requirements_test.txt
     $ pytest
 
 The test runner can only run tests that do not import from Superset. The
