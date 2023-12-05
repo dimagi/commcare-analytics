@@ -52,6 +52,8 @@ class HQClient(db.Model, OAuth2ClientMixin):
             client_id=str(uuid.uuid4()),
             client_secret=generate_password_hash(client_secret),
         )
+        client.set_client_metadata({"grant_types": ["client_credentials"]})
+
         db.session.add(client)
         db.session.commit()
 
@@ -68,6 +70,7 @@ class Token(db.Model):
     revoked = db.Column(db.Boolean, default=False)
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime)
+    scope = db.Column(db.String(255))
 
     @property
     def domain(self):
@@ -81,4 +84,4 @@ class Token(db.Model):
         return self.revoked
 
     def get_scope(self):
-        return ''
+        return self.scope

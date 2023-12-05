@@ -36,12 +36,6 @@ def save_token(token, request):
     db.session.commit()
 
 
-class HQAuthorizationServer(AuthorizationServer):
-    def generate_token(self, *args, **kwargs):
-        kwargs['expires_in'] = ONE_DAY_SECONDS
-        return super().generate_token(*args, **kwargs)
-
-
 class HQBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
         return db.session.query(Token).filter_by(access_token=token_string).first()
@@ -49,7 +43,7 @@ class HQBearerTokenValidator(BearerTokenValidator):
 
 require_oauth.register_token_validator(HQBearerTokenValidator())
 
-authorization = HQAuthorizationServer(
+authorization = AuthorizationServer(
     app=app,
     query_client=query_client,
     save_token=save_token,
@@ -74,5 +68,4 @@ class OAuth(BaseApi):
             return response
 
         data = json.loads(response.data.decode("utf-8"))
-        data['expires_in'] = ONE_DAY_SECONDS
         return jsonify(data)
