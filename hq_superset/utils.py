@@ -40,8 +40,16 @@ def get_hq_database():
     from superset import db
     from superset.models.core import Database
 
-    # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
+    try:
+        hq_db = (
+            db.session
+            .query(Database)
+            .filter_by(database_name=HQ_DB_CONNECTION_NAME)
+            .one()
+        )
+    except sqlalchemy.orm.exc.NoResultFound as err:
+        raise CCHQApiException('CommCare HQ database missing') from err
+    return hq_db
 
 
 def get_schema_name_for_domain(domain):

@@ -6,6 +6,7 @@ from http import HTTPStatus
 import superset
 from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
+from flask_appbuilder.baseviews import expose_api
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
@@ -15,8 +16,13 @@ from superset.datasets.commands.exceptions import (
     DatasetForbiddenError,
     DatasetNotFoundError,
 )
+from superset.extensions import csrf
 from superset.superset_typing import FlaskResponse
-from superset.views.base import BaseSupersetView, json_error_response
+from superset.views.base import (
+    BaseSupersetView,
+    handle_api_exception,
+    json_error_response,
+)
 
 from .hq_domain import user_domains
 from .models import DataSetChange
@@ -217,10 +223,11 @@ class DataSetChangeAPI(BaseSupersetView):
 
     def __init__(self):
         self.route_base = '/hq_webhook'
-        self.default_view = 'post'
+        self.default_view = 'post_dataset_change'
         super().__init__()
 
-    @expose('/change/', methods=['POST'])
+    # http://localhost:8088/hq_webhook/change/
+    @expose_api(url='/change/', methods=('POST',))
     # TODO: Authenticate
     # e.g. superset.views.datasource.views.Datasource:
     # @event_logger.log_this_with_context(
@@ -229,8 +236,9 @@ class DataSetChangeAPI(BaseSupersetView):
     # )
     # @has_access_api
     # @api
-    # @handle_api_exception
-    def post(self) -> FlaskResponse:
+    @handle_api_exception
+    @csrf.exempt
+    def post_dataset_change(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
                 HTTPStatus.REQUEST_ENTITY_TOO_LARGE.description,
@@ -255,3 +263,6 @@ class DataSetChangeAPI(BaseSupersetView):
                 str(err),
                 status=HTTPStatus.BAD_REQUEST.value,
             )
+        # `@handle_api_exception` will return other exceptions as JSON
+        # with status code 500, e.g.
+        #     {"error": "CommCare HQ database missing"}
