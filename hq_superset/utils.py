@@ -6,15 +6,9 @@ from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
-import superset
 from flask import g
 from flask_login import current_user
 from sqlalchemy.dialects import postgresql
-from superset import db
-from superset.connectors.sqla.models import SqlaTable
-from superset.extensions import cache_manager
-from superset.models.core import Database
-from superset.sql_parse import Table
 
 from .models import DataSetChange
 
@@ -128,6 +122,8 @@ class AsyncImportHelper:
 
     @property
     def task_id(self):
+        from superset.extensions import cache_manager
+
         return cache_manager.cache.get(self.progress_key)
 
     def is_import_in_progress(self):
@@ -138,9 +134,13 @@ class AsyncImportHelper:
         return not res.ready()
 
     def mark_as_in_progress(self, task_id):
+        from superset.extensions import cache_manager
+
         cache_manager.cache.set(self.progress_key, task_id)
 
     def mark_as_complete(self):
+        from superset.extensions import cache_manager
+
         cache_manager.cache.delete(self.progress_key)
 
 
@@ -271,6 +271,12 @@ def refresh_hq_datasource(
     """
     # See `CsvToDatabaseView.form_post()` in
     # https://github.com/apache/superset/blob/master/superset/views/database/views.py
+
+    import superset
+    from superset import db
+    from superset.connectors.sqla.models import SqlaTable
+    from superset.sql_parse import Table
+
     database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
@@ -360,6 +366,9 @@ def get_explore_database(database):
     Hive was used to upload a CSV, Presto will be a better option to
     explore its tables.
     """
+    from superset import db
+    from superset.models.core import Database
+
     explore_database_id = database.explore_database_id
     if explore_database_id:
         return (
@@ -373,6 +382,9 @@ def get_explore_database(database):
 
 
 def update_dataset(change: DataSetChange):
+    from superset import db
+    from superset.connectors.sqla.models import SqlaTable
+
     database = get_hq_database()
     explore_database = get_explore_database(database)  # TODO: Necessary?
     sqla_table = (
