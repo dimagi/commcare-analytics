@@ -161,9 +161,9 @@ class DomainSyncUtil:
     def _ensure_schema_created(domain):
         schema_name = get_schema_name_for_domain(domain)
         database = get_hq_database()
-        engine = database.get_sqla_engine()
-        if not engine.dialect.has_schema(engine, schema_name):
-            engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
+        with database.hq_db.get_sqla_engine_with_context() as engine:
+            if not engine.dialect.has_schema(engine, schema_name):
+                engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
 
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
@@ -206,12 +206,12 @@ def download_datasource(domain, datasource_id):
         url=HqUrl.datasource_export_url(domain, datasource_id),
     )
     response = hq_request.get()
-
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR export from HQ")
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
     path = os.path.join(superset.config.SHARED_DIR, filename)
+    breakpoint()
     with open(path, "wb") as f:
         f.write(response.content)
 

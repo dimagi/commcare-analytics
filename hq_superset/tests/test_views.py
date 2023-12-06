@@ -196,7 +196,7 @@ class TestViews(HQDBTestCase):
         self.assertTrue('/domain/list' in response.request.path)
         self.logout(client)
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     def test_datasource_list(self, *args):
         def _do_assert(datasources):
             self.assert_template_used("hq_datasource_list.html")
@@ -228,14 +228,13 @@ class TestViews(HQDBTestCase):
                 'ds1'
             )
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     @patch('hq_superset.views.os.remove')
     def test_trigger_datasource_refresh(self, *args):
         from hq_superset.views import (
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
             trigger_datasource_refresh,
         )
-
         domain = 'test1'
         ds_name = 'ds_name'
         file_path = '/file_path'
@@ -275,7 +274,7 @@ class TestViews(HQDBTestCase):
             None
         )
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     def test_download_datasource(self, *args):
         from hq_superset.views import download_datasource
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
@@ -285,7 +284,7 @@ class TestViews(HQDBTestCase):
             self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
         os.remove(path)
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
 
         client = self.app.test_client()
