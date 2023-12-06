@@ -148,11 +148,11 @@ class TestViews(HQDBTestCase):
             self.assertTrue('hq_domain' not in response.request.cookies)
 
     def _assert_pg_schema_exists(self, domain, exists):
-        engine = self.hq_db.get_sqla_engine()
-        self.assertEqual(
-            engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
-            exists
-        )
+        with self.hq_db.get_sqla_engine_with_context() as engine:
+            self.assertEqual(
+                engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
+                exists
+            )
 
     def test_redirects_to_domain_select_after_login(self):
         with self.app.test_client() as client:
@@ -275,10 +275,21 @@ class TestViews(HQDBTestCase):
         )
 
     @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
-    def test_download_datasource(self, *args):
+    @patch('hq_superset.tasks.subscribe_to_hq_datasource_task.delay')
+    @patch('hq_superset.hq_requests.HQRequest.get')
+    def test_download_datasource(self, hq_request_get_mock, subscribe_task_mock, *args):
         from hq_superset.views import download_datasource
+        hq_request_get_mock.return_value = MockResponse(
+            json_data=TEST_UCR_CSV_V1,
+            status_code=200,
+        )
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-        path, size = download_datasource(self.oauth_mock, '_', 'test1', ucr_id)
+        path, size = download_datasource('test1', ucr_id)
+
+        subscribe_task_mock.assert_called_once_with(
+            'test1',
+            ucr_id,
+        )
         with open(path, 'rb') as f:
             self.assertEqual(pickle.load(f), TEST_UCR_CSV_V1)
             self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
@@ -291,7 +302,7 @@ class TestViews(HQDBTestCase):
         
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = "ds1"
-        with patch("hq_superset.views.get_datasource_file") as csv_mock, \
+        with patch("hq_superset.utils.get_datasource_file") as csv_mock, \
             self.app.test_client() as client:
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
@@ -304,15 +315,15 @@ class TestViews(HQDBTestCase):
                 self.assertEqual(datasets['result'][0]['schema'], get_schema_name_for_domain('test1'))
                 self.assertEqual(datasets['result'][0]['table_name'], ucr_id)
                 self.assertEqual(datasets['result'][0]['description'], ds_name)
-                engine = self.hq_db.get_sqla_engine()
-                with engine.connect() as connection:
-                    result = connection.execute(text(
-                        'SELECT doc_id FROM hqdomain_test1.test1_ucr1'
-                    )).fetchall()
-                    self.assertEqual(
-                        result,
-                        expected_output
-                    )
+                with self.hq_db.get_sqla_engine_with_context() as engine:
+                    with engine.connect() as connection:
+                        result = connection.execute(text(
+                            'SELECT doc_id FROM hqdomain_test1.test1_ucr1'
+                        )).fetchall()
+                        self.assertEqual(
+                            result,
+                            expected_output
+                        )
                 # Check that updated dataset is reflected in the list view
                 client.get('/hq_datasource/list/', follow_redirects=True)
                 self.assert_context('ucr_id_to_pks', {'test1_ucr1': 1})
