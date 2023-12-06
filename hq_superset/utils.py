@@ -3,7 +3,6 @@ import os
 from contextlib import contextmanager
 from datetime import date, datetime
 from zipfile import ZipFile
-from hq_superset.tasks import subscribe_to_hq_datasource_task
 
 import pandas
 import sqlalchemy
@@ -201,6 +200,7 @@ def get_datasource_file(path):
 def download_datasource(domain, datasource_id):
     import superset
     from hq_superset.hq_requests import HqUrl, HQRequest
+    from hq_superset.tasks import subscribe_to_hq_datasource_task
 
     hq_request = HQRequest(
         url=HqUrl.datasource_export_url(domain, datasource_id),
