@@ -233,7 +233,7 @@ class DataSetChangeAPI(BaseSupersetView):
         try:
             request_json = json.loads(request.get_data(as_text=True))
             change = DataSetChange(**request_json)
-            # TODO: update_dataset(change)
+            update_dataset(change)
             return self.json_response(
                 'Request accepted; updating dataset',
                 status=HTTPStatus.ACCEPTED.value,
