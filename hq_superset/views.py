@@ -40,6 +40,7 @@ from .utils import (
     update_dataset,
 )
 from .hq_requests import HqUrl, HQRequest
+from .api import require_oauth
 
 logger = logging.getLogger(__name__)
 
@@ -219,16 +220,9 @@ class DataSetChangeAPI(BaseSupersetView):
 
     # http://localhost:8088/hq_webhook/change/
     @expose_api(url='/change/', methods=('POST',))
-    # TODO: Authenticate
-    # e.g. superset.views.datasource.views.Datasource:
-    # @event_logger.log_this_with_context(
-    #     action=lambda self, *args, **kwargs: f"{self.__class__.__name__}.save",
-    #     log_to_statsd=False,
-    # )
-    # @has_access_api
-    # @api
     @handle_api_exception
     @csrf.exempt
+    @require_oauth
     def post_dataset_change(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
