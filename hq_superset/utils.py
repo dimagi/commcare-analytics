@@ -211,7 +211,7 @@ def download_datasource(domain, datasource_id):
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
     path = os.path.join(superset.config.SHARED_DIR, filename)
-    breakpoint()
+
     with open(path, "wb") as f:
         f.write(response.content)
 
