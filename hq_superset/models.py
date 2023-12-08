@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Dict, Literal
 
 
 @dataclass
 class DataSetChange:
     action: Literal['upsert', 'delete']
     data_source_id: str
-    data: dict[str, Any]
+    data: Dict[str, Any]
 
     def __post_init__(self):
         if 'doc_id' not in self.data:
