@@ -49,7 +49,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
     @classmethod
     def create_domain_client(cls, domain: str):
         alphabet = string.ascii_letters + string.digits
-        client_secret = ''.join(secrets.choice(alphabet) for i in range(32))
+        client_secret = ''.join(secrets.choice(alphabet) for i in range(64))
 
         client = HQClient(
             domain=domain,
