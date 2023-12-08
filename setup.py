@@ -25,7 +25,6 @@ setup(
         'cryptography==37.0.4',
         'sentry-sdk==1.9.10',
         'celery==5.2.7',
-        'blinker==1.7.0',
     ],
     classifiers=[
         'Programming Language :: Python',
