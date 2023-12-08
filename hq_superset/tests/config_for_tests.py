@@ -34,7 +34,8 @@ superset_config.OAUTH_PROVIDERS = [
     }
 ]
 
-superset_config.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+# Test DB must be PostgreSQL. See `hq_superset.tests.utils.setup_hq_db()`
+superset_config.SQLALCHEMY_DATABASE_URI = 'postgresql://commcarehq:commcarehq@localhost:5432/superset_tests'
 superset_config.SHARED_DIR = "shared_dir"
 superset_config.ENABLE_ASYNC_UCR_IMPORTS = True
 superset_config.CACHE_CONFIG = {
