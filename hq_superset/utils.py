@@ -23,17 +23,6 @@ class CCHQApiException(Exception):
     pass
 
 
-def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-
-def get_datasource_list_url(domain):
-    return f"a/{domain}/api/v0.5/ucr_data_source/"
-
-
-def get_datasource_details_url(domain, datasource_id):
-    return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
-
 
 def get_hq_database():
     # Todo; cache to avoid multiple lookups in single request
@@ -172,9 +161,9 @@ class DomainSyncUtil:
     def _ensure_schema_created(domain):
         schema_name = get_schema_name_for_domain(domain)
         database = get_hq_database()
-        engine = database.get_sqla_engine()
-        if not engine.dialect.has_schema(engine, schema_name):
-            engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
+        with database.hq_db.get_sqla_engine_with_context() as engine:
+            if not engine.dialect.has_schema(engine, schema_name):
+                engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
 
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
@@ -208,24 +197,35 @@ def get_datasource_file(path):
         yield zipfile.open(filename)
 
 
-def download_datasource(provider, oauth_token, domain, datasource_id):
+def download_datasource(domain, datasource_id):
     import superset
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.get(datasource_url, token=oauth_token)
+    from hq_superset.hq_requests import HqUrl, HQRequest
+    from hq_superset.tasks import subscribe_to_hq_datasource_task
+
+    hq_request = HQRequest(
+        url=HqUrl.datasource_export_url(domain, datasource_id),
+    )
+    response = hq_request.get()
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR export from HQ")
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
     path = os.path.join(superset.config.SHARED_DIR, filename)
+
     with open(path, "wb") as f:
         f.write(response.content)
+
+    subscribe_to_hq_datasource_task.delay(domain, datasource_id)
 
     return path, len(response.content)
 
 
-def get_datasource_defn(provider, oauth_token, domain, datasource_id):
-    url = get_datasource_details_url(domain, datasource_id)
-    response = provider.get(url, token=oauth_token)
+def get_datasource_defn(domain, datasource_id):
+    from hq_superset.hq_requests import HqUrl, HQRequest
+
+    hq_request = HQRequest(url=HqUrl.datasource_details_url(domain, datasource_id))
+    response = hq_request.get()
+
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR definition from HQ")
     return response.json()

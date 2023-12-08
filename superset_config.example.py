@@ -114,3 +114,8 @@ LANGUAGES = {
    'en': {'flag':'us', 'name':'English'},
    'pt': {'flag':'pt', 'name':'Portuguese'}
 }
+
+OAUTH2_TOKEN_EXPIRES_IN = {
+    'client_credentials': 86400,
+}
+BASE_URL = "http://localhost:5000"

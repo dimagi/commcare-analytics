@@ -32,6 +32,7 @@ def is_user_admin():
     from superset.views.base import is_user_admin
     return is_user_admin()
 
+
 def ensure_domain_selected():
     # Check if a hq_domain cookie is set
     #   Ensure necessary roles, permissions and DB schemas are created for the domain

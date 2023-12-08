@@ -2,7 +2,7 @@ from functools import wraps
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database
+from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database, CCHQApiException
 
 
 class UnitTestingRequired(Exception):
@@ -28,9 +28,8 @@ def setup_hq_db():
 
     try:
         get_hq_database()
-    except NoResultFound:
+    except CCHQApiException:
         CreateDatabaseCommand(
-            None, 
             {
                 'sqlalchemy_uri': superset.app.config.get('HQ_DATA_DB'),
                 'engine': 'PostgreSQL', 
