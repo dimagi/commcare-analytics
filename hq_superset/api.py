@@ -10,8 +10,6 @@ from authlib.oauth2.rfc6750 import BearerTokenValidator
 from superset.extensions import appbuilder
 from hq_superset.models import HQClient, Token
 
-ONE_DAY_SECONDS = 60*60*24
-
 require_oauth = ResourceProtector()
 app = appbuilder.app
 
@@ -24,7 +22,7 @@ def save_token(token, request):
     client = request.client
     client.revoke_tokens()
 
-    expires_at = datetime.utcnow() + timedelta(seconds=ONE_DAY_SECONDS)
+    expires_at = datetime.utcnow() + timedelta(days=1)
     tok = Token(
         client_id=client.client_id,
         expires_at=expires_at,
