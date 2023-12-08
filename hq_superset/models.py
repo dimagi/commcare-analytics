@@ -81,7 +81,13 @@ class Token(db.Model):
         return datetime.utcnow() > self.expires_at
 
     def is_revoked(self):
+        """
+        The require_oauth ResourceProtector needs this method to be defined
+        """
         return self.revoked
 
     def get_scope(self):
+        """
+        The require_oauth ResourceProtector needs this method to be defined
+        """
         return self.scope
