@@ -1,4 +1,6 @@
 import uuid
+import string
+import secrets
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -46,7 +48,9 @@ class HQClient(db.Model, OAuth2ClientMixin):
 
     @classmethod
     def create_domain_client(cls, domain: str):
-        client_secret = str(uuid.uuid4())
+        alphabet = string.ascii_letters + string.digits
+        client_secret = ''.join(secrets.choice(alphabet) for i in range(32))
+
         client = HQClient(
             domain=domain,
             client_id=str(uuid.uuid4()),
