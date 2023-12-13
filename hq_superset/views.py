@@ -1,32 +1,23 @@
-import json
 import logging
 import os
-from http import HTTPStatus
 
 import superset
 from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
-from flask_appbuilder.baseviews import expose_api
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
-from superset.datasets.commands.delete import DeleteDatasetCommand
-from superset.datasets.commands.exceptions import (
+from superset.commands.dataset.delete import (
+    DeleteDatasetCommand,
     DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
 )
-from superset.extensions import csrf
-from superset.superset_typing import FlaskResponse
 from superset.views.base import (
     BaseSupersetView,
-    handle_api_exception,
-    json_error_response,
 )
 
 from .hq_domain import user_domains
-from .models import DataSetChange
-from .oauth import get_valid_cchq_oauth_token
 from .tasks import refresh_hq_datasource_task
 from .utils import (
     ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
@@ -37,10 +28,8 @@ from .utils import (
     get_hq_database,
     get_schema_name_for_domain,
     refresh_hq_datasource,
-    update_dataset,
 )
 from .hq_requests import HqUrl, HQRequest
-from .api import require_oauth
 
 logger = logging.getLogger(__name__)
 
@@ -204,50 +193,3 @@ class SelectDomainView(BaseSupersetView):
         response.set_cookie('hq_domain', hq_domain)
         DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response
-
-
-class DataSetChangeAPI(BaseSupersetView):
-    """
-    Accepts changes to datasets from CommCare HQ data forwarding
-    """
-
-    MAX_REQUEST_LENGTH = 10_485_760  # reject >10MB JSON requests
-
-    def __init__(self):
-        self.route_base = '/hq_webhook'
-        self.default_view = 'post_dataset_change'
-        super().__init__()
-
-    # http://localhost:8088/hq_webhook/change/
-    @expose_api(url='/change/', methods=('POST',))
-    @handle_api_exception
-    @csrf.exempt
-    @require_oauth
-    def post_dataset_change(self) -> FlaskResponse:
-        if request.content_length > self.MAX_REQUEST_LENGTH:
-            return json_error_response(
-                HTTPStatus.REQUEST_ENTITY_TOO_LARGE.description,
-                status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE.value,
-            )
-
-        try:
-            request_json = json.loads(request.get_data(as_text=True))
-            change = DataSetChange(**request_json)
-            update_dataset(change)
-            return self.json_response(
-                'Request accepted; updating dataset',
-                status=HTTPStatus.ACCEPTED.value,
-            )
-        except json.JSONDecodeError:
-            return json_error_response(
-                'Invalid JSON syntax',
-                status=HTTPStatus.BAD_REQUEST.value,
-            )
-        except (TypeError, ValueError) as err:
-            return json_error_response(
-                str(err),
-                status=HTTPStatus.BAD_REQUEST.value,
-            )
-        # `@handle_api_exception` will return other exceptions as JSON
-        # with status code 500, e.g.
-        #     {"error": "CommCare HQ database missing"}
