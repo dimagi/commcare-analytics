@@ -14,17 +14,19 @@ setup(
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     install_requires=[
-        # Werkzeug 2.1 doesn't work, so pin it
-        'Werkzeug==2.0.0',
-        'jinja2==3.0.3',
-        'dimagi-superset==2.0.1',
-        'authlib==1.0.1',
-        'requests==2.28.1',
-        'psycopg2==2.9.3',
-        'WTForms==2.3.3',
-        'cryptography==37.0.4',
-        'sentry-sdk==1.9.10',
-        'celery==5.2.7',
+        # 'dimagi-superset==2.0.1',
+        # 'apache-superset==2.1.2',
+        'apache-superset @ git+ssh://git@github.com/apache/superset@master#egg=apache-superset'
+
+        'Werkzeug',  # 2.3.8 (Superset uses "werkzeug>=2.3.3, <3")
+        'Jinja2',  # Superset dependency installs 3.1.2
+        'authlib',
+        'requests',  # Superset dependency installs 2.31.0
+        'psycopg2',  # Superset uses psycopg2-binary==2.9.1
+        'WTForms',  # Superset dependency installs 2.3.3
+        'cryptography',  # Superset: "cryptography>=41.0.2, <41.1.0"
+        'sentry-sdk',
+        'celery',  # Superset: "celery>=5.2.2, <6.0.0"
     ],
     classifiers=[
         'Programming Language :: Python',
