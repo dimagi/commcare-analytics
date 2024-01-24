@@ -1,21 +1,29 @@
-from flask_appbuilder.security.manager import AUTH_OAUTH
-from superset import config as superset_config
+# Configuring Superset
+# ====================
+#
+# Set the `SUPERSET_CONFIG_PATH` environment variable to allow Superset
+# to find this config file. e.g.
+#
+#     $ export SUPERSET_CONFIG_PATH=$HOME/src/dimagi/hq_superset/superset_config.py
+#
+import sentry_sdk
+from cachelib.redis import RedisCache
+from celery.schedules import crontab
+from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
+from sentry_sdk.integrations.flask import FlaskIntegration
 
-import hq_superset
+from hq_superset import flask_app_mutator, oauth
 
 
-# Any other additional roles to be assigned to the user on top of the base role
-# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
-# specify more than one role
-superset_config.AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+# Use a tool to generate a sufficiently random string, e.g.
+#     $ openssl rand -base64 42
+# SECRET_KEY = ...
 
-hq_superset.patch_superset_config(superset_config)
-
-
-AUTH_TYPE = AUTH_OAUTH
+AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
+# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
 # Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://commcarehq:commcarehq@localhost:5432/superset_meta'
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
@@ -56,8 +64,6 @@ SHARED_DIR = 'shared_dir'
 ENABLE_ASYNC_UCR_IMPORTS = False
 
 # Enable below for sentry integration
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
 sentry_sdk.init(
     dsn='',
     integrations=[FlaskIntegration()],
@@ -65,28 +71,28 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
+_REDIS_URL = 'redis://localhost:6379/0'
+
 CACHE_CONFIG = {
       'CACHE_TYPE': 'RedisCache',
       'CACHE_DEFAULT_TIMEOUT': 300,
       'CACHE_KEY_PREFIX': 'superset_',
-      'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+      'CACHE_REDIS_URL': _REDIS_URL
 }
 
-from cachelib.redis import RedisCache
 RESULTS_BACKEND = RedisCache(
     host='localhost', port=6379, key_prefix='superset_results'
 )
 
-from celery.schedules import crontab
 
-class CeleryConfig(object):
-    broker_url = 'redis://localhost:6379/0'
+class CeleryConfig:
+    broker_url = _REDIS_URL
     imports = (
         'superset.sql_lab',
         'superset.tasks',
         'hq_superset.tasks',
     )
-    result_backend = 'redis://localhost:6379/0'
+    result_backend = _REDIS_URL
     worker_log_level = 'DEBUG'
     worker_prefetch_multiplier = 10
     task_acks_late = True
@@ -104,9 +110,10 @@ class CeleryConfig(object):
     beat_schedule = {
         'email_reports.schedule_hourly': {
             'task': 'email_reports.schedule_hourly',
-            'schedule': crontab(minute=1, hour='*'),
+            'schedule': crontab(minute='1', hour='*'),
         },
     }
+
 
 CELERY_CONFIG = CeleryConfig
 
@@ -114,3 +121,7 @@ LANGUAGES = {
    'en': {'flag':'us', 'name':'English'},
    'pt': {'flag':'pt', 'name':'Portuguese'}
 }
+
+# CommCare Analytics extensions
+FLASK_APP_MUTATOR = flask_app_mutator
+CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager
