@@ -1,15 +1,18 @@
-from flask_appbuilder.security.manager import AUTH_OAUTH
-from superset import config as superset_config
+# Configuring Superset
+# ====================
+#
+# Set the `SUPERSET_CONFIG_PATH` environment variable to allow Superset
+# to find this config file. e.g.
+#
+#     $ export SUPERSET_CONFIG_PATH=$HOME/src/dimagi/hq_superset/hq_superset/tests/config_for_tests.py
+#
+import sentry_sdk
+from cachelib.redis import RedisCache
+from celery.schedules import crontab
+from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
+from sentry_sdk.integrations.flask import FlaskIntegration
 
-import hq_superset
-
-
-# Any other additional roles to be assigned to the user on top of the base role
-# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
-# specify more than one role
-superset_config.AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
-
-hq_superset.patch_superset_config(superset_config)
+from hq_superset import flask_app_mutator, oauth
 
 
 AUTH_TYPE = AUTH_OAUTH
@@ -56,8 +59,6 @@ SHARED_DIR = 'shared_dir'
 ENABLE_ASYNC_UCR_IMPORTS = False
 
 # Enable below for sentry integration
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
 sentry_sdk.init(
     dsn='',
     integrations=[FlaskIntegration()],
@@ -72,14 +73,12 @@ CACHE_CONFIG = {
       'CACHE_REDIS_URL': 'redis://localhost:6379/0'
 }
 
-from cachelib.redis import RedisCache
 RESULTS_BACKEND = RedisCache(
     host='localhost', port=6379, key_prefix='superset_results'
 )
 
-from celery.schedules import crontab
 
-class CeleryConfig(object):
+class CeleryConfig:
     broker_url = 'redis://localhost:6379/0'
     imports = (
         'superset.sql_lab',
@@ -108,6 +107,7 @@ class CeleryConfig(object):
         },
     }
 
+
 CELERY_CONFIG = CeleryConfig
 
 LANGUAGES = {
@@ -119,3 +119,7 @@ OAUTH2_TOKEN_EXPIRES_IN = {
     'client_credentials': 86400,
 }
 BASE_URL = "http://localhost:5000"
+
+# CommCare Analytics extensions
+FLASK_APP_MUTATOR = flask_app_mutator
+CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager

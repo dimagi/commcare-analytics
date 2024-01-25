@@ -37,6 +37,7 @@ class UserMock():
     def get_id(self):
         return self.user_id
 
+
 class OAuthMock():
 
     def __init__(self):
@@ -106,6 +107,7 @@ a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
 a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
 a3, 2021-11-22, 2022-01-19, 10, 2022-03-20, some_other_text2
 """
+
 
 class TestViews(HQDBTestCase):
 
@@ -297,13 +299,10 @@ class TestViews(HQDBTestCase):
 
     @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
-
-        client = self.app.test_client()
-        
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = "ds1"
         with patch("hq_superset.utils.get_datasource_file") as csv_mock, \
-            self.app.test_client() as client:
+                self.app.test_client() as client:
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
             
@@ -344,3 +343,24 @@ class TestViews(HQDBTestCase):
             self.assertEqual(response.status, "302 FOUND")
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
+
+    # def test_dataset_update(self):
+    #     # The equivalent of something like:
+    #     #
+    #     # $ curl -X POST \
+    #     #     -H "Content-Type: application/json" \
+    #     #     -d '{"action": "upsert", "data_source_id": "abc123", "data": {"doc_id": "abc123"}}' \
+    #     #     http://localhost:8088/hq_webhook/change/
+    #
+    #     ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+    #     ds_name = "ds1"
+    #     with patch("hq_superset.views.get_datasource_file") as csv_mock, \
+    #             self.app.test_client() as client:
+    #
+    #         self.login(client)
+    #
+    # def test_dataset_insert(self):
+    #     pass
+    #
+    # def test_dataset_delete(self):
+    #     pass
