@@ -27,7 +27,6 @@ def setup_hq_db():
         get_hq_database()
     except NoResultFound:
         CreateDatabaseCommand(
-            None, 
             {
                 'sqlalchemy_uri': superset.app.config.get('HQ_DATA_DB'),
                 'engine': 'PostgreSQL', 

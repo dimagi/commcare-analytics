@@ -112,11 +112,11 @@ class TestDomainSyncUtil(HQDBTestCase):
 
     def test_schema_gets_created(self):
         schema_name = get_schema_name_for_domain(self.domain)
-        engine = self.hq_db.get_sqla_engine()
-        self.assertFalse(
-            engine.dialect.has_schema(engine, schema_name),
-        )
-        DomainSyncUtil._ensure_schema_created(self.domain)
-        self.assertTrue(
-            engine.dialect.has_schema(engine, schema_name),
-        )
+        with self.hq_db.get_sqla_engine_with_context() as engine:
+            self.assertFalse(
+                engine.dialect.has_schema(engine, schema_name),
+            )
+            DomainSyncUtil._ensure_schema_created(self.domain)
+            self.assertTrue(
+                engine.dialect.has_schema(engine, schema_name),
+            )

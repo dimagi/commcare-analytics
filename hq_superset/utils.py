@@ -153,9 +153,9 @@ class DomainSyncUtil:
     def _ensure_schema_created(domain):
         schema_name = get_schema_name_for_domain(domain)
         database = get_hq_database()
-        engine = database.get_sqla_engine()
-        if not engine.dialect.has_schema(engine, schema_name):
-            engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
+        with database.get_sqla_engine_with_context() as engine:
+            if not engine.dialect.has_schema(engine, schema_name):
+                engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
 
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
