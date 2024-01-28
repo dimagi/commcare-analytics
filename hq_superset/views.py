@@ -14,8 +14,8 @@ from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
-from superset.datasets.commands.delete import DeleteDatasetCommand
-from superset.datasets.commands.exceptions import (
+from superset.commands.dataset.delete import DeleteDatasetCommand
+from superset.commands.dataset.exceptions import (
     DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,

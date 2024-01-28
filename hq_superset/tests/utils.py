@@ -21,7 +21,7 @@ def unit_testing_only(fn):
 
 @unit_testing_only
 def setup_hq_db():
-    from superset.databases.commands.create import CreateDatabaseCommand
+    from superset.commands.database.create import CreateDatabaseCommand
     import superset
     try:
         get_hq_database()
