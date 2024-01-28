@@ -1,6 +1,3 @@
-"""
-Setup.py for superset-patchup
-"""
 from setuptools import setup, find_packages
 
 setup(

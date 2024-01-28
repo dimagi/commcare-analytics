@@ -1,47 +1,41 @@
-import logging
 import ast
+import logging
 import os
+
 import pandas as pd
-import superset
 import sqlalchemy
-
-from datetime import datetime
-from io import BytesIO
-from sqlalchemy.dialects import postgresql
-from flask import Response, abort, g, redirect, request, flash, url_for
-
+import superset
+from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
+from sqlalchemy.dialects import postgresql
 from superset import db
-from superset.connectors.sqla.models import SqlaTable
 from superset.commands.dataset.delete import DeleteDatasetCommand
 from superset.commands.dataset.exceptions import (
     DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
 )
+from superset.connectors.sqla.models import SqlaTable
 from superset.models.core import Database
 from superset.sql_parse import Table
 from superset.views.base import BaseSupersetView
-from superset.extensions import cache_manager
 
 from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
 from .tasks import refresh_hq_datasource_task
 from .utils import (
-    get_column_dtypes,
-    get_datasource_details_url,
-    get_datasource_export_url,
-    get_datasource_list_url,
-    get_schema_name_for_domain,
-    get_hq_database,
-    parse_date,
+    ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
     AsyncImportHelper,
     DomainSyncUtil,
-    get_datasource_file,
     download_datasource,
+    get_column_dtypes,
     get_datasource_defn,
-    ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+    get_datasource_file,
+    get_datasource_list_url,
+    get_hq_database,
+    get_schema_name_for_domain,
+    parse_date,
 )
 
 logger = logging.getLogger(__name__)

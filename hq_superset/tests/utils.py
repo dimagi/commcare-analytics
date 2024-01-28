@@ -1,11 +1,14 @@
 from functools import wraps
+
 from sqlalchemy.orm.exc import NoResultFound
-from hq_superset.utils import get_hq_database, HQ_DB_CONNECTION_NAME
+
+from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database
 
 # @pytest.fixture(scope="session", autouse=True)
 # def manage_ucr_db(request):
 #     # setup_ucr_db()
 #     request.addfinalizer(clear_ucr_db)
+
 
 def unit_testing_only(fn):
     import superset
@@ -21,8 +24,8 @@ def unit_testing_only(fn):
 
 @unit_testing_only
 def setup_hq_db():
-    from superset.commands.database.create import CreateDatabaseCommand
     import superset
+    from superset.commands.database.create import CreateDatabaseCommand
     try:
         get_hq_database()
     except NoResultFound:

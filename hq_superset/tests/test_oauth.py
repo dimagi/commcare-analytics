@@ -1,12 +1,14 @@
 import datetime
-import jwt
+from unittest.mock import patch
 
-from unittest.mock import patch, MagicMock
 from flask import session
 
 from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
-from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, 
-    SESSION_OAUTH_RESPONSE_KEY)
+from hq_superset.utils import (
+    SESSION_OAUTH_RESPONSE_KEY,
+    SESSION_USER_DOMAINS_KEY,
+)
+
 from .base_test import SupersetTestCase
 
 

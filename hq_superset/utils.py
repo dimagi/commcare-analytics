@@ -1,22 +1,20 @@
 import os
-import pandas
-import sqlalchemy
-
-
 from contextlib import contextmanager
 from datetime import date, datetime
-from superset.extensions import cache_manager
-from flask_login import current_user
 from zipfile import ZipFile
 
-
+import pandas
+import sqlalchemy
+from flask_login import current_user
+from superset.extensions import cache_manager
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 HQ_DB_CONNECTION_NAME = "HQ Data"
-# ~5MB
-ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5000000
+
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
+
 
 def get_datasource_export_url(domain, datasource_id):
     return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
@@ -182,8 +180,6 @@ class DomainSyncUtil:
         self.sm.get_session.commit()
 
 
-
-
 @contextmanager
 def get_datasource_file(path):
     with ZipFile(path) as zipfile:
@@ -204,6 +200,7 @@ def download_datasource(provider, oauth_token, domain, datasource_id):
         f.write(response.content)
 
     return path, len(response.content)
+
 
 def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     url = get_datasource_details_url(domain, datasource_id)

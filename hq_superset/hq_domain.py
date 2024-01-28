@@ -6,6 +6,7 @@ from .utils import SESSION_USER_DOMAINS_KEY
 def before_request_hook():
     return ensure_domain_selected()
 
+
 def after_request_hook(response):
     # On logout clear domain cookie
     logout_views = [
@@ -15,6 +16,7 @@ def after_request_hook(response):
     if (request.url_rule and request.url_rule.endpoint in logout_views):
         response.set_cookie('hq_domain', '', expires=0)
     return response
+
 
 DOMAIN_EXCLUDED_VIEWS = [
     "AuthOAuthView.login",
@@ -28,9 +30,11 @@ DOMAIN_EXCLUDED_VIEWS = [
     "static",
 ]
 
+
 def is_user_admin():
     from superset import security_manager
     return security_manager.is_admin()
+
 
 def ensure_domain_selected():
     # Check if a hq_domain cookie is set
