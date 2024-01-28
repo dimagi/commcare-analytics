@@ -98,7 +98,7 @@ class HQDatasourceView(BaseSupersetView):
     @expose("/delete/<datasource_pk>", methods=["GET"])
     def delete(self, datasource_pk):
         try:
-            DeleteDatasetCommand(g.user, datasource_pk).run()
+            DeleteDatasetCommand([datasource_pk]).run()
         except DatasetNotFoundError:
             return abort(404)
         except DatasetForbiddenError:

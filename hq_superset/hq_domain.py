@@ -29,8 +29,8 @@ DOMAIN_EXCLUDED_VIEWS = [
 ]
 
 def is_user_admin():
-    from superset.views.base import is_user_admin
-    return is_user_admin()
+    from superset import security_manager
+    return security_manager.is_admin()
 
 def ensure_domain_selected():
     # Check if a hq_domain cookie is set
