@@ -73,7 +73,9 @@ def get_valid_cchq_oauth_token():
 
     # If token hasn't expired yet, return it
     expires_at = oauth_response.get("expires_at")
-    if expires_at > int(time.time()):
+    # TODO: RFC-6749 specifies "expires_in", not "expires_at".
+    #       https://www.rfc-editor.org/rfc/rfc6749#section-5.1
+    if expires_at is None or expires_at > int(time.time()):
         return oauth_response
 
     # If the token has expired, get a new token using refresh_token

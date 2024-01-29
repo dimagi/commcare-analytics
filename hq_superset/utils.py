@@ -165,7 +165,7 @@ class DomainSyncUtil:
     def _ensure_schema_created(domain):
         schema_name = get_schema_name_for_domain(domain)
         database = get_hq_database()
-        with database.hq_db.get_sqla_engine_with_context() as engine:
+        with database.get_sqla_engine_with_context() as engine:
             if not engine.dialect.has_schema(engine, schema_name):
                 engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
 
