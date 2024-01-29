@@ -4,7 +4,7 @@
 # Set the `SUPERSET_CONFIG_PATH` environment variable to allow Superset
 # to find this config file. e.g.
 #
-#     $ export SUPERSET_CONFIG_PATH=$HOME/src/dimagi/hq_superset/hq_superset/tests/config_for_tests.py
+#     $ export SUPERSET_CONFIG_PATH=$HOME/src/dimagi/hq_superset/superset_config.py
 #
 import sentry_sdk
 from cachelib.redis import RedisCache
@@ -15,10 +15,15 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from hq_superset import flask_app_mutator, oauth
 
 
-AUTH_TYPE = AUTH_OAUTH
+# Use a tool to generate a sufficiently random string, e.g.
+#     $ openssl rand -base64 42
+# SECRET_KEY = ...
+
+AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
+# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
 # Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://commcarehq:commcarehq@localhost:5432/superset_meta'
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
@@ -66,11 +71,13 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
+_REDIS_URL = 'redis://localhost:6379/0'
+
 CACHE_CONFIG = {
       'CACHE_TYPE': 'RedisCache',
       'CACHE_DEFAULT_TIMEOUT': 300,
       'CACHE_KEY_PREFIX': 'superset_',
-      'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+      'CACHE_REDIS_URL': _REDIS_URL
 }
 
 RESULTS_BACKEND = RedisCache(
@@ -79,13 +86,13 @@ RESULTS_BACKEND = RedisCache(
 
 
 class CeleryConfig:
-    broker_url = 'redis://localhost:6379/0'
+    broker_url = _REDIS_URL
     imports = (
         'superset.sql_lab',
         'superset.tasks',
         'hq_superset.tasks',
     )
-    result_backend = 'redis://localhost:6379/0'
+    result_backend = _REDIS_URL
     worker_log_level = 'DEBUG'
     worker_prefetch_multiplier = 10
     task_acks_late = True
@@ -103,7 +110,7 @@ class CeleryConfig:
     beat_schedule = {
         'email_reports.schedule_hourly': {
             'task': 'email_reports.schedule_hourly',
-            'schedule': crontab(minute=1, hour='*'),
+            'schedule': crontab(minute='1', hour='*'),
         },
     }
 

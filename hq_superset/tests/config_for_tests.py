@@ -1,23 +1,36 @@
+# Running tests
+# =============
+#
+# If you are using PostgreSQL for `SQLALCHEMY_DATABASE_URI` and/or
+# `HQ_DATA_DB` then you need to create test databases. The test runner
+# does not do this for you. e.g.
+#
+#     $ psql -h localhost -p 5433 -U postgres
+#     # CREATE DATABASE superset_test;
+#     # CREATE DATABASE superset_test_hq;
+#
+# Run tests with `pytest`. e.g.
+#
+#     $ pytest hq_superset/tests/test_hq_domain.py
+#
 from flask_appbuilder.security.manager import AUTH_OAUTH
-from superset import config as superset_config
 
-import hq_superset
+from hq_superset import flask_app_mutator, oauth
 
-superset_config.WTF_CSRF_ENABLED = False
-superset_config.TESTING = True
-superset_config.SECRET_KEY = 'abc'
+WTF_CSRF_ENABLED = False
+TESTING = True
+SECRET_KEY = 'abc'
 
 # Any other additional roles to be assigned to the user on top of the base role
 # Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
 # specify more than one role
-superset_config.AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
-# Todo; add to github workflow
-superset_config.HQ_DATA_DB = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
+HQ_DATA_DB = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
 
-superset_config.AUTH_TYPE = AUTH_OAUTH
+AUTH_TYPE = AUTH_OAUTH
 
-superset_config.OAUTH_PROVIDERS = [
+OAUTH_PROVIDERS = [
     {
         'name': 'commcare',
         'token_key': 'access_token',
@@ -34,18 +47,19 @@ superset_config.OAUTH_PROVIDERS = [
     }
 ]
 
-# Test DB must be PostgreSQL. See `hq_superset.tests.utils.setup_hq_db()`
-superset_config.SQLALCHEMY_DATABASE_URI = 'postgresql://commcarehq:commcarehq@localhost:5432/superset_tests'
-superset_config.SHARED_DIR = "shared_dir"
-superset_config.ENABLE_ASYNC_UCR_IMPORTS = True
-superset_config.CACHE_CONFIG = {
+SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+SHARED_DIR = "shared_dir"
+ENABLE_ASYNC_UCR_IMPORTS = True
+CACHE_CONFIG = {
       'CACHE_TYPE': 'RedisCache',
       'CACHE_DEFAULT_TIMEOUT': 300,
       'CACHE_KEY_PREFIX': 'superset_',
       'CACHE_REDIS_URL': 'redis://localhost:6379/0'
 }
 
-superset_config.AUTH_USER_REGISTRATION = True
-superset_config.AUTH_USER_REGISTRATION_ROLE = "Gamma"
+AUTH_USER_REGISTRATION = True
+AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
-hq_superset.patch_superset_config(superset_config)
+# CommCare Analytics extensions
+FLASK_APP_MUTATOR = flask_app_mutator
+CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager

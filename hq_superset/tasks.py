@@ -20,9 +20,9 @@ def refresh_hq_datasource_task(domain, datasource_id, display_name, export_path,
 
 @celery_app.task(name='subscribe_to_hq_datasource_task')
 def subscribe_to_hq_datasource_task(domain, datasource_id):
+    from superset.config import BASE_URL
     from hq_superset.hq_requests import HQRequest, HqUrl
     from hq_superset.models import HQClient
-    from superset.config import BASE_URL
 
     if HQClient.get_by_domain(domain) is None:
         hq_request = HQRequest(

@@ -17,7 +17,7 @@ from .utils import setup_hq_db
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
 shutil.rmtree(superset_test_home, ignore_errors=True)
 os.environ["SUPERSET_HOME"] = superset_test_home
-os.environ["SUPERSET_CONFIG"] = "hq_superset.tests.config_for_tests.superset_config"
+os.environ["SUPERSET_CONFIG_PATH"] = "hq_superset/tests/config_for_tests.py"
 test_app = create_app()
 
 

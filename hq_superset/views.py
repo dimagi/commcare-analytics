@@ -6,18 +6,17 @@ from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
-from superset.connectors.sqla.models import SqlaTable
-from superset.commands.dataset.delete import (
-    DeleteDatasetCommand,
+from superset.commands.dataset.delete import DeleteDatasetCommand
+from superset.commands.dataset.exceptions import (
     DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
 )
-from superset.views.base import (
-    BaseSupersetView,
-)
+from superset.connectors.sqla.models import SqlaTable
+from superset.views.base import BaseSupersetView
 
 from .hq_domain import user_domains
+from .hq_requests import HQRequest, HqUrl
 from .tasks import refresh_hq_datasource_task
 from .utils import (
     ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
@@ -29,7 +28,6 @@ from .utils import (
     get_schema_name_for_domain,
     refresh_hq_datasource,
 )
-from .hq_requests import HqUrl, HQRequest
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +80,7 @@ class HQDatasourceView(BaseSupersetView):
     @expose("/delete/<datasource_pk>", methods=["GET"])
     def delete(self, datasource_pk):
         try:
-            DeleteDatasetCommand(g.user, datasource_pk).run()
+            DeleteDatasetCommand([datasource_pk]).run()
         except DatasetNotFoundError:
             return abort(404)
         except DatasetForbiddenError:

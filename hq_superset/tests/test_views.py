@@ -120,7 +120,9 @@ class TestViews(HQDBTestCase):
         self.app.appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
 
         gamma_role = self.app.appbuilder.sm.find_role('Gamma')
-        self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+        self.user = self.app.appbuilder.sm.find_user(self.oauth_mock.user_json['username'])
+        if not self.user:
+            self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow

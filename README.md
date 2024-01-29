@@ -1,6 +1,7 @@
-## CommCareHQ Superset Integration
+## CommCare HQ Superset Integration
 
-This is a python package that can be installed alongside of `apache-superset` to integrate Superset and CommCareHQ. 
+This is a Python package that can be installed alongside of
+`apache-superset` to integrate Superset and CommCare HQ. 
 
 ## Local Development
 
@@ -8,17 +9,23 @@ Follow below instructions.
 
 ### Setup env
 
-While doing development on top of this integration, it's useful to install this via `pip -e` option so that any changes made get reflected directly without another `pip install`.
+While doing development on top of this integration, it's useful to
+install this via `pip -e` option so that any changes made get reflected
+directly without another `pip install`.
 
 - Set up a virtual environment.
 - Clone this repo and change into the directory of this repo.
-- Run `cp superset_config.example.py superset_config.py` and override the config appropriately.
+- Run `cp superset_config.example.py superset_config.py` and override
+  the config appropriately.
 - Run `pip install -e .`
 
-### CommCareHQ OAuth Integration
+### CommCare HQ OAuth Integration
 
-- Create an OAuth application on CommCareHQ using Django Admin `<hq_host>/admin/oauth2_provider/application/`. Use `<superset_host>/oauth-authorized/commcare` as the redirect URL.
-- Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth client credentials obtained from HQ.
+- Create an OAuth application on CommCare HQ using Django Admin
+  `<hq_host>/admin/oauth2_provider/application/`. Use
+  `<superset_host>/oauth-authorized/commcare` as the redirect URL.
+- Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth
+  client credentials obtained from HQ.
 
 
 ### Initialize Superset
@@ -63,14 +70,14 @@ database created to store CommCare HQ data.
   ```bash
   $ createdb -h localhost -p 5432 -U commcarehq hq_data
   ```
-- Login to superset as the admin user created in the Superset
+- Log into Superset as the admin user created in the Superset
   installation and initialization. Note that you will need to update
-  `AUTH_TYPE = AUTH_DB` to login as admin user. `AUTH_TYPE` should be
+  `AUTH_TYPE = AUTH_DB` to log in as admin user. `AUTH_TYPE` should be
   otherwise set to `AUTH_OAUTH`.
 - Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
-- Create a Database connection by clicking '+ DATABASE' button at the top.
+- Create a database connection by clicking '+ DATABASE' button at the top.
 - The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
-  the name by which this codebase refers to the postgres DB.
+  the name by which this codebase refers to the Postgres DB.
 
 OAuth integration should now start working.
 
@@ -80,12 +87,15 @@ OAuth integration should now start working.
 
 Celery is used to import UCRs that are larger than
 `hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES`. If you need
-to import UCRs larger than this, you need to run celery to import them.
+to import UCRs larger than this, you need to run Celery to import them.
 Here is how celery can be run locally.
 
 - Install and run Redis
-- Add Redis and celery config sections from `superset_config.example.py` to your local `superset_config.py`.
-- Run `celery --app=superset.tasks.celery_app:app worker --pool=prefork -O fair -c 4` in the superset virtualenv.
+- Add Redis and Celery config sections from
+  `superset_config.example.py` to your local `superset_config.py`.
+- Run
+  `celery --app=superset.tasks.celery_app:app worker --pool=prefork -O fair -c 4`
+  in the Superset virtualenv.
 
 
 ### Testing

@@ -19,6 +19,10 @@ HQ_DB_CONNECTION_NAME = "HQ Data"
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 
 
+def get_datasource_export_url(domain, datasource_id):
+    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
+
+
 class CCHQApiException(Exception):
     pass
 
@@ -199,7 +203,8 @@ def get_datasource_file(path):
 
 def download_datasource(domain, datasource_id):
     import superset
-    from hq_superset.hq_requests import HqUrl, HQRequest
+
+    from hq_superset.hq_requests import HQRequest, HqUrl
     from hq_superset.tasks import subscribe_to_hq_datasource_task
 
     hq_request = HQRequest(
@@ -221,7 +226,7 @@ def download_datasource(domain, datasource_id):
 
 
 def get_datasource_defn(domain, datasource_id):
-    from hq_superset.hq_requests import HqUrl, HQRequest
+    from hq_superset.hq_requests import HQRequest, HqUrl
 
     hq_request = HQRequest(url=HqUrl.datasource_details_url(domain, datasource_id))
     response = hq_request.get()
