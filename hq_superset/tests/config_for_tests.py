@@ -36,7 +36,6 @@ superset_config.OAUTH_PROVIDERS = [
 
 superset_config.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 superset_config.SHARED_DIR = "shared_dir"
-superset_config.ENABLE_ASYNC_UCR_IMPORTS = True
 superset_config.CACHE_CONFIG = {
       'CACHE_TYPE': 'RedisCache',
       'CACHE_DEFAULT_TIMEOUT': 300,
