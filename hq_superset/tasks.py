@@ -1,7 +1,8 @@
+import logging
 import os
+
 from superset.extensions import celery_app
 
-import logging
 from .utils import AsyncImportHelper
 
 logger = logging.getLogger(__name__)

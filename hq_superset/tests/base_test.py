@@ -6,11 +6,12 @@ Base TestCase class
 import os
 import shutil
 
-from sqlalchemy.sql import text
-from flask_appbuilder import SQLA
 from flask_testing import TestCase
+from sqlalchemy.sql import text
 from superset.app import create_app
-from hq_superset.utils import get_hq_database, DOMAIN_PREFIX
+
+from hq_superset.utils import DOMAIN_PREFIX, get_hq_database
+
 from .utils import setup_hq_db
 
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
@@ -39,14 +40,14 @@ class HQDBTestCase(SupersetTestCase):
 
     def tearDown(self):
         # Drop HQ DB Schemas
-        engine = self.hq_db.get_sqla_engine()
-        with engine.connect() as connection:
-            results = connection.execute(text("SELECT schema_name FROM information_schema.schemata"))
-            domain_schemas = []
-            for schema, in results.fetchall():
-                if schema.startswith(DOMAIN_PREFIX):
-                    domain_schemas.append(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; COMMIT;')
-            if domain_schemas:
-                sql = "; ".join(domain_schemas) + ";"
-                connection.execute(text(sql))
+        with self.hq_db.get_sqla_engine_with_context() as engine:
+            with engine.connect() as connection:
+                results = connection.execute(text("SELECT schema_name FROM information_schema.schemata"))
+                domain_schemas = []
+                for schema, in results.fetchall():
+                    if schema.startswith(DOMAIN_PREFIX):
+                        domain_schemas.append(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; COMMIT;')
+                if domain_schemas:
+                    sql = "; ".join(domain_schemas) + ";"
+                    connection.execute(text(sql))
         super(HQDBTestCase, self).tearDown()

@@ -2,14 +2,22 @@ from unittest.mock import patch
 
 from flask import g
 
-from hq_superset.hq_domain import (user_domains,
-    is_valid_user_domain, ensure_domain_selected,
-    DOMAIN_EXCLUDED_VIEWS, before_request_hook, after_request_hook)
-from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, DomainSyncUtil,
-        get_hq_database, get_schema_name_for_domain)
-from .utils import setup_hq_db
-from .base_test import SupersetTestCase, HQDBTestCase
+from hq_superset.hq_domain import (
+    DOMAIN_EXCLUDED_VIEWS,
+    after_request_hook,
+    before_request_hook,
+    ensure_domain_selected,
+    is_valid_user_domain,
+    user_domains,
+)
+from hq_superset.utils import (
+    SESSION_USER_DOMAINS_KEY,
+    DomainSyncUtil,
+    get_schema_name_for_domain,
+)
 
+from .base_test import HQDBTestCase, SupersetTestCase
+from .utils import setup_hq_db
 
 MOCK_DOMAIN_SESSION = {
     SESSION_USER_DOMAINS_KEY:[
@@ -112,11 +120,11 @@ class TestDomainSyncUtil(HQDBTestCase):
 
     def test_schema_gets_created(self):
         schema_name = get_schema_name_for_domain(self.domain)
-        engine = self.hq_db.get_sqla_engine()
-        self.assertFalse(
-            engine.dialect.has_schema(engine, schema_name),
-        )
-        DomainSyncUtil._ensure_schema_created(self.domain)
-        self.assertTrue(
-            engine.dialect.has_schema(engine, schema_name),
-        )
+        with self.hq_db.get_sqla_engine_with_context() as engine:
+            self.assertFalse(
+                engine.dialect.has_schema(engine, schema_name),
+            )
+            DomainSyncUtil._ensure_schema_created(self.domain)
+            self.assertTrue(
+                engine.dialect.has_schema(engine, schema_name),
+            )

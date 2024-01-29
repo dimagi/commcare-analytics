@@ -1,6 +1,7 @@
 import doctest
 
 from hq_superset.utils import get_column_dtypes
+
 from .utils import TEST_DATASOURCE
 
 

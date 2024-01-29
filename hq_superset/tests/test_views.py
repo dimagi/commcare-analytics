@@ -1,19 +1,19 @@
-import datetime
 import json
-import jwt
 import os
 import pickle
-
 from io import StringIO
-from unittest.mock import patch, MagicMock
-from flask import session, redirect
-from sqlalchemy.sql import text
-from superset.connectors.sqla.models import SqlaTable
+from unittest.mock import patch
 
-from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
-from hq_superset.utils import (SESSION_USER_DOMAINS_KEY, 
-    SESSION_OAUTH_RESPONSE_KEY, get_schema_name_for_domain)
-from .base_test import SupersetTestCase, HQDBTestCase
+import jwt
+from flask import redirect, session
+from sqlalchemy.sql import text
+
+from hq_superset.utils import (
+    SESSION_USER_DOMAINS_KEY,
+    get_schema_name_for_domain,
+)
+
+from .base_test import HQDBTestCase
 from .utils import TEST_DATASOURCE
 
 
@@ -117,7 +117,9 @@ class TestViews(HQDBTestCase):
         self.app.appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
 
         gamma_role = self.app.appbuilder.sm.find_role('Gamma')
-        self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+        self.user = self.app.appbuilder.sm.find_user(self.oauth_mock.user_json['username'])
+        if not self.user:
+            self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
@@ -147,11 +149,11 @@ class TestViews(HQDBTestCase):
             self.assertTrue('hq_domain' not in response.request.cookies)
 
     def _assert_pg_schema_exists(self, domain, exists):
-        engine = self.hq_db.get_sqla_engine()
-        self.assertEqual(
-            engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
-            exists
-        )
+        with self.hq_db.get_sqla_engine_with_context() as engine:
+            self.assertEqual(
+                engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
+                exists
+            )
 
     def test_redirects_to_domain_select_after_login(self):
         with self.app.test_client() as client:
@@ -232,7 +234,7 @@ class TestViews(HQDBTestCase):
     def test_trigger_datasource_refresh(self, *args):
         from hq_superset.views import (
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
-            trigger_datasource_refresh
+            trigger_datasource_refresh,
         )
         domain = 'test1'
         ds_name = 'ds_name'
@@ -304,15 +306,15 @@ class TestViews(HQDBTestCase):
                 self.assertEqual(datasets['result'][0]['schema'], get_schema_name_for_domain('test1'))
                 self.assertEqual(datasets['result'][0]['table_name'], ucr_id)
                 self.assertEqual(datasets['result'][0]['description'], ds_name)
-                engine = self.hq_db.get_sqla_engine()
-                with engine.connect() as connection:
-                    result = connection.execute(text(
-                        'SELECT doc_id FROM hqdomain_test1.test1_ucr1'
-                    )).fetchall()
-                    self.assertEqual(
-                        result,
-                        expected_output
-                    )
+                with self.hq_db.get_sqla_engine_with_context() as engine:
+                    with engine.connect() as connection:
+                        result = connection.execute(text(
+                            'SELECT doc_id FROM hqdomain_test1.test1_ucr1'
+                        )).fetchall()
+                        self.assertEqual(
+                            result,
+                            expected_output
+                        )
                 # Check that updated dataset is reflected in the list view
                 client.get('/hq_datasource/list/', follow_redirects=True)
                 self.assert_context('ucr_id_to_pks', {'test1_ucr1': 1})
