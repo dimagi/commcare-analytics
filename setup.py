@@ -19,7 +19,7 @@ setup(
         'jinja2==3.1.2',
         'psycopg2==2.9.6',
         'requests==2.31.0',
-        'sentry-sdk==1.39.2',
+        'sentry-sdk[flask]==1.39.2',
         'Werkzeug==2.3.3',
         'WTForms==2.3.3',
     ],
