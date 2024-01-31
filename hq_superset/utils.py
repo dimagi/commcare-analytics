@@ -399,12 +399,12 @@ def update_dataset(change: DataSetChange):
     from superset.connectors.sqla.models import SqlaTable
 
     database = get_hq_database()
-    explore_database = get_explore_database(database)  # TODO: Necessary?
+    # explore_database = get_explore_database(database)  # TODO: Necessary?
     sqla_table = (
         db.session.query(SqlaTable)
         .filter_by(
             table_name=change.data_source_id,
-            database_id=explore_database.id,
+            # database_id=explore_database.id,
         )
         .one_or_none()
     )

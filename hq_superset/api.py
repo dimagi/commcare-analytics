@@ -92,11 +92,12 @@ class DataSetChangeAPI(BaseApi):
         super().__init__()
 
     # http://localhost:8088/hq_webhook/change/
-    @expose_api(url='/change/', methods=('POST',))
+    @expose(url='/change/', methods=('POST',))
     @handle_api_exception
     @csrf.exempt
     @require_oauth
     def post_dataset_change(self) -> FlaskResponse:
+        breakpoint()
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
                 HTTPStatus.REQUEST_ENTITY_TOO_LARGE.description,

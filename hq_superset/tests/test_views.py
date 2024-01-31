@@ -3,7 +3,6 @@ import os
 import pickle
 from io import StringIO
 from unittest.mock import patch
-
 import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
@@ -12,6 +11,7 @@ from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
     refresh_hq_datasource,
+    DomainSyncUtil
 )
 
 from .base_test import HQDBTestCase
@@ -346,6 +346,49 @@ class TestViews(HQDBTestCase):
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
 
+    def test_dataset_update(self, *args):
+        # The equivalent of something like:
+        #
+        # $ curl -X POST \
+        #     -H "Content-Type: application/json" \
+        #     -d '"{"doc_id": "abc123", data_source_id": "abc123", "data": {"doc_id": "abc123"}}' \
+        #     http://localhost:8088/hq_webhook/change/
+    
+        ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+        ds_name = "ds1"
+        domain = "test1"
+        with patch("hq_superset.utils.get_datasource_file") as csv_mock, \
+            self.app.test_client() as client:
+                self.login(client)
+
+                ############################## Setup the datasource table
+                with self.hq_db.get_sqla_engine_with_context() as engine:
+                    DomainSyncUtil._ensure_schema_created(domain)
+                    csv_mock.return_value = StringIO(TEST_UCR_CSV_V1)
+                    refresh_hq_datasource(domain, ucr_id, ds_name, '_', TEST_DATASOURCE)
+                    # datasets = json.loads(client.get('/api/v1/dataset/').data)
+                    schema_name = get_schema_name_for_domain(domain)
+                    self.assertTrue(engine.dialect.has_schema(engine, schema_name))
+                #########################################################
+
+                # Make API call
+                doc_id = "a3"
+                new_data = [{
+                    "doc_id": doc_id,
+                    "inserted_at": "2021-12-20",
+                    "data_visit_date_eaece89e": "2022-01-19",
+                    "data_visit_number_33d63739": "100",
+                    "data_lmp_date_5e24b993": "2022-02-20",
+                    "data_visit_comment_fb984fda": "some-text-a3"
+                }]
+
+                payload = {
+                    "data": new_data,
+                    "data_source_id": ucr_id,
+                    "doc_id": doc_id
+                }
+                response = client.post('/hq_webhook/change', data=payload)
+                self.assert200(response)
     # def test_dataset_update(self):
     #     # The equivalent of something like:
     #     #
@@ -361,8 +404,9 @@ class TestViews(HQDBTestCase):
     #
     #         self.login(client)
     #
+
     # def test_dataset_insert(self):
     #     pass
-    #
+    
     # def test_dataset_delete(self):
     #     pass
