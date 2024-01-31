@@ -1,9 +1,10 @@
-## CommCare HQ Superset Integration
+CommCare HQ Superset Integration
+================================
 
-This is a Python package that can be installed alongside of
-`apache-superset` to integrate Superset and CommCare HQ. 
+This is a Python package that integrates Superset and CommCare HQ.
 
-## Local Development
+Local Development
+-----------------
 
 Follow below instructions.
 
@@ -108,3 +109,12 @@ Tests use pytest, which is included in `requirements_dev.txt`:
 The test runner can only run tests that do not import from Superset. The
 code you want to test will need to be in a module whose dependencies
 don't include Superset.
+
+
+Upgrading Superset
+------------------
+
+`dimagi-superset` is a requirement of this `hq_superset` package. It is
+a fork of `apache-superset`, and adds important features to it,
+necessary for `hq_superset`. For more information about how to upgrade
+`dimagi-superset`, see [Dimagi Superset Fork](apache-superset.md).
