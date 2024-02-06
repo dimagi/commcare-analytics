@@ -11,7 +11,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     install_requires=[
-        'apache-superset==3.1.0',
+        'dimagi-superset==3.1.0',
         # Dependencies based on Superset 3.1.0 where applicable
         'Authlib==1.3.0',
         'celery==5.2.7',
