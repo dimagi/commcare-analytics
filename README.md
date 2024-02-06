@@ -22,9 +22,15 @@ directly without another `pip install`.
 
 ### CommCare HQ OAuth Integration
 
-- Create an OAuth application on CommCare HQ using Django Admin
-  `<hq_host>/admin/oauth2_provider/application/`. Use
-  `<superset_host>/oauth-authorized/commcare` as the redirect URL.
+- Create an OAuth application on CommCare HQ using Django Admin at the URL
+  `<hq_host>/admin/oauth2_provider/application/` with the following settings:
+  - Redirect URIs: `<superset_host>/oauth-authorized/commcare`
+  - Leave "Post logout redirect URIs" empty.
+  - Client type: Confidential
+  - Authorization grant type: Client credentials
+  - Give your OAuth application a name, like "CommCare Analytics" or "HQ Superset"
+  - Leave "Skip authorization" unchecked
+  - Algorithm: No OIDC support
 - Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth
   client credentials obtained from HQ.
 
@@ -80,7 +86,8 @@ database created to store CommCare HQ data.
 - The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
   the name by which this codebase refers to the Postgres DB.
 
-OAuth integration should now start working.
+OAuth integration should now be working. You can log in as a CommCare
+HQ web user.
 
 
 ### Importing UCRs using Redis and Celery
