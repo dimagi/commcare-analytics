@@ -1,126 +1,270 @@
-## Dimagi Superset Fork
+Dimagi Superset Fork
+--------------------
 
-This is a fork of https://github.com/apache/superset. This repo is
-maintained to build a slightly customized version of the original
-[Superset PyPI package](https://pypi.org/project/apache-superset/).
+[Dimagi Superset](https://github.com/dimagi/hq_superset) is a fork of
+[Apache Superset](https://github.com/apache/superset). Dimagi Superset
+is maintained to build a slightly customized version of the
+[Apache Superset PyPI package](https://pypi.org/project/apache-superset/).
 
 
 ### Making changes
 
-We build most of the customization and integration inside
-https://github.com/dimagi/hq_superset and avoid customizing this repo
-directly so that we don't diverge too much from original Superset. But
-we do that when it's very complicated to do it inside hq_superset and
-when it's super easy to do it in this fork.
+We build most of the customization and integration inside this
+[HQ Superset](https://github.com/dimagi/hq_superset) repo, and avoid
+customizing Dimagi Superset, so that it diverges as little as possible
+from Apache Superset. But we do customize Dimagi Superset when it's
+very complicated or impossible to do inside HQ Superset.
 
 In this spirit, 
 - if the change is specific to CommCare HQ, try to implement the
-  customization in https://github.com/dimagi/hq_superset itself.
+  customization in [HQ Superset](https://github.com/dimagi/hq_superset).
 - If the change is not specific to CommCare HQ and is useful to outside
-  users, try to create a Pull Request against the upstream repo
-  https://github.com/apache/superset itself.
-- If that is too complicated, you may add a change to this repo. 
+  users, try to create a pull request against the upstream
+  [Apache Superset](https://github.com/apache/superset) repo.
+- If that is too complicated, you may have to add a change to the
+  [Dimagi Superset](https://github.com/dimagi/superset) repo.
 
-To include your changes in https://github.com/dimagi/hq_superset you
-will need to track it under a proper Git release tag, build a new PyPI
-release from your changes and reference that release in hq_superset
-requirements. Below sections explain how to do this.
+To include your changes in
+[HQ Superset](https://github.com/dimagi/hq_superset) you will need to
+track it under a proper Git release tag, build a new PyPI release from
+your changes, and reference that release in HQ Superset's requirements.
+The sections below explain how to do this.
 
 ### Keeping track of your changes via Git tags
 
-Please note that maintaining this repo in sync with the upstream
-changes, our own customizations and maintaining proper PyPI versions
-(also the Git tags) is very difficult  (Google 'vendor branch
-pattern'). For this reason we don't aim to keep the master branch in
-sync with the upstream.
+Please note that maintaining Dimagi Superset in sync with upstream
+changes, with our own customizations, and maintaining proper PyPI
+versions (also the Git tags) is very difficult.
 
-https://github.com/apache/superset repo maintains Git tags to indicate
-the version of each released Superset PyPI package. For example, see
-1.4.1 release
-[here](https://github.com/apache/superset/releases/tag/1.4.1). We follow
-simple conventions below to maintain a patched version of the package
-that we can use in https://github.com/dimagi/hq_superset.
+The [Apache Superset](https://github.com/apache/superset) repo maintains
+Git tags to indicate the version of each released Superset PyPI
+package. For example, see the
+[1.4.1 release](https://github.com/apache/superset/releases/tag/1.4.1).
+We follow the simple conventions below to maintain a patched version of the package that we can use in
+[HQ Superset](https://github.com/dimagi/hq_superset).
 
 - All our patches/customizations are done against an upstream release
   tag. We release only these patched versions of the upstream
   versions.
+
 - By convention, these releases are tracked under
-  `<apache-superset-version>-dimagi-<index>` formatted Git tags.
-  `apache-superset-version` is the upstream verion (for e.g. 1.4.1),
+  "\<apache-superset-version>-dimagi-<index>" formatted Git tags.
+  "apache-superset-version" is the upstream verion (e.g. "1.4.1"),
   and the index is an incremental number that keeps track of separate
   patched versions that we release from a given upstream version. For
-  example, `1.4.1-dimagi-1` would mean the first patched release based
-  on 1.4.1 and `1.4.1-dimagi-2` would mean a patched release made on
-  top of `1.4.1-dimagi-1`.
-- Whenever a new upstream release is available, all the patch commits
-  from our last release are cherry-picked onto the new upstream release
-  and a new Git release tag is created in the above format with the new
-  upstream release version (for e.g. `1.5.1-dimagi-1`)
+  example, "1.4.1-dimagi-1" would mean the first patched release based
+  on 1.4.1 and "1.4.1-dimagi-2" would mean a patched release made on
+  top of "1.4.1-dimagi-1".
+
 - Whenever a new patch is to be applied against our own release of the
   same upstream version, a new Git release is created with the index
-  incremented (for e.g. `1.4.1-dimagi-2`)
+  incremented (e.g. "1.4.1-dimagi-2")
 
-Based on these, below sections explain the examples of adding our own
-customization or upgrading to a newer superset version.
+- Whenever a new upstream release is available, all the patch commits
+  from our last release are rebased onto the new upstream release,
+  and a new Git release tag is created in the above format with the new
+  upstream release version (e.g. "1.5.1-dimagi-1")
 
-#### Example to add new customization
+- Dimagi also maintains additional Portuguese translations for Superset.
+  These cannot be rebased onto the upstream release. They need to be
+  managed using tools for translations, and applied on top of the patch
+  commits. For example, if "1.5.1" is the new upstream release version,
+  then "1.5.1-dimagi-1" would be the tag for the rebased patch commits.
+  Dimagi's Portuguese translations would be applied to that, and the
+  result would be tagged "1.5.1-dimagi-2".
 
-Here is how a new customization is done on existing release.
+Based on these, the sections below give examples of adding our own
+customization, applying Portuguese translations, and upgrading to a
+newer Superset version.
 
-- Do `git tag -l "*dimagi*"` which will print all tags containing
-  dimagi. Pick the latest tag (for e.g. `1.4.1-dimagi-1`)
-- `git checkout -b mybranch $latest-dimagi-tag`
-- Add new commits containing the new customizations and PR against
-  $latest-dimagi-tag
-- Once merged, create a new tag with the index incremented `git tag
-  $new-tag` and push it to github.
 
-If we take the example of `1.4.1-dimagi-1` for the latest released tag,
-the commands will be the following:
+#### Example of adding a new customization
+
+Here is how to add a new customization to an existing Dimagi Superset
+release.
+
+1. Print all the tags containing "dimagi".
+   ```bash
+   $ git tag -l "*dimagi*"
+   1.3.1-dimagi-1
+   1.3.1-dimagi-2
+   1.4.1-dimagi-1
+   ```
+   Pick the latest one, "1.4.1-dimagi-1".
+
+2. If a branch at that tag doesn't already exist, then check out a new
+   branch (e.g. "my_custom") at that tagged commit.
+   ```bash
+   $ git checkout -b my_custom 1.4.1-dimagi-1
+   ```
+
+3. Add new commits containing the new customizations, and open a pull
+   request with the tag "1.4.1-dimagi-1" as its base.
+
+4. Once merged, create a new tag with the index incremented, and push it
+   to GitHub.
+   ```bash
+   $ git tag 1.4.1-dimagi-2
+   $ git push origin 1.4.1-dimagi-2
+   ```
+
+Now a PyPI package can be built for "1.4.1-dimagi-2". See
+[instructions to do that](#building-dimagi-superset-pypi-package) later
+in this document.
+
+
+#### Example of applying translations
+
+Managing translations requires two tools:
+
+- **msgmerge**, which is probably already be installed. It is included
+  in the **gettext** package, which is one of the pre-install
+  requirements for CommCare HQ dev environments on Linux.
+
+- **po2json**, which needs to be installed using **npm**.
+
+You will also need Dimagi's Portuguese translations. You can reach out
+to members of the Solutions Division who work on projects in Mozambique
+for an updated version. The current version should be named
+`dimagi_pt_messages.po`, available in the last commit in the
+`dimagi_pt` branch of
+[Dimagi Superset] (https://github.com/dimagi/superset).
+
+If you get a new version of Dimagi's Portuguese translations,
+please _replace_ the last `dimagi_pt_messages.po` file, and commit it
+in the `dimagi_pt` branch.
+
+To generate updated language files:
+
+0. (Optional) Set up a virtual Node environment (like a Python virtual
+   environment) so that globally-installed Node packages aren't actually
+   global.
+
+   1. Enable your Python virtual environment.
+      ```bash
+      $ . venv/bin/activate
+      ```
+
+   2. Install **nodeenv**.
+      ```bash
+      $ pip install nodeenv
+      ```
+
+   3. Create a Node virtual environment and activate it.
+      ```bash
+      $ nodeenv install nenv
+      $ . nenv/bin/activate
+      ```
+
+1. Install po2json.
+   ```bash
+   $ npm install -g po2json
+   ```
+
+2. Fetch the Apache Superset Portuguese translation files that you want
+   to update. For example, if these translations will be released as
+   Dimagi Superset 3.1.0, then you will want to merge the new Dimagi
+   translations with the existing Apache Superset 3.1.0 translations.
+   So you should check out the tag for the Apache Superset 3.1.0
+   release. Use `msgmerge` to merge the new Dimagi translations with
+   the existing file.
+   ```bash
+   $ git checkout 3.1.0
+   $ msmerge superset/translations/pt/LC_MESSAGES/messages.po \
+     /path/to/new/dimagi_pt_messages.po > /tmp/merged_pt_messages.po
+   ```
+
+3. Then switch back to the branch you're working in, and replace the
+   current translations.
+   ```bash
+   $ git checkout my_custom
+   $ mv /tmp/merged_pt_messages.po \
+     superset/translations/pt/LC_MESSAGES/messages.po
+   ```
+
+4. Generate the messages.json files for all of the languages.
+
+   (The **po2json** script only works in BASH. If you don't use BASH by
+   default, you will need to switch to it, and activate your virtual
+   environments. Again, this is only necessary if you are not already in
+   a BASH shell.)
+   ```bash
+   $ bash
+   $ . venv/bin/activate
+   $ . nenv/bin/activate
+   ```
+
+   Run the **po2json** script to generate messages.json files for all of
+   the languages.
+   ```bash
+   $ ./scripts/po2json
+   ```
+
+5. Commit the Portuguese files, and discard the rest. (BE CAREFUL!)
+   ```bash
+   $ git add superset/translations/pt/LC_MESSAGES/{messages.po,messages.json}
+   $ git commit -m 'Updated PT language files'
+
+   $ git reset --hard  # CAREFUL! DISCARDS ALL OTHER CHANGES!
+   ```
+
+6. Tag the commit as "{RELEASE}-dimagi-{VERSION}", and push the tag.
+   ```bash
+   $ git tag 3.1.0-dimagi-2
+   $ git push origin 3.1.0-dimagi-2
+   ```
+
+
+#### Example of upgrading to a new upstream version
+
+Let us assume that the last Dimagi Superset release was 2.1.3 and we
+want to create a new release based on the new Apache Superset version
+3.0.3. To create a new Dimagi Superset release, we need to know three
+tags:
+
+1. The previous Dimagi release *that doesn't include translations*:
+   ```bash
+   $ git tag -l '*dimagi*'
+   1.4.1-dimagi-1
+   2.0.0-dimagi-1
+   2.0.1-dimagi-1
+   2.1.3-dimagi-1  # <- This one
+   2.1.3-dimagi-2  # <- Not this (hypothetical) one with translations
+
+   $ export PREV_DIMAGI=2.1.3-dimagi-1
+   ```
+
+2. Its corresponding Apache release:
+   ```bash
+   $ export PREV_APACHE=2.1.3
+   ```
+
+3. The new Apache release that we want to create a Dimagi release for.
+   Apache will have created a tag with the same name:
+   ```bash
+   $ export NEW_APACHE=3.0.3
+   ```
+
+Now that we have these three tag names, we will rebase our old
+Dimagi-only commits onto the new Apache release tag, and create a new
+branch. In this example, our new is named "3.0.3-dimagi". (See
+[Git Rebasing](https://git-scm.com/book/en/v2/Git-Branching-Rebasing)
+documentation for more about `git rebase --onto`.)
 
 ```bash
-$ git tag -l "*dimagi*"
-1.3.1-dimagi-1
-1.3.1-dimagi-2
-1.4.1-dimagi-1
-$ git checkout -b mybranch 1.4.1-dimagi-1
-$ # Add commits and PR ...
-$ git tag 1.4.1-dimagi-2
-$ git push origin 1.4.1-dimagi-2
+    $ git rebase --onto $NEW_APACHE $PREV_APACHE $PREV_DIMAGI
+    $ git checkout -b 3.0.3-dimagi
+    $ git push --set-upstream origin 3.0.3-dimagi
 ```
 
-Now 1.4.1-dimagi-2 PyPI package can be built using the section below.
+Tag the commit as "{RELEASE}-dimagi-{VERSION}", and push the tag.
+```bash
+    $ git tag 3.0.3-dimagi-1
+    $ git push origin 3.0.3-dimagi-1
+```
 
-#### Example to update to a new upstream version
+Now a "3.0.3-dimagi-1" PyPI package can be built using the section below.
 
-- Fetch latest tags from upstream superset repo (for e.g. 1.5.1 being
-  the latest)
-- List dimagi specific tags using `git tag -l "*dimagi*"`. Pick the
-  latest tag (for e.g. 1.4.1-dimagi-1).
-- `git checkout -b mybranch $latest-upstream-tag`
-- Find list of commits that are Dimagi specific by doing `git log
-  <superset-tag>..<dimagi-tag>`
-- Cherry-pick all the above commits onto mybranch
-- Create a new release for the new version by 'git tag
-  <apache-superset-release-tag>-dimagi-<index>'
-
-If we take the example of 1.4.1-dimagi-1 for the latest released tag,
-the commands will be following
-
-- git fetch upstream (let's say the latest upstream is 1.5.1)
-- git tag -l "*dimagi*"
-  1.3.1-dimagi-1
-  1.3.1-dimagi-2
-  1.4.1-dimagi-1
-  1.4.1-dimagi-2
-- git checkout -b mybranch 1.4.1-dimagi-2
-- git log 1.4.1..1.4.1-dimagi-2 (shows all the commits containing our
-  patches)
-- Do "git cherry-pick" for all of above commits.
-- git tag 1.5.1-dimagi-1
-- git push origin 1.5.1-dimagi-1
-
-Now, 1.4.1-dimagi-2 PyPI package can be built using the section below.
 
 ### Building dimagi-superset PyPI package.
 
