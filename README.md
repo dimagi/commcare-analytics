@@ -27,7 +27,7 @@ directly without another `pip install`.
   - Redirect URIs: `<superset_host>/oauth-authorized/commcare`
   - Leave "Post logout redirect URIs" empty.
   - Client type: Confidential
-  - Authorization grant type: Client credentials
+  - Authorization grant type: Authorization code
   - Give your OAuth application a name, like "CommCare Analytics" or "HQ Superset"
   - Leave "Skip authorization" unchecked
   - Algorithm: No OIDC support
