@@ -24,13 +24,31 @@ directly without another `pip install`.
 
 - Create an OAuth application on CommCare HQ using Django Admin at the URL
   `<hq_host>/admin/oauth2_provider/application/` with the following settings:
+
   - Redirect URIs: `<superset_host>/oauth-authorized/commcare`
+
   - Leave "Post logout redirect URIs" empty.
+
   - Client type: Confidential
+
   - Authorization grant type: Authorization code
-  - Give your OAuth application a name, like "CommCare Analytics" or "HQ Superset"
+
+  - Give your OAuth application a name, like "CommCare Analytics" or "HQ
+    Superset". This name will appear in CommCare HQ's dialog box
+    requesting authorization from the user. e.g.
+
+    > **Authorize *CommCare Analytics* ?**
+    >
+    > Application requires the following permissions
+    > * Allow users to view and download all report data
+    > * Access API data on all your CommCare projects
+    >
+    > [Cancel] [Authorize]
+
   - Leave "Skip authorization" unchecked
+
   - Algorithm: No OIDC support
+
 - Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth
   client credentials obtained from HQ.
 
