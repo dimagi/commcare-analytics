@@ -33,17 +33,10 @@ directly without another `pip install`.
 
   - Authorization grant type: Authorization code
 
-  - Give your OAuth application a name, like "CommCare Analytics" or "HQ
-    Superset". This name will appear in CommCare HQ's dialog box
-    requesting authorization from the user. e.g.
-
-    > **Authorize *CommCare Analytics* ?**
-    >
-    > Application requires the following permissions
-    > * Allow users to view and download all report data
-    > * Access API data on all your CommCare projects
-    >
-    > [Cancel] [Authorize]
+  - Give your OAuth application a name that users would recognize,
+    like "CommCare Analytics" or "HQ Superset". This name will appear
+    in CommCare HQ's dialog box requesting authorization from the
+    user.
 
   - Leave "Skip authorization" unchecked
 
