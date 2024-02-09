@@ -1,9 +1,10 @@
-## CommCare HQ Superset Integration
+CommCare HQ Superset Integration
+================================
 
-This is a Python package that can be installed alongside of
-`apache-superset` to integrate Superset and CommCare HQ. 
+This is a Python package that integrates Superset and CommCare HQ.
 
-## Local Development
+Local Development
+-----------------
 
 Follow below instructions.
 
@@ -21,9 +22,26 @@ directly without another `pip install`.
 
 ### CommCare HQ OAuth Integration
 
-- Create an OAuth application on CommCare HQ using Django Admin
-  `<hq_host>/admin/oauth2_provider/application/`. Use
-  `<superset_host>/oauth-authorized/commcare` as the redirect URL.
+- Create an OAuth application on CommCare HQ using Django Admin at the URL
+  `<hq_host>/admin/oauth2_provider/application/` with the following settings:
+
+  - Redirect URIs: `<superset_host>/oauth-authorized/commcare`
+
+  - Leave "Post logout redirect URIs" empty.
+
+  - Client type: Confidential
+
+  - Authorization grant type: Authorization code
+
+  - Give your OAuth application a name that users would recognize,
+    like "CommCare Analytics" or "HQ Superset". This name will appear
+    in CommCare HQ's dialog box requesting authorization from the
+    user.
+
+  - Leave "Skip authorization" unchecked
+
+  - Algorithm: No OIDC support
+
 - Update `OAUTH_PROVIDERS` setting in `superset_config.py` with OAuth
   client credentials obtained from HQ.
 
@@ -79,7 +97,8 @@ database created to store CommCare HQ data.
 - The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
   the name by which this codebase refers to the Postgres DB.
 
-OAuth integration should now start working.
+OAuth integration should now be working. You can log in as a CommCare
+HQ web user.
 
 
 ### Importing UCRs using Redis and Celery
@@ -108,3 +127,12 @@ Tests use pytest, which is included in `requirements_dev.txt`:
 The test runner can only run tests that do not import from Superset. The
 code you want to test will need to be in a module whose dependencies
 don't include Superset.
+
+
+Upgrading Superset
+------------------
+
+`dimagi-superset` is a requirement of this `hq_superset` package. It is
+a fork of `apache-superset`, and adds important features to it,
+necessary for `hq_superset`. For more information about how to upgrade
+`dimagi-superset`, see [Dimagi Superset Fork](apache-superset.md).
