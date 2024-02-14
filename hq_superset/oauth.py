@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class CommCareSecurityManager(SupersetSecurityManager):
-
     def oauth_user_info(self, provider, response=None):
         logger.debug("Oauth2 provider: {0}.".format(provider))
-        if provider == 'commcare':
+        if provider == "commcare":
             logger.debug("Getting user info from {}".format(provider))
             user = self._get_hq_response("api/v0.5/identity/", provider, response)
-            domains = self._get_hq_response("api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true", provider, response)
+            domains = self._get_hq_response(
+                "api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true",
+                provider,
+                response,
+            )
             session[SESSION_USER_DOMAINS_KEY] = domains["objects"]
             logger.debug(f"user - {user}, domain - {domains}")
             return user
@@ -93,8 +96,7 @@ def refresh_and_fetch_token(refresh_token):
     try:
         provider = superset.appbuilder.sm.oauth_remotes["commcare"]
         refresh_response = provider._get_oauth_client().refresh_token(
-            provider.access_token_url,
-            refresh_token=refresh_token
+            provider.access_token_url, refresh_token=refresh_token
         )
         return refresh_response
     except HTTPError:

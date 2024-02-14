@@ -36,8 +36,8 @@ def save_token(token, request):
     tok = Token(
         client_id=client.client_id,
         expires_at=expires_at,
-        access_token=token['access_token'],
-        token_type=token['token_type'],
+        access_token=token["access_token"],
+        token_type=token["token_type"],
         scope=client.domain,
     )
     db.session.add(tok)
@@ -60,12 +60,11 @@ authorization.register_grant(grants.ClientCredentialsGrant)
 
 
 class OAuth(BaseApi):
-
     def __init__(self):
         super().__init__()
         self.route_base = "/oauth"
 
-    @expose("/token", methods=('POST',))
+    @expose("/token", methods=("POST",))
     def issue_access_token(self):
         try:
             response = authorization.create_token_response()
@@ -87,12 +86,12 @@ class DataSetChangeAPI(BaseApi):
     MAX_REQUEST_LENGTH = 10_485_760  # reject >10MB JSON requests
 
     def __init__(self):
-        self.route_base = '/hq_webhook'
-        self.default_view = 'post_dataset_change'
+        self.route_base = "/hq_webhook"
+        self.default_view = "post_dataset_change"
         super().__init__()
 
     # http://localhost:8088/hq_webhook/change/
-    @expose_api(url='/change/', methods=('POST',))
+    @expose_api(url="/change/", methods=("POST",))
     @handle_api_exception
     @csrf.exempt
     @require_oauth
@@ -108,12 +107,12 @@ class DataSetChangeAPI(BaseApi):
             change = DataSetChange(**request_json)
             update_dataset(change)
             return self.json_response(
-                'Request accepted; updating dataset',
+                "Request accepted; updating dataset",
                 status=HTTPStatus.ACCEPTED.value,
             )
         except json.JSONDecodeError:
             return json_error_response(
-                'Invalid JSON syntax',
+                "Invalid JSON syntax",
                 status=HTTPStatus.BAD_REQUEST.value,
             )
         except (TypeError, ValueError) as err:

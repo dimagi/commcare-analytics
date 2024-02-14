@@ -50,9 +50,7 @@ class HQDatasourceView(BaseSupersetView):
         # Fetches data for a datasource from HQ and creates/updates a
         # Superset table
         display_name = request.args.get("name")
-        res = trigger_datasource_refresh(
-            g.hq_domain, datasource_id, display_name
-        )
+        res = trigger_datasource_refresh(g.hq_domain, datasource_id, display_name)
         return res
 
     @expose("/list/", methods=["GET"])
@@ -64,17 +62,20 @@ class HQDatasourceView(BaseSupersetView):
             return Response(status=403)
         if response.status_code != 200:
             url = hq_request.absolute_url
-            return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
+            return Response(
+                response=f"There was an error in fetching datasources from CommCareHQ at {url}",
+                status=400,
+            )
         hq_datasources = response.json()
-        for ds in hq_datasources['objects']:
-            ds['is_import_in_progress'] = AsyncImportHelper(
-                g.hq_domain, ds['id']
+        for ds in hq_datasources["objects"]:
+            ds["is_import_in_progress"] = AsyncImportHelper(
+                g.hq_domain, ds["id"]
             ).is_import_in_progress()
         return self.render_template(
             "hq_datasource_list.html",
             hq_datasources=hq_datasources,
             ucr_id_to_pks=self._ucr_id_to_pks(),
-            hq_base_url=hq_request.api_base_url
+            hq_base_url=hq_request.api_base_url,
         )
 
     @expose("/delete/<datasource_pk>", methods=["GET"])
@@ -165,29 +166,29 @@ class SelectDomainView(BaseSupersetView):
         self.default_view = "list"
         super().__init__()
 
-    @expose('/list/', methods=['GET'])
+    @expose("/list/", methods=["GET"])
     @has_access
     @permission_name("profile")
     def list(self):
         return self.render_template(
-            'select_domain.html',
-            next=request.args.get('next'),
+            "select_domain.html",
+            next=request.args.get("next"),
             domains=user_domains(),
         )
 
-    @expose('/select/<hq_domain>/', methods=['GET'])
+    @expose("/select/<hq_domain>/", methods=["GET"])
     @has_access
     @permission_name("profile")
     def select(self, hq_domain):
         response = redirect(
-            request.args.get('next') or self.appbuilder.get_url_for_index
+            request.args.get("next") or self.appbuilder.get_url_for_index
         )
         if hq_domain not in user_domains():
             flash(
-                'Please select a valid domain to access this page.',
-                'warning',
+                "Please select a valid domain to access this page.",
+                "warning",
             )
-            return redirect(url_for('SelectDomainView.list', next=request.url))
-        response.set_cookie('hq_domain', hq_domain)
+            return redirect(url_for("SelectDomainView.list", next=request.url))
+        response.set_cookie("hq_domain", hq_domain)
         DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
         return response
