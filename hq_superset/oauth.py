@@ -98,4 +98,6 @@ def refresh_and_fetch_token(refresh_token):
         return refresh_response
     except HTTPError:
         # If the refresh token too expired raise exception.
-        raise OAuthSessionExpired('OAuth refresh token has expired. User need to re-authorize the OAuth Application')
+        raise OAuthSessionExpired(
+            'OAuth refresh token has expired. User need to re-authorize the OAuth Application'
+        )

@@ -299,7 +299,9 @@ class TestViews(HQDBTestCase):
                 self.assertEqual(datasets['result'][0]['description'], ds_name)
                 with self.hq_db.get_sqla_engine_with_context() as engine:
                     with engine.connect() as connection:
-                        result = connection.execute(text('SELECT doc_id FROM hqdomain_test1.test1_ucr1')).fetchall()
+                        result = connection.execute(
+                            text('SELECT doc_id FROM hqdomain_test1.test1_ucr1')
+                        ).fetchall()
                         self.assertEqual(result, expected_output)
                 # Check that updated dataset is reflected in the list view
                 client.get('/hq_datasource/list/', follow_redirects=True)

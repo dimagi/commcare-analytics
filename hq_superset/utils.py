@@ -166,7 +166,9 @@ class DomainSyncUtil:
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
         new_domain_roles = [r for r in existing_roles if not r.name.startswith(DOMAIN_PREFIX)] + [new_domain_role]
-        additional_roles = [self.sm.add_role(r) for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']]
+        additional_roles = [
+            self.sm.add_role(r) for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']
+        ]
         return new_domain_roles + additional_roles
 
     def _ensure_datasource_perm_created(self):
