@@ -367,7 +367,7 @@ class TestViews(HQDBTestCase):
     # def test_dataset_delete(self):
     #     pass
 
-    def test_sync_domain_role_creates_can_save_permission(self):
+    def test_domain_gets_expected_permissions(self):
         sm = self.app.appbuilder.sm
         domain_name = "test2"
         expected_permissions_map = {"schema_access": f"[HQ Data].[hqdomain_{domain_name}]", "can_save": "Datasource"}
