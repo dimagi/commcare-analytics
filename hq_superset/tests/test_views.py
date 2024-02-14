@@ -347,6 +347,27 @@ class TestViews(HQDBTestCase):
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
 
+    # def test_dataset_update(self):
+    #     # The equivalent of something like:
+    #     #
+    #     # $ curl -X POST \
+    #     #     -H "Content-Type: application/json" \
+    #     #     -d '{"action": "upsert", "data_source_id": "abc123", "data": {"doc_id": "abc123"}}' \
+    #     #     http://localhost:8088/hq_webhook/change/
+    #
+    #     ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+    #     ds_name = "ds1"
+    #     with patch("hq_superset.views.get_datasource_file") as csv_mock, \
+    #             self.app.test_client() as client:
+    #
+    #         self.login(client)
+    #
+    # def test_dataset_insert(self):
+    #     pass
+    #
+    # def test_dataset_delete(self):
+    #     pass
+
     def test_sync_domain_role_creates_can_save_permission(self):
         sm = superset.appbuilder.sm
         domain_name = "test2"
