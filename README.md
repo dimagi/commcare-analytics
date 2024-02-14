@@ -102,7 +102,7 @@ Here is how celery can be run locally.
 
 Tests use pytest, which is included in `requirements_dev.txt`:
 
-    $ pip install -r requirements_test.txt
+    $ pip install -r dev-requirements.txt
     $ pytest
 
 The test runner can only run tests that do not import from Superset. The
