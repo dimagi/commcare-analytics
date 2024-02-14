@@ -30,9 +30,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
         return check_password_hash(self.client_secret, client_secret)
 
     def revoke_tokens(self):
-        tokens = db.session.execute(
-            db.select(Token).filter_by(client_id=self.client_id, revoked=False)
-        ).all()
+        tokens = db.session.execute(db.select(Token).filter_by(client_id=self.client_id, revoked=False)).all()
         for (token,) in tokens:
             token.revoked = True
             db.session.add(token)

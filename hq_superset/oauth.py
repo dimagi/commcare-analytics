@@ -70,8 +70,7 @@ def get_valid_cchq_oauth_token():
     oauth_response = session.get(SESSION_OAUTH_RESPONSE_KEY, {})
     if 'access_token' not in oauth_response:
         raise OAuthSessionExpired(
-            'access_token not found in oauth_response, possibly because '
-            "the user didn't do an OAuth Login yet"
+            'access_token not found in oauth_response, possibly because ' "the user didn't do an OAuth Login yet"
         )
 
     # If token hasn't expired yet, return it
@@ -84,9 +83,7 @@ def get_valid_cchq_oauth_token():
     # If the token has expired, get a new token using refresh_token
     refresh_token = oauth_response.get('refresh_token')
     if not refresh_token:
-        raise OAuthSessionExpired(
-            'access_token is expired but a refresh_token is not found in oauth_response'
-        )
+        raise OAuthSessionExpired('access_token is expired but a refresh_token is not found in oauth_response')
     refresh_response = refresh_and_fetch_token(refresh_token)
     superset.appbuilder.sm.set_oauth_session('commcare', refresh_response)
     return refresh_response
@@ -101,6 +98,4 @@ def refresh_and_fetch_token(refresh_token):
         return refresh_response
     except HTTPError:
         # If the refresh token too expired raise exception.
-        raise OAuthSessionExpired(
-            'OAuth refresh token has expired. User need to re-authorize the OAuth Application'
-        )
+        raise OAuthSessionExpired('OAuth refresh token has expired. User need to re-authorize the OAuth Application')

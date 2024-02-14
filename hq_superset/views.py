@@ -68,9 +68,7 @@ class HQDatasourceView(BaseSupersetView):
             )
         hq_datasources = response.json()
         for ds in hq_datasources['objects']:
-            ds['is_import_in_progress'] = AsyncImportHelper(
-                g.hq_domain, ds['id']
-            ).is_import_in_progress()
+            ds['is_import_in_progress'] = AsyncImportHelper(g.hq_domain, ds['id']).is_import_in_progress()
         return self.render_template(
             'hq_datasource_list.html',
             hq_datasources=hq_datasources,
@@ -109,9 +107,7 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
     path, size = download_datasource(domain, datasource_id)
     datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
-        refresh_hq_datasource(
-            domain, datasource_id, display_name, path, datasource_defn, None
-        )
+        refresh_hq_datasource(domain, datasource_id, display_name, path, datasource_defn, None)
         os.remove(path)
         return redirect('/tablemodelview/list/')
     else:
@@ -180,9 +176,7 @@ class SelectDomainView(BaseSupersetView):
     @has_access
     @permission_name('profile')
     def select(self, hq_domain):
-        response = redirect(
-            request.args.get('next') or self.appbuilder.get_url_for_index
-        )
+        response = redirect(request.args.get('next') or self.appbuilder.get_url_for_index)
         if hq_domain not in user_domains():
             flash(
                 'Please select a valid domain to access this page.',

@@ -43,15 +43,11 @@ class HQDBTestCase(SupersetTestCase):
         # Drop HQ DB Schemas
         with self.hq_db.get_sqla_engine_with_context() as engine:
             with engine.connect() as connection:
-                results = connection.execute(
-                    text('SELECT schema_name FROM information_schema.schemata')
-                )
+                results = connection.execute(text('SELECT schema_name FROM information_schema.schemata'))
                 domain_schemas = []
                 for (schema,) in results.fetchall():
                     if schema.startswith(DOMAIN_PREFIX):
-                        domain_schemas.append(
-                            f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; COMMIT;'
-                        )
+                        domain_schemas.append(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE; COMMIT;')
                 if domain_schemas:
                     sql = '; '.join(domain_schemas) + ';'
                     connection.execute(text(sql))

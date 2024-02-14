@@ -17,9 +17,7 @@ class HqUrl:
 
     @classmethod
     def subscribe_to_datasource_url(cls, domain, datasource_id):
-        return (
-            f'a/{domain}/configurable_reports/data_sources/subscribe/{datasource_id}/'
-        )
+        return f'a/{domain}/configurable_reports/data_sources/subscribe/{datasource_id}/'
 
 
 class HQRequest:

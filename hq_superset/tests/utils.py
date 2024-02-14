@@ -17,9 +17,7 @@ def unit_testing_only(fn):
     @wraps(fn)
     def inner(*args, **kwargs):
         if not superset.app.config.get('TESTING'):
-            raise UnitTestingRequired(
-                'You may only call {} during unit testing'.format(fn.__name__)
-            )
+            raise UnitTestingRequired('You may only call {} during unit testing'.format(fn.__name__))
         return fn(*args, **kwargs)
 
     return inner

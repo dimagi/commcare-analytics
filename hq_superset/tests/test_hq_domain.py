@@ -94,9 +94,7 @@ class TestCustomHooks(SupersetTestCase):
     def test_hooks_are_registered(self):
         import superset
 
-        self.assertEqual(
-            superset.app.before_request_funcs[None][-1], before_request_hook
-        )
+        self.assertEqual(superset.app.before_request_funcs[None][-1], before_request_hook)
 
         self.assertEqual(superset.app.after_request_funcs[None][-1], after_request_hook)
 

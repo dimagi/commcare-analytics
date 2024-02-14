@@ -40,9 +40,7 @@ def is_user_admin():
 def ensure_domain_selected():
     # Check if a hq_domain cookie is set
     #   Ensure necessary roles, permissions and DB schemas are created for the domain
-    if is_user_admin() or (
-        request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS
-    ):
+    if is_user_admin() or (request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS):
         return
     hq_domain = request.cookies.get('hq_domain')
     if is_valid_user_domain(hq_domain):
