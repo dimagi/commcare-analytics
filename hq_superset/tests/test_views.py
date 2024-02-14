@@ -3,7 +3,6 @@ import os
 import pickle
 from io import StringIO
 from unittest.mock import patch
-import superset
 import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
@@ -369,7 +368,7 @@ class TestViews(HQDBTestCase):
     #     pass
 
     def test_sync_domain_role_creates_can_save_permission(self):
-        sm = superset.appbuilder.sm
+        sm = self.app.appbuilder.sm
         domain_name = "test2"
         expected_permissions_map = {"schema_access": f"[HQ Data].[hqdomain_{domain_name}]", "can_save": "Datasource"}
 
