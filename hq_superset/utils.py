@@ -182,6 +182,13 @@ class DomainSyncUtil:
         ]
         return new_domain_roles + additional_roles
 
+    def _ensure_datasource_perm_created(self):
+        "This allows users to create and update virtual datasets"
+        permission = self.sm.find_permission_view_menu("can_save", "Datasource")
+        if not permission:
+            permission = self.sm.add_permission_view_menu("can_save", "Datasource")
+        return permission
+
     def sync_domain_role(self, domain):
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
@@ -189,6 +196,10 @@ class DomainSyncUtil:
         permission = self._ensure_schema_perm_created(domain)
         role = self._ensure_domain_role_created(domain)
         self.sm.add_permission_role(role, permission)
+
+        ds_permission = self._ensure_datasource_perm_created()
+        self.sm.add_permission_role(role, ds_permission)
+
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()

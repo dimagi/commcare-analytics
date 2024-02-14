@@ -3,7 +3,7 @@ import os
 import pickle
 from io import StringIO
 from unittest.mock import patch
-
+import superset
 import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
@@ -12,6 +12,7 @@ from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
     refresh_hq_datasource,
+    get_role_name_for_domain
 )
 
 from .base_test import HQDBTestCase
@@ -346,23 +347,22 @@ class TestViews(HQDBTestCase):
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
 
-    # def test_dataset_update(self):
-    #     # The equivalent of something like:
-    #     #
-    #     # $ curl -X POST \
-    #     #     -H "Content-Type: application/json" \
-    #     #     -d '{"action": "upsert", "data_source_id": "abc123", "data": {"doc_id": "abc123"}}' \
-    #     #     http://localhost:8088/hq_webhook/change/
-    #
-    #     ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-    #     ds_name = "ds1"
-    #     with patch("hq_superset.views.get_datasource_file") as csv_mock, \
-    #             self.app.test_client() as client:
-    #
-    #         self.login(client)
-    #
-    # def test_dataset_insert(self):
-    #     pass
-    #
-    # def test_dataset_delete(self):
-    #     pass
+    def test_sync_domain_role_creates_can_save_permission(self):
+        sm = superset.appbuilder.sm
+        domain_name = "test2"
+        expected_permissions_map = {"schema_access": f"[HQ Data].[hqdomain_{domain_name}]", "can_save": "Datasource"}
+
+        with self.app.test_client() as client:
+            self.login(client)
+            client.get(f'/domain/select/{domain_name}/', follow_redirects=True)
+            
+            domain_role = get_role_name_for_domain(domain_name)
+            role = sm.find_role(domain_role)
+            permissions = list(sm.get_role_permissions(role))
+            
+            expected_permissions_not_present = list(expected_permissions_map.keys())
+            for permission, target in permissions:
+                expected_permissions_not_present.remove(permission)
+                assert target == expected_permissions_map[permission]
+            
+            assert expected_permissions_not_present == [], "Not all expected permissions were granted"
