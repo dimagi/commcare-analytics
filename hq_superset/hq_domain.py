@@ -10,24 +10,24 @@ def before_request_hook():
 def after_request_hook(response):
     # On logout clear domain cookie
     logout_views = [
-        "AuthDBView.login",
-        "AuthOAuthView.logout",
+        'AuthDBView.login',
+        'AuthOAuthView.logout',
     ]
     if request.url_rule and request.url_rule.endpoint in logout_views:
-        response.set_cookie("hq_domain", "", expires=0)
+        response.set_cookie('hq_domain', '', expires=0)
     return response
 
 
 DOMAIN_EXCLUDED_VIEWS = [
-    "AuthOAuthView.login",
-    "AuthOAuthView.logout",
-    "AuthOAuthView.oauth_authorized",
-    "AuthDBView.logout",
-    "AuthDBView.login",
-    "SelectDomainView.list",
-    "SelectDomainView.select",
-    "appbuilder.static",
-    "static",
+    'AuthOAuthView.login',
+    'AuthOAuthView.logout',
+    'AuthOAuthView.oauth_authorized',
+    'AuthDBView.logout',
+    'AuthDBView.login',
+    'SelectDomainView.list',
+    'SelectDomainView.select',
+    'appbuilder.static',
+    'static',
 ]
 
 
@@ -44,12 +44,12 @@ def ensure_domain_selected():
         request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS
     ):
         return
-    hq_domain = request.cookies.get("hq_domain")
+    hq_domain = request.cookies.get('hq_domain')
     if is_valid_user_domain(hq_domain):
         g.hq_domain = hq_domain
     else:
-        flash("Please select a domain to access this page.", "warning")
-        return redirect(url_for("SelectDomainView.list", next=request.url))
+        flash('Please select a domain to access this page.', 'warning')
+        return redirect(url_for('SelectDomainView.list', next=request.url))
 
 
 def is_valid_user_domain(hq_domain):
@@ -61,7 +61,7 @@ def user_domains():
     # This should be set by oauth_user_info after OAuth
     if is_user_admin() or SESSION_USER_DOMAINS_KEY not in session:
         return []
-    return [d["domain_name"] for d in session[SESSION_USER_DOMAINS_KEY]]
+    return [d['domain_name'] for d in session[SESSION_USER_DOMAINS_KEY]]
 
 
 def add_domain_links(active_domain, domains):
@@ -71,5 +71,5 @@ def add_domain_links(active_domain, domains):
         superset.appbuilder.menu.add_link(
             domain,
             category=active_domain,
-            href=url_for("SelectDomainView.select", hq_domain=domain),
+            href=url_for('SelectDomainView.select', hq_domain=domain),
         )

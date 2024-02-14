@@ -11,10 +11,10 @@ def flask_app_mutator(app):
     from . import api, hq_domain, views
 
     appbuilder.add_view(
-        views.HQDatasourceView, "Update HQ Datasource", menu_cond=lambda *_: False
+        views.HQDatasourceView, 'Update HQ Datasource', menu_cond=lambda *_: False
     )
     appbuilder.add_view(
-        views.SelectDomainView, "Select a Domain", menu_cond=lambda *_: False
+        views.SelectDomainView, 'Select a Domain', menu_cond=lambda *_: False
     )
     appbuilder.add_api(api.OAuth)
     appbuilder.add_api(api.DataSetChangeAPI)
@@ -28,7 +28,7 @@ def override_jinja2_template_loader(app):
     # Allow loading templates from the templates directory in this project as well
 
     template_path = os.sep.join(
-        (os.path.dirname(os.path.abspath(__file__)), "templates")
+        (os.path.dirname(os.path.abspath(__file__)), 'templates')
     )
     my_loader = jinja2.ChoiceLoader(
         [
@@ -38,8 +38,8 @@ def override_jinja2_template_loader(app):
     )
     app.jinja_loader = my_loader
 
-    images_path = os.sep.join((os.path.dirname(os.path.abspath(__file__)), "images"))
+    images_path = os.sep.join((os.path.dirname(os.path.abspath(__file__)), 'images'))
     blueprint = Blueprint(
-        "Static", __name__, static_url_path="/static/images", static_folder=images_path
+        'Static', __name__, static_url_path='/static/images', static_folder=images_path
     )
     app.register_blueprint(blueprint)
