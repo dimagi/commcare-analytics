@@ -1,7 +1,7 @@
-.PHONY: install
-
 export SUPERSET_CONFIG_PATH := superset_config.py
 export FLASK_APP := superset
+
+all: setup
 
 setup:
 	pip install -e .
