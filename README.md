@@ -6,9 +6,14 @@ This is a Python package that integrates Superset and CommCare HQ.
 Local Development
 -----------------
 
-Follow below instructions.
+### Preparing CommCare HQ
 
-### Setup env
+The 'User configurable reports UI' feature flag must be enabled for the
+domain in CommCare HQ, even if the data sources to be imported were
+created by Report Builder, not a UCR.
+
+
+### Setting up a dev environment
 
 While doing development on top of this integration, it's useful to
 install this via `pip -e` option so that any changes made get reflected
