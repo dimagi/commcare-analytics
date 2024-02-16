@@ -26,7 +26,9 @@ SECRET_KEY = 'abc'
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ['sql_lab']
 
-HQ_DATA_DB = 'postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq'
+HQ_DATA_DB = (
+    'postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq'
+)
 
 AUTH_TYPE = AUTH_OAUTH
 

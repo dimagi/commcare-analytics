@@ -83,9 +83,15 @@ class OAuthMock:
             'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true': MockResponse(
                 self.domain_json, 200
             ),
-            'a/test1/api/v0.5/ucr_data_source/': MockResponse(self.test1_datasources, 200),
-            'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
-            'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
+            'a/test1/api/v0.5/ucr_data_source/': MockResponse(
+                self.test1_datasources, 200
+            ),
+            'a/test2/api/v0.5/ucr_data_source/': MockResponse(
+                self.test2_datasources, 200
+            ),
+            'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(
+                TEST_DATASOURCE, 200
+            ),
             'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(
                 TEST_UCR_CSV_V1, 200
             ),
@@ -116,16 +122,22 @@ class TestViews(HQDBTestCase):
         self.app.appbuilder.sm.oauth_remotes = {'commcare': self.oauth_mock}
 
         gamma_role = self.app.appbuilder.sm.find_role('Gamma')
-        self.user = self.app.appbuilder.sm.find_user(self.oauth_mock.user_json['username'])
+        self.user = self.app.appbuilder.sm.find_user(
+            self.oauth_mock.user_json['username']
+        )
         if not self.user:
-            self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+            self.user = self.app.appbuilder.sm.add_user(
+                **self.oauth_mock.user_json, role=[gamma_role]
+            )
 
     def login(self, client):
         # bypass oauth-workflow by skipping login and oauth flow
         with client.session_transaction() as session_:
             session_['oauth_state'] = 'mock_state'
         state = jwt.encode({}, 'mock_state', algorithm='HS256')
-        return client.get(f'/oauth-authorized/commcare?state={state}', follow_redirects=True)
+        return client.get(
+            f'/oauth-authorized/commcare?state={state}', follow_redirects=True
+        )
 
     @staticmethod
     def logout(client):
@@ -147,7 +159,9 @@ class TestViews(HQDBTestCase):
     def _assert_pg_schema_exists(self, domain, exists):
         with self.hq_db.get_sqla_engine_with_context() as engine:
             self.assertEqual(
-                engine.dialect.has_schema(engine, get_schema_name_for_domain(domain)),
+                engine.dialect.has_schema(
+                    engine, get_schema_name_for_domain(domain)
+                ),
                 exists,
             )
 
@@ -188,7 +202,9 @@ class TestViews(HQDBTestCase):
     def test_non_user_domain_cant_be_selected(self):
         client = self.app.test_client()
         self.login(client)
-        response = client.get('/domain/select/wrong_domain/', follow_redirects=True)
+        response = client.get(
+            '/domain/select/wrong_domain/', follow_redirects=True
+        )
         self.assertEqual(response.status, '200 OK')
         self.assertTrue('/domain/list' in response.request.path)
         self.logout(client)
@@ -216,9 +232,14 @@ class TestViews(HQDBTestCase):
         self.login(client)
         client.get('/domain/select/test1/', follow_redirects=True)
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-        with patch('hq_superset.views.trigger_datasource_refresh') as refresh_mock:
+        with patch(
+            'hq_superset.views.trigger_datasource_refresh'
+        ) as refresh_mock:
             refresh_mock.return_value = redirect('/tablemodelview/list/')
-            client.get(f'/hq_datasource/update/{ucr_id}?name=ds1', follow_redirects=True)
+            client.get(
+                f'/hq_datasource/update/{ucr_id}?name=ds1',
+                follow_redirects=True,
+            )
             refresh_mock.assert_called_once_with('test1', ucr_id, 'ds1')
 
     @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
@@ -235,14 +256,25 @@ class TestViews(HQDBTestCase):
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
 
         def _test_sync_or_async(ds_size, routing_method, user_id):
-            with patch('hq_superset.views.download_datasource') as download_ds_mock, patch(
+            with patch(
+                'hq_superset.views.download_datasource'
+            ) as download_ds_mock, patch(
                 'hq_superset.views.get_datasource_defn'
-            ) as ds_defn_mock, patch(routing_method) as refresh_mock, patch('hq_superset.views.g') as mock_g:
+            ) as ds_defn_mock, patch(routing_method) as refresh_mock, patch(
+                'hq_superset.views.g'
+            ) as mock_g:
                 mock_g.user = UserMock()
                 download_ds_mock.return_value = file_path, ds_size
                 ds_defn_mock.return_value = TEST_DATASOURCE
                 trigger_datasource_refresh(domain, ucr_id, ds_name)
-                refresh_mock.assert_called_once_with(domain, ucr_id, ds_name, file_path, TEST_DATASOURCE, user_id)
+                refresh_mock.assert_called_once_with(
+                    domain,
+                    ucr_id,
+                    ds_name,
+                    file_path,
+                    TEST_DATASOURCE,
+                    user_id,
+                )
 
         # When datasource size is more than the limit, it should get
         #   queued via celery
@@ -262,7 +294,9 @@ class TestViews(HQDBTestCase):
     @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     @patch('hq_superset.tasks.subscribe_to_hq_datasource_task.delay')
     @patch('hq_superset.hq_requests.HQRequest.get')
-    def test_download_datasource(self, hq_request_get_mock, subscribe_task_mock, *args):
+    def test_download_datasource(
+        self, hq_request_get_mock, subscribe_task_mock, *args
+    ):
         from hq_superset.views import download_datasource
 
         hq_request_get_mock.return_value = MockResponse(
@@ -285,22 +319,31 @@ class TestViews(HQDBTestCase):
     def test_refresh_hq_datasource(self, *args):
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = 'ds1'
-        with patch('hq_superset.utils.get_datasource_file') as csv_mock, self.app.test_client() as client:
+        with patch(
+            'hq_superset.utils.get_datasource_file'
+        ) as csv_mock, self.app.test_client() as client:
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
 
             def _test_upload(test_data, expected_output):
                 csv_mock.return_value = StringIO(test_data)
-                refresh_hq_datasource('test1', ucr_id, ds_name, '_', TEST_DATASOURCE)
+                refresh_hq_datasource(
+                    'test1', ucr_id, ds_name, '_', TEST_DATASOURCE
+                )
                 datasets = json.loads(client.get('/api/v1/dataset/').data)
                 self.assertEqual(len(datasets['result']), 1)
-                self.assertEqual(datasets['result'][0]['schema'], get_schema_name_for_domain('test1'))
+                self.assertEqual(
+                    datasets['result'][0]['schema'],
+                    get_schema_name_for_domain('test1'),
+                )
                 self.assertEqual(datasets['result'][0]['table_name'], ucr_id)
                 self.assertEqual(datasets['result'][0]['description'], ds_name)
                 with self.hq_db.get_sqla_engine_with_context() as engine:
                     with engine.connect() as connection:
                         result = connection.execute(
-                            text('SELECT doc_id FROM hqdomain_test1.test1_ucr1')
+                            text(
+                                'SELECT doc_id FROM hqdomain_test1.test1_ucr1'
+                            )
                         ).fetchall()
                         self.assertEqual(result, expected_output)
                 # Check that updated dataset is reflected in the list view
@@ -361,9 +404,13 @@ class TestViews(HQDBTestCase):
             role = sm.find_role(domain_role)
             permissions = list(sm.get_role_permissions(role))
 
-            expected_permissions_not_present = list(expected_permissions_map.keys())
+            expected_permissions_not_present = list(
+                expected_permissions_map.keys()
+            )
             for permission, target in permissions:
                 expected_permissions_not_present.remove(permission)
                 assert target == expected_permissions_map[permission]
 
-            assert expected_permissions_not_present == [], 'Not all expected permissions were granted'
+            assert (
+                expected_permissions_not_present == []
+            ), 'Not all expected permissions were granted'

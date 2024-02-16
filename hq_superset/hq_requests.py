@@ -44,4 +44,6 @@ class HQRequest:
         return self.commcare_provider.get(self.url, token=self.oauth_token)
 
     def post(self, data):
-        return self.commcare_provider.post(self.url, data=data, token=self.oauth_token)
+        return self.commcare_provider.post(
+            self.url, data=data, token=self.oauth_token
+        )

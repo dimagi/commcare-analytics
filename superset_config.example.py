@@ -23,7 +23,9 @@ AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
 # AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
 # Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
+SQLALCHEMY_DATABASE_URI = (
+    'postgresql://postgres:postgres@localhost:5433/superset_meta'
+)
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
@@ -78,7 +80,9 @@ CACHE_CONFIG = {
     'CACHE_REDIS_URL': _REDIS_URL,
 }
 
-RESULTS_BACKEND = RedisCache(host='localhost', port=6379, key_prefix='superset_results')
+RESULTS_BACKEND = RedisCache(
+    host='localhost', port=6379, key_prefix='superset_results'
+)
 
 
 class CeleryConfig:

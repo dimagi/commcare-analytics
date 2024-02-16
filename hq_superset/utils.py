@@ -33,7 +33,11 @@ def get_hq_database():
     from superset.models.core import Database
 
     try:
-        hq_db = db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
+        hq_db = (
+            db.session.query(Database)
+            .filter_by(database_name=HQ_DB_CONNECTION_NAME)
+            .one()
+        )
     except sqlalchemy.orm.exc.NoResultFound as err:
         raise CCHQApiException('CommCare HQ database missing') from err
     return hq_db
@@ -149,10 +153,16 @@ class DomainSyncUtil:
         return self.sm.add_role(get_role_name_for_domain(domain))
 
     def _ensure_schema_perm_created(self, domain):
-        menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
-        permission = self.sm.find_permission_view_menu('schema_access', menu_name)
+        menu_name = self.sm.get_schema_perm(
+            get_hq_database(), get_schema_name_for_domain(domain)
+        )
+        permission = self.sm.find_permission_view_menu(
+            'schema_access', menu_name
+        )
         if not permission:
-            permission = self.sm.add_permission_view_menu('schema_access', menu_name)
+            permission = self.sm.add_permission_view_menu(
+                'schema_access', menu_name
+            )
         return permission
 
     @staticmethod
@@ -165,17 +175,26 @@ class DomainSyncUtil:
 
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
-        new_domain_roles = [r for r in existing_roles if not r.name.startswith(DOMAIN_PREFIX)] + [new_domain_role]
+        new_domain_roles = [
+            r for r in existing_roles if not r.name.startswith(DOMAIN_PREFIX)
+        ] + [new_domain_role]
         additional_roles = [
-            self.sm.add_role(r) for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']
+            self.sm.add_role(r)
+            for r in self.sm.appbuilder.app.config[
+                'AUTH_USER_ADDITIONAL_ROLES'
+            ]
         ]
         return new_domain_roles + additional_roles
 
     def _ensure_datasource_perm_created(self):
         "This allows users to create and update virtual datasets"
-        permission = self.sm.find_permission_view_menu('can_save', 'Datasource')
+        permission = self.sm.find_permission_view_menu(
+            'can_save', 'Datasource'
+        )
         if not permission:
-            permission = self.sm.add_permission_view_menu('can_save', 'Datasource')
+            permission = self.sm.add_permission_view_menu(
+                'can_save', 'Datasource'
+            )
         return permission
 
     def sync_domain_role(self, domain):
@@ -228,7 +247,9 @@ def download_datasource(domain, datasource_id):
 def get_datasource_defn(domain, datasource_id):
     from hq_superset.hq_requests import HQRequest, HqUrl
 
-    hq_request = HQRequest(url=HqUrl.datasource_details_url(domain, datasource_id))
+    hq_request = HQRequest(
+        url=HqUrl.datasource_details_url(domain, datasource_id)
+    )
     response = hq_request.get()
 
     if response.status_code != 200:
@@ -293,11 +314,18 @@ def refresh_hq_datasource(
     database = get_hq_database()
     schema = get_schema_name_for_domain(domain)
     csv_table = Table(table=datasource_id, schema=schema)
-    column_dtypes, date_columns, array_columns = get_column_dtypes(datasource_defn)
+    column_dtypes, date_columns, array_columns = get_column_dtypes(
+        datasource_defn
+    )
 
-    converters = {column_name: convert_to_array for column_name in array_columns}
+    converters = {
+        column_name: convert_to_array for column_name in array_columns
+    }
     # TODO: can we assume all array values will be of type TEXT?
-    sqlconverters = {column_name: postgresql.ARRAY(sqlalchemy.types.TEXT) for column_name in array_columns}
+    sqlconverters = {
+        column_name: postgresql.ARRAY(sqlalchemy.types.TEXT)
+        for column_name in array_columns
+    }
 
     def to_sql(df, replace=False):
         database.db_engine_spec.df_to_sql(
@@ -376,7 +404,12 @@ def get_explore_database(database):
 
     explore_database_id = database.explore_database_id
     if explore_database_id:
-        return db.session.query(Database).filter_by(id=explore_database_id).one_or_none() or database
+        return (
+            db.session.query(Database)
+            .filter_by(id=explore_database_id)
+            .one_or_none()
+            or database
+        )
     else:
         return database
 
@@ -399,7 +432,9 @@ def update_dataset(change: DataSetChange):
         raise ValueError(f'{change.data_source_id} table not found.')
 
     if change.action == 'delete':
-        stmt = sqla_table.delete().where(sqla_table.doc_id == change.data['doc_id'])
+        stmt = sqla_table.delete().where(
+            sqla_table.doc_id == change.data['doc_id']
+        )
     elif change.action == 'upsert':
         stmt = (
             sqla_table.insert()

@@ -46,7 +46,11 @@ def save_token(token, request):
 
 class HQBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
-        return db.session.query(Token).filter_by(access_token=token_string).first()
+        return (
+            db.session.query(Token)
+            .filter_by(access_token=token_string)
+            .first()
+        )
 
 
 require_oauth.register_token_validator(HQBearerTokenValidator())

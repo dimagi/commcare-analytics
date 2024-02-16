@@ -1,5 +1,5 @@
 [tool.ruff]
-line-length = 115
+line-length = 79
 
 [tool.ruff.format]
 quote-style = "single"
