@@ -1,12 +1,12 @@
-import uuid
-import string
 import secrets
+import string
+import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, Literal
 
-from datetime import datetime
-from superset import db
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from superset import db
 from werkzeug.security import check_password_hash, generate_password_hash
 
 

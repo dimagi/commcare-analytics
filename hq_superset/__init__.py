@@ -8,6 +8,7 @@ def flask_app_mutator(app):
     # Import the views (which assumes the app is initialized) here
     # return
     from superset.extensions import appbuilder
+
     from . import api, hq_domain, views
 
     appbuilder.add_view(

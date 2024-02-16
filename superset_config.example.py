@@ -14,7 +14,6 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 
 from hq_superset import flask_app_mutator, oauth
 
-
 # Use a tool to generate a sufficiently random string, e.g.
 #     $ openssl rand -base64 42
 # SECRET_KEY = ...

@@ -3,15 +3,16 @@ import os
 import pickle
 from io import StringIO
 from unittest.mock import patch
+
 import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
 
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
+    get_role_name_for_domain,
     get_schema_name_for_domain,
     refresh_hq_datasource,
-    get_role_name_for_domain,
 )
 
 from .base_test import HQDBTestCase
