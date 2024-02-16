@@ -63,8 +63,15 @@ class HQDatasourceView(BaseSupersetView):
         if response.status_code == 403:
             return Response(status=403)
         if response.status_code != 200:
-            url = hq_request.absolute_url
-            return Response(response=f"There was an error in fetching datasources from CommCareHQ at {url}", status=400)
+            try:
+                msg = response.json()['error']
+            except:  # pylint: disable=E722
+                msg = ''
+            return Response(
+                "There was an error in fetching datasources from CommCare HQ "
+                f"at {hq_request.absolute_url}: {response.status_code} {msg}",
+                status=400
+            )
         hq_datasources = response.json()
         for ds in hq_datasources['objects']:
             ds['is_import_in_progress'] = AsyncImportHelper(
