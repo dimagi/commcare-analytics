@@ -70,10 +70,11 @@ $ export FLASK_APP=superset
 $ export SUPERSET_CONFIG_PATH=/path/to/superset_config.py
 ```
 
-Initialize the database. Create an administrator. Create default roles
+Initialize the databases. Create an administrator. Create default roles
 and permissions:
 ```bash
 $ superset db upgrade
+$ superset db upgrade --directory hq_superset/migrations/
 $ superset fab create-admin
 $ superset load_examples  # (Optional)
 $ superset init

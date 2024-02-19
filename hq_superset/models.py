@@ -28,6 +28,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
     __tablename__ = 'hq_oauth_client'
 
     domain = db.Column(db.String(255), primary_key=True)
+    client_secret = db.Column(db.String(255))  # more chars for encryption
 
     def check_client_secret(self, client_secret):
         return check_password_hash(self.client_secret, client_secret)
