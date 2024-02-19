@@ -22,8 +22,9 @@ from hq_superset import flask_app_mutator, oauth
 AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
 # AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
-# Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
+# Override these for your databases for Superset and HQ Data
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset'
+SQLALCHEMY_HQDATA_URI = 'postgresql://postgres:postgres@localhost:5432/superset_hq_data'
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [

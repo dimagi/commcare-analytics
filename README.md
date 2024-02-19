@@ -56,11 +56,12 @@ directly without another `pip install`.
 Read through the initialization instructions at
 https://superset.apache.org/docs/installation/installing-superset-from-scratch/#installing-and-initializing-superset.
 
-Create the database. These instructions assume that PostgreSQL is
-running on localhost, and that its user is "commcarehq". Adapt
-accordingly:
+Create a database for Superset, and a database for storing data from
+CommCare HQ. Adapt the username and database names to suit your
+environment.
 ```bash
-$ createdb -h localhost -p 5432 -U commcarehq superset_meta
+$ createdb -h localhost -p 5432 -U postgres superset
+$ createdb -h localhost -p 5432 -U postgres superset_hq_data
 ```
 
 Set the following environment variables:
@@ -83,27 +84,8 @@ You should now be able to run superset using the `superset run` command:
 ```bash
 $ superset run -p 8088 --with-threads --reload --debugger
 ```
-However, OAuth login does not work yet as hq-superset needs a Postgres
-database created to store CommCare HQ data.
 
-
-### Create a Postgres Database Connection for storing HQ data
-
-- Create a Postgres database. e.g.
-  ```bash
-  $ createdb -h localhost -p 5432 -U commcarehq hq_data
-  ```
-- Log into Superset as the admin user created in the Superset
-  installation and initialization. Note that you will need to update
-  `AUTH_TYPE = AUTH_DB` to log in as admin user. `AUTH_TYPE` should be
-  otherwise set to `AUTH_OAUTH`.
-- Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
-- Create a database connection by clicking '+ DATABASE' button at the top.
-- The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
-  the name by which this codebase refers to the Postgres DB.
-
-OAuth integration should now be working. You can log in as a CommCare
-HQ web user.
+You can now log in as a CommCare HQ web user.
 
 
 ### Importing UCRs using Redis and Celery

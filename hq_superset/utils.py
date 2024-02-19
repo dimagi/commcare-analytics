@@ -6,9 +6,10 @@ from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
-from flask import g
+from flask import current_app, g
 from flask_login import current_user
 from sqlalchemy.dialects import postgresql
+from superset.utils.database import get_or_create_db
 
 from .models import DataSetChange
 
@@ -27,22 +28,9 @@ class CCHQApiException(Exception):
     pass
 
 
-
 def get_hq_database():
-    # Todo; cache to avoid multiple lookups in single request
-    from superset import db
-    from superset.models.core import Database
-
-    try:
-        hq_db = (
-            db.session
-            .query(Database)
-            .filter_by(database_name=HQ_DB_CONNECTION_NAME)
-            .one()
-        )
-    except sqlalchemy.orm.exc.NoResultFound as err:
-        raise CCHQApiException('CommCare HQ database missing') from err
-    return hq_db
+    db_uri = current_app.config.get("SQLALCHEMY_HQDATA_URI")
+    return get_or_create_db(HQ_DB_CONNECTION_NAME, db_uri)
 
 
 def get_schema_name_for_domain(domain):
