@@ -13,7 +13,7 @@ from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from hq_superset import flask_app_mutator, oauth
-
+from hq_superset.const import HQ_DATA
 
 # Use a tool to generate a sufficiently random string, e.g.
 #     $ openssl rand -base64 42
@@ -24,7 +24,9 @@ AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
 
 # Override these for your databases for Superset and HQ Data
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset'
-SQLALCHEMY_HQDATA_URI = 'postgresql://postgres:postgres@localhost:5432/superset_hq_data'
+SQLALCHEMY_BINDS = {
+    HQ_DATA: 'postgresql://postgres:postgres@localhost:5432/superset_hq_data'
+}
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [

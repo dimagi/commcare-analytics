@@ -11,12 +11,12 @@ from flask_login import current_user
 from sqlalchemy.dialects import postgresql
 from superset.utils.database import get_or_create_db
 
+from .const import HQ_DATA
 from .models import DataSetChange
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
-HQ_DB_CONNECTION_NAME = "HQ Data"
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 
 
@@ -29,8 +29,8 @@ class CCHQApiException(Exception):
 
 
 def get_hq_database():
-    db_uri = current_app.config.get("SQLALCHEMY_HQDATA_URI")
-    return get_or_create_db(HQ_DB_CONNECTION_NAME, db_uri)
+    db_uri = current_app.config['SQLALCHEMY_BINDS'][HQ_DATA]
+    return get_or_create_db(HQ_DATA, db_uri)
 
 
 def get_schema_name_for_domain(domain):

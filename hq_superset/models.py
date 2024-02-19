@@ -9,6 +9,8 @@ from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from superset import db
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from hq_superset.const import HQ_DATA
+
 
 @dataclass
 class DataSetChange:
@@ -22,6 +24,7 @@ class DataSetChange:
 
 
 class HQClient(db.Model, OAuth2ClientMixin):
+    __bind_key__ = HQ_DATA
     __tablename__ = 'hq_oauth_client'
 
     domain = db.Column(db.String(255), primary_key=True)
@@ -65,6 +68,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
 
 
 class Token(db.Model):
+    __bind_key__ = HQ_DATA
     __tablename__ = 'hq_oauth_token'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
