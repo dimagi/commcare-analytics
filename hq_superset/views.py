@@ -1,6 +1,7 @@
 import logging
 import os
 
+import requests
 import superset
 from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
@@ -58,7 +59,14 @@ class HQDatasourceView(BaseSupersetView):
     @expose("/list/", methods=["GET"])
     def list_hq_datasources(self):
         hq_request = HQRequest(url=HqUrl.datasource_list_url(g.hq_domain))
-        response = hq_request.get()
+        try:
+            response = hq_request.get()
+        except requests.exceptions.ConnectionError as err:
+            return Response(
+                "Unable to connect to CommCare HQ "
+                f"at {hq_request.absolute_url}",
+                status=400
+            )
 
         if response.status_code == 403:
             return Response(status=403)
