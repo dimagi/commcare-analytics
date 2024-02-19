@@ -117,6 +117,41 @@ code you want to test will need to be in a module whose dependencies
 don't include Superset.
 
 
+### Creating a migration
+
+You will need to create an Alembic migration for any new SQLAlchemy
+models that you add. The Superset CLI should allow you to do this:
+
+```shell
+$ superset db revision --autogenerate -m "Add table for Foo model"
+```
+
+However, problems with this approach have occurred in the past. You
+might have more success by using Alembic directly. You will need to
+modify the configuration a little to do this:
+
+1. Copy the "HQ_DATA" database URI from `superset_config.py`.
+
+2. Paste it as the value of `sqlalchemy.url` in
+   `hq_superset/migrations/alembic.ini`.
+
+3. Edit `env.py` and comment out the following lines:
+   ```
+   hq_data_uri = current_app.config['SQLALCHEMY_BINDS'][HQ_DATA]
+   decoded_uri = urllib.parse.unquote(hq_data_uri)
+   config.set_main_option('sqlalchemy.url', decoded_uri)
+   ```
+
+Those changes will allow Alembic to connect to the "HD Data" database
+without the need to instantiate Superset's Flask app. You can now
+autogenerate your new table with:
+
+```shell
+$ cd hq_superset/migrations/
+$ alembic revision --autogenerate -m "Add table for Foo model"
+```
+
+
 Upgrading Superset
 ------------------
 
