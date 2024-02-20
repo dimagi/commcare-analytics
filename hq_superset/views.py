@@ -28,6 +28,7 @@ from .utils import (
     get_hq_database,
     get_schema_name_for_domain,
     refresh_hq_datasource,
+    subscribe_to_hq_datasource,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,7 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
         )
         return redirect("/tablemodelview/list/")
 
+    subscribe_to_hq_datasource(domain, datasource_id)
     path, size = download_datasource(domain, datasource_id)
     datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:

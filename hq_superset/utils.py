@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -18,6 +19,8 @@ DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
+
+logger = logging.getLogger(__name__)
 
 
 def get_datasource_export_url(domain, datasource_id):
@@ -191,9 +194,7 @@ def get_datasource_file(path):
 
 def download_datasource(domain, datasource_id):
     import superset
-
     from hq_superset.hq_requests import HQRequest, HqUrl
-    from hq_superset.tasks import subscribe_to_hq_datasource_task
 
     hq_request = HQRequest(
         url=HqUrl.datasource_export_url(domain, datasource_id),
@@ -204,13 +205,40 @@ def download_datasource(domain, datasource_id):
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
     path = os.path.join(superset.config.SHARED_DIR, filename)
-
     with open(path, "wb") as f:
         f.write(response.content)
 
-    subscribe_to_hq_datasource_task.delay(domain, datasource_id)
-
     return path, len(response.content)
+
+
+def subscribe_to_hq_datasource(domain, datasource_id):
+    from superset.config import BASE_URL
+    from hq_superset.hq_requests import HQRequest, HqUrl
+    from hq_superset.models import HQClient
+
+    if HQClient.get_by_domain(domain) is None:
+        hq_request = HQRequest(
+            url=HqUrl.subscribe_to_datasource_url(domain, datasource_id)
+        )
+
+        client_id, client_secret = HQClient.create_domain_client(domain)
+
+        response = hq_request.post({
+            'webhook_url': f'{BASE_URL}/hq_webhook/change/',
+            'token_url': f'{BASE_URL}/oauth/token',
+            'client_id': client_id,
+            'client_secret': client_secret,
+        })
+        if response.status_code == 201:
+            return
+        if response.status_code < 500:
+            logger.error(
+                f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.data}"
+            )
+        if response.status_code >= 500:
+            logger.exception(
+                f"Failed to subscribe to data source {datasource_id} due to a remote server error"
+            )
 
 
 def get_datasource_defn(domain, datasource_id):
