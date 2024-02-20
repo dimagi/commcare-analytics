@@ -108,7 +108,7 @@ class HQDatasourceView(BaseSupersetView):
                 str(ex),
                 exc_info=True,
             )
-            return abort(description=str(ex))
+            return abort(400, description=str(ex))
         return redirect("/tablemodelview/list/")
 
 
