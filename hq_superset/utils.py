@@ -5,6 +5,7 @@ from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
+from cryptography.fernet import Fernet
 from flask import current_app
 from flask_login import current_user
 from superset.utils.database import get_or_create_db
@@ -146,6 +147,31 @@ def get_datasource_file(path):
     with ZipFile(path) as zipfile:
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
+
+
+def get_fernet_keys():
+    return [
+        Fernet(encoded(key, 'ascii'))
+        for key in current_app.config['FERNET_KEYS']
+    ]
+
+
+def encoded(string_maybe, encoding):
+    """
+    Returns ``string_maybe`` encoded with ``encoding``, otherwise
+    returns it unchanged.
+
+    >>> encoded('abc', 'utf-8')
+    b'abc'
+    >>> encoded(b'abc', 'ascii')
+    b'abc'
+    >>> encoded(123, 'utf-8')
+    123
+
+    """
+    if hasattr(string_maybe, 'encode'):
+        return string_maybe.encode(encoding)
+    return string_maybe
 
 
 def convert_to_array(string_array):

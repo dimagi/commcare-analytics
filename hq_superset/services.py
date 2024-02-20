@@ -151,27 +151,27 @@ def refresh_hq_datasource(
 
 
 def subscribe_to_hq_datasource(domain, datasource_id):
-    if HQClient.get_by_domain(domain) is None:
-        hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    hq_client = HQClient.get_by_domain(domain)
+    if hq_client is None:
+        hq_client = HQClient.create_domain_client(domain)
 
-        client_id, client_secret = HQClient.create_domain_client(domain)
-
-        response = hq_request.post({
-            'webhook_url': f'{BASE_URL}/hq_webhook/change/',
-            'token_url': f'{BASE_URL}/oauth/token',
-            'client_id': client_id,
-            'client_secret': client_secret,
-        })
-        if response.status_code == 201:
-            return
-        if response.status_code < 500:
-            logger.error(
-                f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.data}"
-            )
-        if response.status_code >= 500:
-            logger.exception(
-                f"Failed to subscribe to data source {datasource_id} due to a remote server error"
-            )
+    hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    response = hq_request.post({
+        'webhook_url': f'{BASE_URL}/hq_webhook/change/',
+        'token_url': f'{BASE_URL}/oauth/token',
+        'client_id': hq_client.client_id,
+        'client_secret': hq_client.get_client_secret(),
+    })
+    if response.status_code == 201:
+        return
+    if response.status_code < 500:
+        logger.error(
+            f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.data}"
+        )
+    if response.status_code >= 500:
+        logger.exception(
+            f"Failed to subscribe to data source {datasource_id} due to a remote server error"
+        )
 
 
 class AsyncImportHelper:

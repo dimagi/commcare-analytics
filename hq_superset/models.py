@@ -6,11 +6,11 @@ from datetime import datetime
 from typing import Any, Dict, Literal
 
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from cryptography.fernet import MultiFernet
 from superset import db
-from werkzeug.security import check_password_hash, generate_password_hash
 
 from .const import HQ_DATA
-from .utils import get_explore_database, get_hq_database
+from .utils import get_explore_database, get_fernet_keys, get_hq_database
 
 
 @dataclass
@@ -74,8 +74,29 @@ class HQClient(db.Model, OAuth2ClientMixin):
     domain = db.Column(db.String(255), primary_key=True)
     client_secret = db.Column(db.String(255))  # more chars for encryption
 
-    def check_client_secret(self, client_secret):
-        return check_password_hash(self.client_secret, client_secret)
+    def get_client_secret(self):
+        keys = get_fernet_keys()
+        fernet = MultiFernet(keys)
+
+        ciphertext_bytes = self.client_secret.encode('utf-8')
+        plaintext_bytes = fernet.decrypt(ciphertext_bytes)
+        return plaintext_bytes.decode('utf-8')
+
+    def set_client_secret(self, plaintext):
+        keys = get_fernet_keys()
+        fernet = MultiFernet(keys)
+
+        plaintext_bytes = plaintext.encode('utf-8')
+        ciphertext_bytes = fernet.encrypt(plaintext_bytes)
+        self.client_secret = ciphertext_bytes.decode('utf-8')
+
+    def check_client_secret(self, plaintext):
+        keys = get_fernet_keys()
+        fernet = MultiFernet(keys)
+
+        ciphertext_bytes = self.client_secret.encode('utf-8')
+        plaintext_bytes = plaintext.encode('utf-8')
+        return fernet.decrypt(ciphertext_bytes) == plaintext_bytes
 
     def revoke_tokens(self):
         tokens = db.session.execute(
@@ -98,18 +119,15 @@ class HQClient(db.Model, OAuth2ClientMixin):
     def create_domain_client(cls, domain: str):
         alphabet = string.ascii_letters + string.digits
         client_secret = ''.join(secrets.choice(alphabet) for i in range(64))
-
         client = HQClient(
             domain=domain,
             client_id=str(uuid.uuid4()),
-            client_secret=generate_password_hash(client_secret),
         )
+        client.set_client_secret(client_secret)
         client.set_client_metadata({"grant_types": ["client_credentials"]})
-
         db.session.add(client)
         db.session.commit()
-
-        return client.client_id, client_secret
+        return client
 
 
 class Token(db.Model):

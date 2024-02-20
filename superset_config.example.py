@@ -19,6 +19,20 @@ from hq_superset.const import HQ_DATA
 #     $ openssl rand -base64 42
 # SECRET_KEY = ...
 
+# [Fernet](https://cryptography.io/en/latest/fernet/) (symmetric
+# encryption) is used to encrypt and decrypt client secrets so that the
+# same credentials can be used to subscribe to many data sources.
+#
+# FERNET_KEYS is a list of keys where the first key is the current one,
+# the second is the previous one, etc. Encryption uses the first key.
+# Decryption is attempted with each key in turn.
+#
+# To generate a key:
+#     >>> from cryptography.fernet import Fernet
+#     >>> Fernet.generate_key()
+# Keys can be bytes or strings.
+# FERNET_KEYS = [...]
+
 AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
 # AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
