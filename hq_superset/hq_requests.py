@@ -2,24 +2,6 @@ import superset
 from hq_superset.oauth import get_valid_cchq_oauth_token
 
 
-class HqUrl:
-    @classmethod
-    def datasource_export_url(cls, domain, datasource_id):
-        return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-    @classmethod
-    def datasource_list_url(cls, domain):
-        return f"a/{domain}/api/v0.5/ucr_data_source/"
-
-    @classmethod
-    def datasource_details_url(cls, domain, datasource_id):
-        return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
-
-    @classmethod
-    def subscribe_to_datasource_url(cls, domain, datasource_id):
-        return f"a/{domain}/configurable_reports/data_sources/subscribe/{datasource_id}/"
-
-
 class HQRequest:
 
     def __init__(self, url):

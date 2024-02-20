@@ -16,10 +16,6 @@ SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 
 
-def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-
 class CCHQApiException(Exception):
     pass
 

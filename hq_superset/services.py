@@ -13,9 +13,10 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.sql_parse import Table
 
-from hq_superset.hq_requests import HQRequest, HqUrl
-from hq_superset.models import HQClient
-from hq_superset.utils import (
+from .hq_requests import HQRequest
+from .hq_url import datasource_details, datasource_export, datasource_subscribe
+from .models import HQClient
+from .utils import (
     CCHQApiException,
     convert_to_array,
     get_column_dtypes,
@@ -30,8 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def download_datasource(domain, datasource_id):
-    url = HqUrl.datasource_export_url(domain, datasource_id)
-    hq_request = HQRequest(url)
+    hq_request = HQRequest(url=datasource_export(domain, datasource_id))
     response = hq_request.get()
     if response.status_code != 200:
         raise CCHQApiException("Error downloading the UCR export from HQ")
@@ -45,8 +45,7 @@ def download_datasource(domain, datasource_id):
 
 
 def get_datasource_defn(domain, datasource_id):
-    url = HqUrl.datasource_details_url(domain, datasource_id)
-    hq_request = HQRequest(url)
+    hq_request = HQRequest(url=datasource_details(domain, datasource_id))
     response = hq_request.get()
 
     if response.status_code != 200:
@@ -153,9 +152,7 @@ def refresh_hq_datasource(
 
 def subscribe_to_hq_datasource(domain, datasource_id):
     if HQClient.get_by_domain(domain) is None:
-        hq_request = HQRequest(
-            url=HqUrl.subscribe_to_datasource_url(domain, datasource_id)
-        )
+        hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
 
         client_id, client_secret = HQClient.create_domain_client(domain)
 

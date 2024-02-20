@@ -17,7 +17,8 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.views.base import BaseSupersetView
 
 from .hq_domain import user_domains
-from .hq_requests import HQRequest, HqUrl
+from .hq_url import datasource_list
+from .hq_requests import HQRequest
 from .services import (
     AsyncImportHelper,
     download_datasource,
@@ -58,7 +59,7 @@ class HQDatasourceView(BaseSupersetView):
 
     @expose("/list/", methods=["GET"])
     def list_hq_datasources(self):
-        hq_request = HQRequest(url=HqUrl.datasource_list_url(g.hq_domain))
+        hq_request = HQRequest(url=datasource_list(g.hq_domain))
         try:
             response = hq_request.get()
         except requests.exceptions.ConnectionError as err:
