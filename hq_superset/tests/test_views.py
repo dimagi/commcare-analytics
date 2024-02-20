@@ -8,10 +8,14 @@ import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
 
+from hq_superset.services import download_datasource, refresh_hq_datasource
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
-    refresh_hq_datasource,
+)
+from hq_superset.views import (
+    ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+    trigger_datasource_refresh,
 )
 
 from .base_test import HQDBTestCase
@@ -235,10 +239,6 @@ class TestViews(HQDBTestCase):
     @patch('hq_superset.oauth.get_valid_cchq_oauth_token', return_value={})
     @patch('hq_superset.views.os.remove')
     def test_trigger_datasource_refresh(self, *args):
-        from hq_superset.views import (
-            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
-            trigger_datasource_refresh,
-        )
         domain = 'test1'
         ds_name = 'ds_name'
         file_path = '/file_path'
@@ -282,7 +282,6 @@ class TestViews(HQDBTestCase):
     @patch('hq_superset.tasks.subscribe_to_hq_datasource_task.delay')
     @patch('hq_superset.hq_requests.HQRequest.get')
     def test_download_datasource(self, hq_request_get_mock, subscribe_task_mock, *args):
-        from hq_superset.views import download_datasource
         hq_request_get_mock.return_value = MockResponse(
             json_data=TEST_UCR_CSV_V1,
             status_code=200,

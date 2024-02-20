@@ -2,7 +2,7 @@ import os
 
 from superset.extensions import celery_app
 
-from .utils import AsyncImportHelper, refresh_hq_datasource
+from .services import AsyncImportHelper, refresh_hq_datasource
 
 
 @celery_app.task(name='refresh_hq_datasource_task')

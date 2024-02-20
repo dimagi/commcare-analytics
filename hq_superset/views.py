@@ -18,18 +18,17 @@ from superset.views.base import BaseSupersetView
 
 from .hq_domain import user_domains
 from .hq_requests import HQRequest, HqUrl
-from .tasks import refresh_hq_datasource_task
-from .utils import (
-    ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+from .services import (
     AsyncImportHelper,
-    DomainSyncUtil,
     download_datasource,
     get_datasource_defn,
-    get_hq_database,
-    get_schema_name_for_domain,
     refresh_hq_datasource,
     subscribe_to_hq_datasource,
 )
+from .tasks import refresh_hq_datasource_task
+from .utils import DomainSyncUtil, get_hq_database, get_schema_name_for_domain
+
+ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 
 logger = logging.getLogger(__name__)
 
