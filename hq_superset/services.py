@@ -1,14 +1,14 @@
 import logging
 import os
 from datetime import datetime
+from urllib.parse import urljoin
 
 import pandas
 import sqlalchemy
 import superset
-from flask import g
+from flask import g, request, url_for
 from sqlalchemy.dialects import postgresql
 from superset import db
-from superset.config import BASE_URL
 from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.sql_parse import Table
@@ -156,9 +156,14 @@ def subscribe_to_hq_datasource(domain, datasource_id):
         hq_client = HQClient.create_domain_client(domain)
 
     hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    webhook_url = urljoin(
+        request.root_url,
+        url_for('DataSetChangeAPI.post_dataset_change'),
+    )
+    token_url = urljoin(request.root_url, url_for('OAuth.issue_access_token'))
     response = hq_request.post({
-        'webhook_url': f'{BASE_URL}/hq_webhook/change/',
-        'token_url': f'{BASE_URL}/oauth/token',
+        'webhook_url': webhook_url,
+        'token_url': token_url,
         'client_id': hq_client.client_id,
         'client_secret': hq_client.get_client_secret(),
     })

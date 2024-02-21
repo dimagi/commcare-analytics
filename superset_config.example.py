@@ -142,7 +142,6 @@ LANGUAGES = {
 OAUTH2_TOKEN_EXPIRES_IN = {
     'client_credentials': 86400,
 }
-BASE_URL = "http://localhost:5000"
 
 # CommCare Analytics extensions
 FLASK_APP_MUTATOR = flask_app_mutator
