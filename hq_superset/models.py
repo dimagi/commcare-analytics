@@ -9,7 +9,8 @@ from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from superset import db
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from hq_superset.const import HQ_DATA
+from .const import HQ_DATA
+from .utils import get_explore_database, get_hq_database
 
 
 @dataclass
@@ -21,6 +22,49 @@ class DataSetChange:
     def __post_init__(self):
         if 'doc_id' not in self.data:
             raise TypeError("'data' missing required key: 'doc_id'")
+
+    def update_dataset(self):
+        # Import here so that this module does not require an
+        # application context, and can be used by the Alembic CLI.
+        from superset.connectors.sqla.models import SqlaTable
+
+        database = get_hq_database()
+        explore_database = get_explore_database(database)  # TODO: Necessary?
+        sqla_table = (
+            db.session.query(SqlaTable)
+            .filter_by(
+                table_name=self.data_source_id,
+                database_id=explore_database.id,
+            )
+            .one_or_none()
+        )
+        if sqla_table is None:
+            raise ValueError(f'{self.data_source_id} table not found.')
+
+        if self.action == 'delete':
+            stmt = (
+                sqla_table
+                .delete()
+                .where(sqla_table.doc_id == self.data['doc_id'])
+            )
+        elif self.action == 'upsert':
+            stmt = (
+                sqla_table
+                .insert()
+                .values(self.data)  # TODO: Do we need to cast anything?
+                .on_conflict_do_update(
+                    index_elements=['doc_id'],
+                    set_=self.data,
+                )
+            )
+        else:
+            raise ValueError(f'Invalid DataSetChange action {self.action!r}')
+        try:
+            db.session.execute(stmt)
+            db.session.commit()
+        except Exception:  # pylint: disable=broad-except
+            db.session.rollback()
+            raise
 
 
 class HQClient(db.Model, OAuth2ClientMixin):

@@ -18,7 +18,6 @@ from superset.superset_typing import FlaskResponse
 from superset.views.base import handle_api_exception, json_error_response
 
 from .models import DataSetChange, HQClient, Token
-from .utils import update_dataset
 
 require_oauth = ResourceProtector()
 app = appbuilder.app
@@ -106,7 +105,7 @@ class DataSetChangeAPI(BaseApi):
         try:
             request_json = json.loads(request.get_data(as_text=True))
             change = DataSetChange(**request_json)
-            update_dataset(change)
+            change.update_dataset()
             return self.json_response(
                 'Request accepted; updating dataset',
                 status=HTTPStatus.ACCEPTED.value,
