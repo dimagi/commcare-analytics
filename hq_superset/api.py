@@ -40,17 +40,15 @@ class DataSetChangeAPI(BaseApi):
     Accepts changes to datasets from CommCare HQ data forwarding
     """
 
-    MAX_REQUEST_LENGTH = 10_485_760  # reject >10MB JSON requests
+    MAX_REQUEST_LENGTH = 10 * 1024 * 1024  # reject JSON requests > 10MB
 
     def __init__(self):
         self.route_base = '/hq_webhook'
         self.default_view = 'post_dataset_change'
         super().__init__()
 
-    # http://localhost:8088/hq_webhook/change/
-    @expose_api(url='/change/', methods=('POST',))
+    @expose('/change/', methods=('POST',))
     @handle_api_exception
-    @csrf.exempt
     @require_oauth
     def post_dataset_change(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
@@ -63,7 +61,7 @@ class DataSetChangeAPI(BaseApi):
             request_json = json.loads(request.get_data(as_text=True))
             change = DataSetChange(**request_json)
             change.update_dataset()
-            return self.json_response(
+            return json_success(
                 'Request accepted; updating dataset',
                 status=HTTPStatus.ACCEPTED.value,
             )
