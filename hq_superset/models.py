@@ -3,10 +3,12 @@ import string
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Literal
+from typing import Any
 
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from cryptography.fernet import MultiFernet
+from sqlalchemy import delete
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from superset import db
 
 from .const import HQ_DATA
@@ -15,21 +17,25 @@ from .utils import get_fernet_keys, get_hq_database
 
 @dataclass
 class DataSetChange:
-    action: Literal['upsert', 'delete']
     data_source_id: str
-    data: Dict[str, Any]
-
-    def __post_init__(self):
-        if 'doc_id' not in self.data:
-            raise TypeError("'data' missing required key: 'doc_id'")
+    doc_id: str
+    data: list[dict[str, Any]]
 
     def update_dataset(self):
         # Import here so that this module does not require an
         # application context, and can be used by the Alembic CLI.
         from superset.connectors.sqla.models import SqlaTable
 
+        def excluded_to_dict(excl):
+            assert self.data[0]  # We know data has at least one row
+            return {
+                k: getattr(excl, k)
+                for k in self.data[0].keys()
+                if k != 'doc_id'
+            }
+
         database = get_hq_database()
-        sqla_table = (
+        sqla_table: SqlaTable = (
             db.session.query(SqlaTable)
             .filter_by(
                 table_name=self.data_source_id,
@@ -39,25 +45,22 @@ class DataSetChange:
         )
         if sqla_table is None:
             raise ValueError(f'{self.data_source_id} table not found.')
+        sqla_table_obj = sqla_table.get_sqla_table_object()
 
-        if self.action == 'delete':
-            stmt = (
-                sqla_table
-                .delete()
-                .where(sqla_table.doc_id == self.data['doc_id'])
-            )
-        elif self.action == 'upsert':
-            stmt = (
-                sqla_table
-                .insert()
-                .values(self.data)  # TODO: Do we need to cast anything?
-                .on_conflict_do_update(
-                    index_elements=['doc_id'],
-                    set_=self.data,
-                )
+        if self.data:
+            # upsert
+            insert_stmt = pg_insert(sqla_table_obj).values(self.data)
+            stmt = insert_stmt.on_conflict_do_update(
+                index_elements=['doc_id'],
+                set_=excluded_to_dict(insert_stmt.excluded)
             )
         else:
-            raise ValueError(f'Invalid DataSetChange action {self.action!r}')
+            # delete
+            stmt = (
+                delete(sqla_table_obj)
+                .where(sqla_table_obj.c.doc_id == self.doc_id)
+            )
+
         try:
             db.session.execute(stmt)
             db.session.commit()
