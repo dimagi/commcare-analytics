@@ -103,6 +103,7 @@ RESULTS_BACKEND = RedisCache(
 
 
 class CeleryConfig:
+    accept_content = ['pickle']
     broker_url = _REDIS_URL
     imports = (
         'superset.sql_lab',
