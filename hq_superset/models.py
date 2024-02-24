@@ -10,7 +10,7 @@ from cryptography.fernet import MultiFernet
 from superset import db
 
 from .const import HQ_DATA
-from .utils import get_fernet_keys, get_hq_database
+from .utils import cast_data_for_table, get_fernet_keys, get_hq_database
 
 
 @dataclass
@@ -31,7 +31,8 @@ class DataSetChange:
 
         table = sqla_table.get_sqla_table_object()
         delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
-        insert_stmt = table.insert().values(self.data) if self.data else None
+        rows = list(cast_data_for_table(self.data, table))
+        insert_stmt = table.insert().values(rows) if rows else None
 
         with (
             database.get_sqla_engine_with_context() as engine,
