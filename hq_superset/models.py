@@ -112,10 +112,6 @@ class HQClient(db.Model, OAuth2ClientMixin):
         return db.session.query(HQClient).filter_by(domain=domain).first()
 
     @classmethod
-    def get_by_client_id(cls, client_id):
-        return db.session.query(HQClient).filter_by(client_id=client_id).first()
-
-    @classmethod
     def create_domain_client(cls, domain: str):
         alphabet = string.ascii_letters + string.digits
         client_secret = ''.join(secrets.choice(alphabet) for i in range(64))

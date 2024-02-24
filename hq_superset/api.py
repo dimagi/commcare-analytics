@@ -1,61 +1,18 @@
 import json
-from datetime import datetime, timedelta
 from http import HTTPStatus
 
-from authlib.integrations.flask_oauth2 import (
-    AuthorizationServer,
-    ResourceProtector,
-)
-from authlib.oauth2.rfc6749 import grants
-from authlib.oauth2.rfc6750 import BearerTokenValidator
 from flask import jsonify, request
 from flask_appbuilder.api import BaseApi, expose
-from flask_appbuilder.baseviews import expose_api
 from sqlalchemy.orm.exc import NoResultFound
-from superset import db
-from superset.extensions import appbuilder, csrf
 from superset.superset_typing import FlaskResponse
-from superset.views.base import handle_api_exception, json_error_response
-
-from .models import DataSetChange, HQClient, Token
-
-require_oauth = ResourceProtector()
-app = appbuilder.app
-
-
-def query_client(client_id):
-    return HQClient.get_by_client_id(client_id)
-
-
-def save_token(token, request):
-    client = request.client
-    client.revoke_tokens()
-
-    expires_at = datetime.utcnow() + timedelta(days=1)
-    tok = Token(
-        client_id=client.client_id,
-        expires_at=expires_at,
-        access_token=token['access_token'],
-        token_type=token['token_type'],
-        scope=client.domain,
-    )
-    db.session.add(tok)
-    db.session.commit()
-
-
-class HQBearerTokenValidator(BearerTokenValidator):
-    def authenticate_token(self, token_string):
-        return db.session.query(Token).filter_by(access_token=token_string).first()
-
-
-require_oauth.register_token_validator(HQBearerTokenValidator())
-
-authorization = AuthorizationServer(
-    app=app,
-    query_client=query_client,
-    save_token=save_token,
+from superset.views.base import (
+    handle_api_exception,
+    json_error_response,
+    json_success,
 )
-authorization.register_grant(grants.ClientCredentialsGrant)
+
+from .models import DataSetChange
+from .oauth2_server import authorization, require_oauth
 
 
 class OAuth(BaseApi):
