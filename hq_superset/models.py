@@ -91,12 +91,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
         self.client_secret = ciphertext_bytes.decode('utf-8')
 
     def check_client_secret(self, plaintext):
-        keys = get_fernet_keys()
-        fernet = MultiFernet(keys)
-
-        ciphertext_bytes = self.client_secret.encode('utf-8')
-        plaintext_bytes = plaintext.encode('utf-8')
-        return fernet.decrypt(ciphertext_bytes) == plaintext_bytes
+        return self.get_client_secret() == plaintext
 
     def revoke_tokens(self):
         tokens = db.session.execute(
