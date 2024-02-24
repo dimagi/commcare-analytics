@@ -66,37 +66,40 @@ def refresh_hq_datasource(
     """
     # See `CsvToDatabaseView.form_post()` in
     # https://github.com/apache/superset/blob/master/superset/views/database/views.py
-    database = get_hq_database()
-    schema = get_schema_name_for_domain(domain)
-    csv_table = Table(table=datasource_id, schema=schema)
-    column_dtypes, date_columns, array_columns = get_column_dtypes(
-        datasource_defn
-    )
 
-    converters = {
-        column_name: convert_to_array for column_name in array_columns
-    }
-    # TODO: can we assume all array values will be of type TEXT?
-    sqlconverters = {
-        column_name: postgresql.ARRAY(sqlalchemy.types.TEXT)
-        for column_name in array_columns
-    }
-
-    def to_sql(df, replace=False):
+    def dataframe_to_sql(df, replace=False):
+        """
+        Upload Pandas DataFrame ``df`` to ``database``.
+        """
         database.db_engine_spec.df_to_sql(
             database,
             csv_table,
             df,
             to_sql_kwargs={
                 "if_exists": "replace" if replace else "append",
-                "dtype": sqlconverters,
+                "dtype": sql_converters,
+                "index": False,
             },
         )
 
+    database = get_hq_database()
+    schema = get_schema_name_for_domain(domain)
+    csv_table = Table(table=datasource_id, schema=schema)
+    column_dtypes, date_columns, array_columns = get_column_dtypes(
+        datasource_defn
+    )
+    converters = {
+        column_name: convert_to_array for column_name in array_columns
+    }
+    sql_converters = {
+        # Assumes all array values will be of type TEXT
+        column_name: postgresql.ARRAY(sqlalchemy.types.TEXT)
+        for column_name in array_columns
+    }
+
     try:
         with get_datasource_file(file_path) as csv_file:
-
-            _iter = pandas.read_csv(
+            dataframes = pandas.read_csv(
                 chunksize=10000,
                 filepath_or_buffer=csv_file,
                 encoding="utf-8",
@@ -108,11 +111,9 @@ def refresh_hq_datasource(
                 iterator=True,
                 low_memory=True,
             )
-
-            to_sql(next(_iter), replace=True)
-
-            for df in _iter:
-                to_sql(df, replace=False)
+            dataframe_to_sql(next(dataframes), replace=True)
+            for df in dataframes:
+                dataframe_to_sql(df, replace=False)
 
         sqla_table = (
             db.session.query(SqlaTable)
