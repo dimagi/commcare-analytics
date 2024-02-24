@@ -10,7 +10,7 @@ from cryptography.fernet import MultiFernet
 from superset import db
 
 from .const import HQ_DATA
-from .utils import get_explore_database, get_fernet_keys, get_hq_database
+from .utils import get_fernet_keys, get_hq_database
 
 
 @dataclass
@@ -29,12 +29,11 @@ class DataSetChange:
         from superset.connectors.sqla.models import SqlaTable
 
         database = get_hq_database()
-        explore_database = get_explore_database(database)  # TODO: Necessary?
         sqla_table = (
             db.session.query(SqlaTable)
             .filter_by(
                 table_name=self.data_source_id,
-                database_id=explore_database.id,
+                database_id=database.id,
             )
             .one_or_none()
         )

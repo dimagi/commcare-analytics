@@ -21,7 +21,6 @@ from .utils import (
     convert_to_array,
     get_column_dtypes,
     get_datasource_file,
-    get_explore_database,
     get_hq_database,
     get_schema_name_for_domain,
     parse_date,
@@ -115,13 +114,12 @@ def refresh_hq_datasource(
             for df in _iter:
                 to_sql(df, replace=False)
 
-        explore_database = get_explore_database(database)
         sqla_table = (
             db.session.query(SqlaTable)
             .filter_by(
                 table_name=datasource_id,
                 schema=csv_table.schema,
-                database_id=explore_database.id,
+                database_id=database.id,
             )
             .one_or_none()
         )
@@ -133,7 +131,7 @@ def refresh_hq_datasource(
             # Store display name from HQ into description since
             #   sqla_table.table_name stores datasource_id
             sqla_table.description = display_name
-            sqla_table.database = explore_database
+            sqla_table.database = database
             sqla_table.database_id = database.id
             if user_id:
                 user = superset.appbuilder.sm.get_user_by_id(user_id)

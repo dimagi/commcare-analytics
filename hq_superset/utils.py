@@ -206,24 +206,3 @@ def convert_to_array(string_array):
         return []
 
     return array_values
-
-
-def get_explore_database(database):
-    """
-    Returns the database that should be used for exploration. e.g. If
-    Hive was used to upload a CSV, Presto will be a better option to
-    explore its tables.
-    """
-    from superset import db
-    from superset.models.core import Database
-
-    explore_database_id = database.explore_database_id
-    if explore_database_id:
-        return (
-            db.session.query(Database)
-            .filter_by(id=explore_database_id)
-            .one_or_none()
-            or database
-        )
-    else:
-        return database
