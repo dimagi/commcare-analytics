@@ -70,6 +70,12 @@ $ export FLASK_APP=superset
 $ export SUPERSET_CONFIG_PATH=/path/to/superset_config.py
 ```
 
+Set this environment variable to allow OAuth 2.0 authentication with
+CommCare HQ over insecure HTTP. (DO NOT USE THIS IN PRODUCTION.)
+```bash
+$ export AUTHLIB_INSECURE_TRANSPORT=1
+```
+
 Initialize the databases. Create an administrator. Create default roles
 and permissions:
 ```bash
@@ -88,6 +94,13 @@ $ superset run -p 8088 --with-threads --reload --debugger
 
 You can now log in as a CommCare HQ web user.
 
+In order for CommCare HQ to sync data source changes, you will need to
+allow OAuth 2.0 authentication over insecure HTTP. (DO NOT USE THIS IN
+PRODUCTION.) Set this environment variable in your CommCare HQ Django
+server. (Yes, it's "OAUTHLIB" this time, not "AUTHLIB" as before.)
+```bash
+$ export OAUTHLIB_INSECURE_TRANSPORT=1
+```
 
 ### Importing UCRs using Redis and Celery
 
