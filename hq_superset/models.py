@@ -28,19 +28,18 @@ class DataSetChange:
             ))
         except StopIteration:
             raise ValueError(f'{self.data_source_id} table not found.')
-
         table = sqla_table.get_sqla_table_object()
-        delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
-        rows = list(cast_data_for_table(self.data, table))
-        insert_stmt = table.insert().values(rows) if rows else None
 
         with (
             database.get_sqla_engine_with_context() as engine,
             engine.connect() as connection,
             connection.begin()  # Commit on leaving context
         ):
+            delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
             connection.execute(delete_stmt)
-            if insert_stmt:
+            if self.data:
+                rows = list(cast_data_for_table(self.data, table))
+                insert_stmt = table.insert().values(rows)
                 connection.execute(insert_stmt)
 
 
