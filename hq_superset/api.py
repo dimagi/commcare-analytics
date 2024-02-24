@@ -49,7 +49,7 @@ class DataSetChangeAPI(BaseApi):
 
     @expose('/change/', methods=('POST',))
     @handle_api_exception
-    @require_oauth
+    @require_oauth()
     def post_dataset_change(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
@@ -61,20 +61,9 @@ class DataSetChangeAPI(BaseApi):
             request_json = json.loads(request.get_data(as_text=True))
             change = DataSetChange(**request_json)
             change.update_dataset()
-            return json_success(
-                'Request accepted; updating dataset',
-                status=HTTPStatus.ACCEPTED.value,
-            )
+            return json_success('Dataset updated')
         except json.JSONDecodeError:
             return json_error_response(
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
-        except (TypeError, ValueError) as err:
-            return json_error_response(
-                str(err),
-                status=HTTPStatus.BAD_REQUEST.value,
-            )
-        # `@handle_api_exception` will return other exceptions as JSON
-        # with status code 500, e.g.
-        #     {"error": "CommCare HQ database missing"}
