@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from authlib.integrations.flask_oauth2 import (
     AuthorizationServer,
@@ -7,7 +7,7 @@ from authlib.integrations.flask_oauth2 import (
 from authlib.integrations.sqla_oauth2 import (
     create_bearer_token_validator,
     create_query_client_func,
-    # create_revocation_endpoint,
+    create_revocation_endpoint,
 )
 from authlib.oauth2.rfc6749 import grants
 
@@ -18,15 +18,15 @@ def save_token(token, request):
     client = request.client
     client.revoke_tokens()
 
-    expires_at = datetime.utcnow() + timedelta(days=1)
-    tok = Token(
+    one_day = 24 * 60 * 60
+    token = Token(
         client_id=client.client_id,
-        expires_at=expires_at,
-        access_token=token['access_token'],
         token_type=token['token_type'],
+        access_token=token['access_token'],
         scope=client.domain,
+        expires_in=one_day,
     )
-    db.session.add(tok)
+    db.session.add(token)
     db.session.commit()
 
 
@@ -43,8 +43,8 @@ def config_oauth2(app):
     authorization.register_grant(grants.ClientCredentialsGrant)
 
     # support revocation
-    # revocation_cls = create_revocation_endpoint(db.session, Token)
-    # authorization.register_endpoint(revocation_cls)
+    revocation_cls = create_revocation_endpoint(db.session, Token)
+    authorization.register_endpoint(revocation_cls)
 
     # protect resource
     bearer_cls = create_bearer_token_validator(db.session, Token)

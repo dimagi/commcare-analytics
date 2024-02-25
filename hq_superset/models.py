@@ -1,12 +1,16 @@
 import secrets
 import string
+import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
-from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from authlib.integrations.sqla_oauth2 import (
+    OAuth2ClientMixin,
+    OAuth2TokenMixin,
+)
 from cryptography.fernet import MultiFernet
+from sqlalchemy import update
 from superset import db
 
 from .const import HQ_DATA
@@ -70,12 +74,14 @@ class HQClient(db.Model, OAuth2ClientMixin):
         return self.get_client_secret() == plaintext
 
     def revoke_tokens(self):
-        tokens = db.session.execute(
-            db.select(Token).filter_by(client_id=self.client_id, revoked=False)
-        ).all()
-        for token, in tokens:
-            token.revoked = True
-            db.session.add(token)
+        revoked_at = int(time.time())
+        stmt = (
+            update(Token)
+            .where(Token.client_id == self.client_id)
+            .where(Token.access_token_revoked_at == 0)
+            .values(access_token_revoked_at=revoked_at)
+        )
+        db.session.execute(stmt)
         db.session.commit()
 
     @classmethod
@@ -97,35 +103,13 @@ class HQClient(db.Model, OAuth2ClientMixin):
         return client
 
 
-class Token(db.Model):
+class Token(db.Model, OAuth2TokenMixin):
     __bind_key__ = HQ_DATA
     __tablename__ = 'hq_oauth_token'
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    client_id = db.Column(db.String(40), nullable=False, index=True)
-    token_type = db.Column(db.String(40))
-    access_token = db.Column(db.String(255), nullable=False, unique=True)
-    revoked = db.Column(db.Boolean, default=False)
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime)
-    scope = db.Column(db.String(255))
+    id = db.Column(db.Integer, primary_key=True)
 
     @property
     def domain(self):
         client = HQClient.get_by_client_id(self.client_id)
         return client.domain
-
-    def is_expired(self):
-        return datetime.utcnow() > self.expires_at
-
-    def is_revoked(self):
-        """
-        The require_oauth ResourceProtector needs this method to be defined
-        """
-        return self.revoked
-
-    def get_scope(self):
-        """
-        The require_oauth ResourceProtector needs this method to be defined
-        """
-        return self.scope
