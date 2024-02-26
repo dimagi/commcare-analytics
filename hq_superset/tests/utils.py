@@ -1,8 +1,10 @@
 from functools import wraps
 
-from sqlalchemy.orm.exc import NoResultFound
-
-from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database
+from hq_superset.utils import (
+    HQ_DB_CONNECTION_NAME,
+    CCHQApiException,
+    get_hq_database,
+)
 
 
 class UnitTestingRequired(Exception):
@@ -27,7 +29,7 @@ def setup_hq_db():
     from superset.commands.database.create import CreateDatabaseCommand
     try:
         get_hq_database()
-    except NoResultFound:
+    except CCHQApiException:
         CreateDatabaseCommand(
             {
                 'sqlalchemy_uri': superset.app.config.get('HQ_DATA_DB'),
