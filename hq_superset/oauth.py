@@ -6,6 +6,7 @@ from flask import flash, session
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
 
+from .exceptions import OAuthSessionExpired
 from .utils import (
     SESSION_OAUTH_RESPONSE_KEY,
     SESSION_USER_DOMAINS_KEY,
@@ -54,10 +55,6 @@ class CommCareSecurityManager(SupersetSecurityManager):
         #     'expires_at': 1650872906
         # }
         session[SESSION_OAUTH_RESPONSE_KEY] = oauth_response
-
-
-class OAuthSessionExpired(Exception):
-    pass
 
 
 def get_valid_cchq_oauth_token():

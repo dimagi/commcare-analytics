@@ -12,7 +12,6 @@ from superset.extensions import cache_manager
 from superset.sql_parse import Table
 
 from .utils import (
-    CCHQApiException,
     convert_to_array,
     get_column_dtypes,
     get_datasource_details_url,
@@ -22,13 +21,14 @@ from .utils import (
     get_schema_name_for_domain,
     parse_date,
 )
+from .exceptions import HQAPIException
 
 
 def download_datasource(provider, oauth_token, domain, datasource_id):
     datasource_url = get_datasource_export_url(domain, datasource_id)
     response = provider.get(datasource_url, token=oauth_token)
     if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR export from HQ")
+        raise HQAPIException("Error downloading the UCR export from HQ")
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
     path = os.path.join(superset.config.SHARED_DIR, filename)
@@ -42,7 +42,7 @@ def get_datasource_defn(provider, oauth_token, domain, datasource_id):
     url = get_datasource_details_url(domain, datasource_id)
     response = provider.get(url, token=oauth_token)
     if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR definition from HQ")
+        raise HQAPIException("Error downloading the UCR definition from HQ")
     return response.json()
 
 

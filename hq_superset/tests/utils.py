@@ -1,14 +1,10 @@
 from functools import wraps
 
+from hq_superset.exceptions import UnitTestingOnly, HQAPIException
 from hq_superset.utils import (
-    HQ_DB_CONNECTION_NAME,
-    CCHQApiException,
-    get_hq_database,
+  HQ_DB_CONNECTION_NAME,
+  get_hq_database,
 )
-
-
-class UnitTestingRequired(Exception):
-  pass
 
 
 def unit_testing_only(fn):
@@ -17,7 +13,7 @@ def unit_testing_only(fn):
     @wraps(fn)
     def inner(*args, **kwargs):
         if not superset.app.config.get('TESTING'):
-            raise UnitTestingRequired(
+            raise UnitTestingOnly(
                 'You may only call {} during unit testing'.format(fn.__name__))
         return fn(*args, **kwargs)
     return inner
@@ -29,7 +25,7 @@ def setup_hq_db():
     from superset.commands.database.create import CreateDatabaseCommand
     try:
         get_hq_database()
-    except CCHQApiException:
+    except HQAPIException:
         CreateDatabaseCommand(
             {
                 'sqlalchemy_uri': superset.app.config.get('HQ_DATA_DB'),
