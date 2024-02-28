@@ -70,7 +70,7 @@ def get_valid_cchq_oauth_token():
 
     # If token hasn't expired yet, return it
     expires_at = oauth_response.get("expires_at")
-    if expires_at > int(time.time()):
+    if expires_at and expires_at > int(time.time()):
         return oauth_response
 
     # If the token has expired, get a new token using refresh_token
