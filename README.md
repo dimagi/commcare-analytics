@@ -6,9 +6,14 @@ This is a Python package that integrates Superset and CommCare HQ.
 Local Development
 -----------------
 
-Follow below instructions.
+### Preparing CommCare HQ
 
-### Setup env
+The 'User configurable reports UI' feature flag must be enabled for the
+domain in CommCare HQ, even if the data sources to be imported were
+created by Report Builder, not a UCR.
+
+
+### Setting up a dev environment
 
 While doing development on top of this integration, it's useful to
 install this via `pip -e` option so that any changes made get reflected
@@ -51,11 +56,12 @@ directly without another `pip install`.
 Read through the initialization instructions at
 https://superset.apache.org/docs/installation/installing-superset-from-scratch/#installing-and-initializing-superset.
 
-Create the database. These instructions assume that PostgreSQL is
-running on localhost, and that its user is "commcarehq". Adapt
-accordingly:
+Create a database for Superset, and a database for storing data from
+CommCare HQ. Adapt the username and database names to suit your
+environment.
 ```bash
-$ createdb -h localhost -p 5432 -U commcarehq superset_meta
+$ createdb -h localhost -p 5432 -U postgres superset
+$ createdb -h localhost -p 5432 -U postgres superset_hq_data
 ```
 
 Set the following environment variables:
@@ -64,10 +70,17 @@ $ export FLASK_APP=superset
 $ export SUPERSET_CONFIG_PATH=/path/to/superset_config.py
 ```
 
-Initialize the database. Create an administrator. Create default roles
+Set this environment variable to allow OAuth 2.0 authentication with
+CommCare HQ over insecure HTTP. (DO NOT USE THIS IN PRODUCTION.)
+```bash
+$ export AUTHLIB_INSECURE_TRANSPORT=1
+```
+
+Initialize the databases. Create an administrator. Create default roles
 and permissions:
 ```bash
 $ superset db upgrade
+$ superset db upgrade --directory hq_superset/migrations/
 $ superset fab create-admin
 $ superset load_examples  # (Optional)
 $ superset init
@@ -78,28 +91,16 @@ You should now be able to run superset using the `superset run` command:
 ```bash
 $ superset run -p 8088 --with-threads --reload --debugger
 ```
-However, OAuth login does not work yet as hq-superset needs a Postgres
-database created to store CommCare HQ data.
 
+You can now log in as a CommCare HQ web user.
 
-### Create a Postgres Database Connection for storing HQ data
-
-- Create a Postgres database. e.g.
-  ```bash
-  $ createdb -h localhost -p 5432 -U commcarehq hq_data
-  ```
-- Log into Superset as the admin user created in the Superset
-  installation and initialization. Note that you will need to update
-  `AUTH_TYPE = AUTH_DB` to log in as admin user. `AUTH_TYPE` should be
-  otherwise set to `AUTH_OAUTH`.
-- Go to 'Data' -> 'Databases' or http://127.0.0.1:8088/databaseview/list/
-- Create a database connection by clicking '+ DATABASE' button at the top.
-- The name of the DISPLAY NAME should be 'HQ Data' exactly, as this is
-  the name by which this codebase refers to the Postgres DB.
-
-OAuth integration should now be working. You can log in as a CommCare
-HQ web user.
-
+In order for CommCare HQ to sync data source changes, you will need to
+allow OAuth 2.0 authentication over insecure HTTP. (DO NOT USE THIS IN
+PRODUCTION.) Set this environment variable in your CommCare HQ Django
+server. (Yes, it's "OAUTHLIB" this time, not "AUTHLIB" as before.)
+```bash
+$ export OAUTHLIB_INSECURE_TRANSPORT=1
+```
 
 ### Importing UCRs using Redis and Celery
 
@@ -127,6 +128,41 @@ Tests use pytest, which is included in `requirements_dev.txt`:
 The test runner can only run tests that do not import from Superset. The
 code you want to test will need to be in a module whose dependencies
 don't include Superset.
+
+
+### Creating a migration
+
+You will need to create an Alembic migration for any new SQLAlchemy
+models that you add. The Superset CLI should allow you to do this:
+
+```shell
+$ superset db revision --autogenerate -m "Add table for Foo model"
+```
+
+However, problems with this approach have occurred in the past. You
+might have more success by using Alembic directly. You will need to
+modify the configuration a little to do this:
+
+1. Copy the "HQ_DATA" database URI from `superset_config.py`.
+
+2. Paste it as the value of `sqlalchemy.url` in
+   `hq_superset/migrations/alembic.ini`.
+
+3. Edit `env.py` and comment out the following lines:
+   ```
+   hq_data_uri = current_app.config['SQLALCHEMY_BINDS'][HQ_DATA]
+   decoded_uri = urllib.parse.unquote(hq_data_uri)
+   config.set_main_option('sqlalchemy.url', decoded_uri)
+   ```
+
+Those changes will allow Alembic to connect to the "HD Data" database
+without the need to instantiate Superset's Flask app. You can now
+autogenerate your new table with:
+
+```shell
+$ cd hq_superset/migrations/
+$ alembic revision --autogenerate -m "Add table for Foo model"
+```
 
 
 Upgrading Superset
