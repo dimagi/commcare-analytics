@@ -236,6 +236,7 @@ class TestViews(HQDBTestCase):
             ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
             trigger_datasource_refresh,
         )
+
         domain = 'test1'
         ds_name = 'ds_name'
         file_path = '/file_path'
@@ -277,7 +278,8 @@ class TestViews(HQDBTestCase):
 
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_download_datasource(self, *args):
-        from hq_superset.views import download_datasource
+        from hq_superset.services import download_datasource
+
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         path, size = download_datasource(self.oauth_mock, '_', 'test1', ucr_id)
         with open(path, 'rb') as f:
@@ -287,14 +289,14 @@ class TestViews(HQDBTestCase):
 
     @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
+        from hq_superset.services import refresh_hq_datasource
 
-        from hq_superset.views import refresh_hq_datasource
-        client = self.app.test_client()
-        
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
         ds_name = "ds1"
-        with patch("hq_superset.views.get_datasource_file") as csv_mock, \
-            self.app.test_client() as client:
+        with (
+            patch("hq_superset.services.get_datasource_file") as csv_mock,
+            self.app.test_client() as client
+        ):
             self.login(client)
             client.get('/domain/select/test1/', follow_redirects=True)
             

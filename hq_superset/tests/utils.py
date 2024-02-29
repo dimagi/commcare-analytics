@@ -1,13 +1,7 @@
 from functools import wraps
 
-from sqlalchemy.orm.exc import NoResultFound
-
-from hq_superset.utils import HQ_DB_CONNECTION_NAME, get_hq_database
-
-# @pytest.fixture(scope="session", autouse=True)
-# def manage_ucr_db(request):
-#     # setup_ucr_db()
-#     request.addfinalizer(clear_ucr_db)
+from hq_superset.exceptions import UnitTestingOnly
+from hq_superset.utils import HQ_DB_CONNECTION_NAME
 
 
 def unit_testing_only(fn):
@@ -16,7 +10,7 @@ def unit_testing_only(fn):
     @wraps(fn)
     def inner(*args, **kwargs):
         if not superset.app.config.get('TESTING'):
-            raise UnitTestingRequired(
+            raise UnitTestingOnly(
                 'You may only call {} during unit testing'.format(fn.__name__))
         return fn(*args, **kwargs)
     return inner
@@ -25,17 +19,10 @@ def unit_testing_only(fn):
 @unit_testing_only
 def setup_hq_db():
     import superset
-    from superset.commands.database.create import CreateDatabaseCommand
-    try:
-        get_hq_database()
-    except NoResultFound:
-        CreateDatabaseCommand(
-            {
-                'sqlalchemy_uri': superset.app.config.get('HQ_DATA_DB'),
-                'engine': 'PostgreSQL', 
-                'database_name': HQ_DB_CONNECTION_NAME
-            }
-        ).run()
+    from superset.utils.database import get_or_create_db
+
+    db_uri = superset.app.config['HQ_DATA_DB']
+    return get_or_create_db(HQ_DB_CONNECTION_NAME, db_uri)
 
 
 TEST_DATASOURCE = {

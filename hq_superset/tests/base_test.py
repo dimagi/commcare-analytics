@@ -35,8 +35,7 @@ class HQDBTestCase(SupersetTestCase):
 
     def setUp(self):
         super(HQDBTestCase, self).setUp()
-        setup_hq_db()
-        self.hq_db = get_hq_database()
+        self.hq_db = setup_hq_db()
 
     def tearDown(self):
         # Drop HQ DB Schemas

@@ -3,7 +3,8 @@ from unittest.mock import patch
 
 from flask import session
 
-from hq_superset.oauth import OAuthSessionExpired, get_valid_cchq_oauth_token
+from hq_superset.exceptions import OAuthSessionExpired
+from hq_superset.oauth import get_valid_cchq_oauth_token
 from hq_superset.utils import (
     SESSION_OAUTH_RESPONSE_KEY,
     SESSION_USER_DOMAINS_KEY,
