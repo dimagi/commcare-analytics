@@ -6,11 +6,11 @@ from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
 from flask_appbuilder.security.decorators import has_access, permission_name
 from superset import db
-from superset.commands.dataset.delete import DeleteDatasetCommand
-from superset.commands.dataset.exceptions import (
+from superset.commands.dataset.delete import (
     DatasetDeleteFailedError,
     DatasetForbiddenError,
     DatasetNotFoundError,
+    DeleteDatasetCommand,
 )
 from superset.connectors.sqla.models import SqlaTable
 from superset.views.base import BaseSupersetView
