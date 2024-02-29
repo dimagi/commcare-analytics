@@ -1,10 +1,12 @@
+import logging
 import os
 from datetime import datetime
+from urllib.parse import urljoin
 
 import pandas
 import sqlalchemy
 import superset
-from flask import g
+from flask import g, request, url_for
 from sqlalchemy.dialects import postgresql
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
@@ -13,6 +15,7 @@ from superset.sql_parse import Table
 
 from .hq_requests import HQRequest
 from .hq_url import datasource_details, datasource_export, datasource_subscribe
+from .models import OAuth2Client
 from .utils import (
     convert_to_array,
     get_column_dtypes,
@@ -23,10 +26,13 @@ from .utils import (
 )
 from .exceptions import HQAPIException
 
+logger = logging.getLogger(__name__)
 
-def download_datasource(provider, oauth_token, domain, datasource_id):
-    datasource_url = get_datasource_export_url(domain, datasource_id)
-    response = provider.get(datasource_url, token=oauth_token)
+
+def download_and_subscribe_to_datasource(domain, datasource_id):
+    hq_request = HQRequest(url=datasource_export(domain, datasource_id))
+    response = hq_request.get()
+
     if response.status_code != 200:
         raise HQAPIException("Error downloading the UCR export from HQ")
 
@@ -143,6 +149,35 @@ def refresh_hq_datasource(
     except Exception as ex:  # pylint: disable=broad-except
         db.session.rollback()
         raise ex
+
+
+def subscribe_to_hq_datasource(domain, datasource_id):
+    hq_client = OAuth2Client.get_by_domain(domain)
+    if hq_client is None:
+        hq_client = OAuth2Client.create_domain_client(domain)
+
+    hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    webhook_url = urljoin(
+        request.root_url,
+        url_for('DataSetChangeAPI.post_dataset_change'),
+    )
+    token_url = urljoin(request.root_url, url_for('OAuth.issue_access_token'))
+    response = hq_request.post({
+        'webhook_url': webhook_url,
+        'token_url': token_url,
+        'client_id': hq_client.client_id,
+        'client_secret': hq_client.get_client_secret(),
+    })
+    if response.status_code == 201:
+        return
+    if response.status_code < 500:
+        logger.error(
+            f"Failed to subscribe to data source {datasource_id} due to the following issue: {response.data}"
+        )
+    if response.status_code >= 500:
+        logger.exception(
+            f"Failed to subscribe to data source {datasource_id} due to a remote server error"
+        )
 
 
 class AsyncImportHelper:

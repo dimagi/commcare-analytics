@@ -8,31 +8,42 @@ from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
+from cryptography.fernet import Fernet
+from flask import current_app
 from flask_login import current_user
 from sqlalchemy.sql import TableClause
+from superset.utils.database import get_or_create_db
 
+from .const import HQ_DATABASE_NAME
 from .exceptions import DatabaseMissing
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
-HQ_DB_CONNECTION_NAME = "HQ Data"
 
 
 def get_hq_database():
-    # Todo; cache to avoid multiple lookups in single request
-    from superset import db
+    """
+    Returns the user-created database for datasets imported from
+    CommCare HQ. If it has not been created and its URI is set in
+    ``superset_config``, it will create it. Otherwise, it will raise a
+    ``DatabaseMissing`` exception.
+    """
+    from superset import app, db
     from superset.models.core import Database
 
     try:
         return (
             db.session
             .query(Database)
-            .filter_by(database_name=HQ_DB_CONNECTION_NAME)
+            .filter_by(database_name=HQ_DATABASE_NAME)
             .one()
         )
-    except sqlalchemy.orm.exc.NoResultFound as err:
-        raise DatabaseMissing('CommCare HQ database missing') from err
+    except sqlalchemy.orm.exc.NoResultFound:
+        db_uri = app.config.get('HQ_DATABASE_URI')
+        if db_uri:
+            return get_or_create_db(HQ_DATABASE_NAME, db_uri)
+        raise DatabaseMissing('CommCare HQ database missing')
 
 
 def get_schema_name_for_domain(domain):
@@ -156,6 +167,31 @@ def get_datasource_file(path):
     with ZipFile(path) as zipfile:
         filename = zipfile.namelist()[0]
         yield zipfile.open(filename)
+
+
+def get_fernet_keys():
+    return [
+        Fernet(encoded(key, 'ascii'))
+        for key in current_app.config['FERNET_KEYS']
+    ]
+
+
+def encoded(string_maybe, encoding):
+    """
+    Returns ``string_maybe`` encoded with ``encoding``, otherwise
+    returns it unchanged.
+
+    >>> encoded('abc', 'utf-8')
+    b'abc'
+    >>> encoded(b'abc', 'ascii')
+    b'abc'
+    >>> encoded(123, 'utf-8')
+    123
+
+    """
+    if hasattr(string_maybe, 'encode'):
+        return string_maybe.encode(encoding)
+    return string_maybe
 
 
 def convert_to_array(string_array):

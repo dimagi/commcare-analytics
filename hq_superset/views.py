@@ -17,19 +17,17 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.views.base import BaseSupersetView
 
 from .hq_domain import user_domains
-from .oauth import get_valid_cchq_oauth_token
 from .hq_url import datasource_list
 from .hq_requests import HQRequest
 from .services import (
     AsyncImportHelper,
-    download_datasource,
+    download_and_subscribe_to_datasource,
     get_datasource_defn,
     refresh_hq_datasource,
 )
 from .tasks import refresh_hq_datasource_task
 from .utils import (
     DomainSyncUtil,
-    get_datasource_list_url,
     get_hq_database,
     get_schema_name_for_domain,
 )
@@ -126,12 +124,8 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
         )
         return redirect("/tablemodelview/list/")
 
-    provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-    token = get_valid_cchq_oauth_token()
-    path, size = download_datasource(provider, token, domain, datasource_id)
-    datasource_defn = get_datasource_defn(
-        provider, token, domain, datasource_id
-    )
+    path, size = download_and_subscribe_to_datasource(domain, datasource_id)
+    datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
         refresh_hq_datasource(
             domain, datasource_id, display_name, path, datasource_defn, None

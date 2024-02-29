@@ -26,6 +26,7 @@ DOMAIN_EXCLUDED_VIEWS = [
     "AuthDBView.login",
     "SelectDomainView.list",
     "SelectDomainView.select",
+    "OAuth.issue_access_token",
     "DataSetChangeAPI.post_dataset_change",
     "appbuilder.static",
     "static",

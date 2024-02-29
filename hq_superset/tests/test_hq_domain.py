@@ -13,11 +13,11 @@ from hq_superset.hq_domain import (
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     DomainSyncUtil,
+    get_hq_database,
     get_schema_name_for_domain,
 )
 
 from .base_test import HQDBTestCase, SupersetTestCase
-from .utils import setup_hq_db
 
 MOCK_DOMAIN_SESSION = {
     SESSION_USER_DOMAINS_KEY:[
@@ -116,7 +116,7 @@ class TestDomainSyncUtil(HQDBTestCase):
     def setUp(self):
         super(TestDomainSyncUtil, self).setUp()
         self.domain = 'test-domain'
-        setup_hq_db()
+        get_hq_database()
 
     def test_schema_gets_created(self):
         schema_name = get_schema_name_for_domain(self.domain)

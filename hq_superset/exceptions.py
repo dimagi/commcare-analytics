@@ -8,7 +8,3 @@ class HQAPIException(Exception):
 
 class OAuthSessionExpired(Exception):
     pass
-
-
-class UnitTestingOnly(Exception):
-  pass

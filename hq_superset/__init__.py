@@ -9,11 +9,14 @@ def flask_app_mutator(app):
     # return
     from superset.extensions import appbuilder
 
-    from . import api, hq_domain, views
+    from . import api, hq_domain, oauth2_server, views
 
     appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource', menu_cond=lambda *_: False)
     appbuilder.add_view(views.SelectDomainView, 'Select a Domain', menu_cond=lambda *_: False)
+    appbuilder.add_api(api.OAuth)
     appbuilder.add_api(api.DataSetChangeAPI)
+    oauth2_server.config_oauth2(app)
+
     app.before_request_funcs.setdefault(None, []).append(
         hq_domain.before_request_hook
     )

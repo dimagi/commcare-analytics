@@ -2,7 +2,7 @@ import doctest
 
 from hq_superset.utils import get_column_dtypes
 
-from .utils import TEST_DATASOURCE
+from .const import TEST_DATASOURCE
 
 
 def test_get_column_dtypes():

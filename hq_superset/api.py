@@ -1,9 +1,9 @@
 import json
 from http import HTTPStatus
 
-from flask import request
-from flask_appbuilder.api import BaseApi
-from flask_appbuilder.baseviews import expose
+from flask import jsonify, request
+from flask_appbuilder.api import BaseApi, expose
+from sqlalchemy.orm.exc import NoResultFound
 from superset.superset_typing import FlaskResponse
 from superset.views.base import (
     handle_api_exception,
@@ -12,6 +12,27 @@ from superset.views.base import (
 )
 
 from .models import DataSetChange
+from .oauth2_server import authorization, require_oauth
+
+
+class OAuth(BaseApi):
+
+    def __init__(self):
+        super().__init__()
+        self.route_base = "/oauth"
+
+    @expose("/token", methods=('POST',))
+    def issue_access_token(self):
+        try:
+            response = authorization.create_token_response()
+        except NoResultFound:
+            return jsonify({"error": "Invalid client"}), 401
+
+        if response.status_code >= 400:
+            return response
+
+        data = json.loads(response.data.decode("utf-8"))
+        return jsonify(data)
 
 
 class DataSetChangeAPI(BaseApi):
@@ -28,6 +49,7 @@ class DataSetChangeAPI(BaseApi):
 
     @expose('/change/', methods=('POST',))
     @handle_api_exception
+    @require_oauth()
     def post_dataset_change(self) -> FlaskResponse:
         if request.content_length > self.MAX_REQUEST_LENGTH:
             return json_error_response(
