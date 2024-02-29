@@ -1,11 +1,15 @@
 import ast
+import sys
 from contextlib import contextmanager
 from datetime import date, datetime
+from functools import partial
+from typing import Any, Generator
 from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
 from flask_login import current_user
+from sqlalchemy.sql import TableClause
 
 from .exceptions import DatabaseMissing
 
@@ -198,3 +202,53 @@ def convert_to_array(string_array):
         return []
 
     return array_values
+
+
+def js_to_py_datetime(jsdt, preserve_tz=True):
+    """
+    JavaScript UTC datetimes end in "Z". In Python < 3.11,
+    ``datetime.isoformat()`` doesn't like it, and raises
+    "ValueError: Invalid isoformat string"
+
+    >>> jsdt = '2024-02-24T14:01:25.397469Z'
+    >>> js_to_py_datetime(jsdt)
+    datetime.datetime(2024, 2, 24, 14, 1, 25, 397469, tzinfo=datetime.timezone.utc)
+    >>> js_to_py_datetime(jsdt, preserve_tz=False)
+    datetime.datetime(2024, 2, 24, 14, 1, 25, 397469)
+
+    """
+    if preserve_tz:
+        if sys.version_info >= (3, 11):
+            return datetime.fromisoformat(jsdt)
+        pydt = jsdt.replace('Z', '+00:00')
+    else:
+        pydt = jsdt.replace('Z', '')
+    return datetime.fromisoformat(pydt)
+
+
+def cast_data_for_table(
+    data: list[dict[str, Any]],
+    table: TableClause,
+) -> Generator[dict[str, Any], None, None]:
+    """
+    Returns ``data`` with values cast in the correct data types for
+    the columns of ``table``.
+    """
+    cast_functions = {
+        # 'BIGINT': int,
+        # 'TEXT': str,
+        'TIMESTAMP': partial(js_to_py_datetime, preserve_tz=False),
+        # TODO: What else?
+    }
+
+    column_types = {c.name: str(c.type) for c in table.columns}
+    for row in data:
+        cast_row = {}
+        for column, value in row.items():
+            type_name = column_types[column]
+            if type_name in cast_functions:
+                cast_func = cast_functions[type_name]
+                cast_row[column] = cast_func(value)
+            else:
+                cast_row[column] = value
+        yield cast_row
