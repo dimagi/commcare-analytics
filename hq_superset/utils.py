@@ -7,6 +7,8 @@ import pandas
 import sqlalchemy
 from flask_login import current_user
 
+from .exceptions import DatabaseMissing
+
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
@@ -30,8 +32,15 @@ def get_hq_database():
     from superset import db
     from superset.models.core import Database
 
-    # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
+    try:
+        return (
+            db.session
+            .query(Database)
+            .filter_by(database_name=HQ_DB_CONNECTION_NAME)
+            .one()
+        )
+    except sqlalchemy.orm.exc.NoResultFound as err:
+        raise DatabaseMissing('CommCare HQ database missing') from err
 
 
 def get_schema_name_for_domain(domain):
