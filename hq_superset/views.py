@@ -1,6 +1,7 @@
 import logging
 import os
 
+import requests
 import superset
 from flask import Response, abort, flash, g, redirect, request, url_for
 from flask_appbuilder import expose
@@ -17,6 +18,8 @@ from superset.views.base import BaseSupersetView
 
 from .hq_domain import user_domains
 from .oauth import get_valid_cchq_oauth_token
+from .hq_url import datasource_list
+from .hq_requests import HQRequest
 from .services import (
     AsyncImportHelper,
     download_datasource,
@@ -61,18 +64,27 @@ class HQDatasourceView(BaseSupersetView):
 
     @expose("/list/", methods=["GET"])
     def list_hq_datasources(self):
-        datasource_list_url = get_datasource_list_url(g.hq_domain)
-        provider = superset.appbuilder.sm.oauth_remotes["commcare"]
-        oauth_token = get_valid_cchq_oauth_token()
-        response = provider.get(datasource_list_url, token=oauth_token)
+        hq_request = HQRequest(url=datasource_list(g.hq_domain))
+        try:
+            response = hq_request.get()
+        except requests.exceptions.ConnectionError:
+            return Response(
+                "Unable to connect to CommCare HQ "
+                f"at {hq_request.absolute_url}",
+                status=400
+            )
+
         if response.status_code == 403:
             return Response(status=403)
         if response.status_code != 200:
-            url = f"{provider.api_base_url}{datasource_list_url}"
+            try:
+                msg = response.json()['error']
+            except:  # pylint: disable=E722
+                msg = ''
             return Response(
-                response="There was an error in fetching datasources from "
-                         f"CommCare HQ at {url}",
-                status=400,
+                "There was an error in fetching datasources from CommCare HQ "
+                f"at {hq_request.absolute_url}: {response.status_code} {msg}",
+                status=400
             )
         hq_datasources = response.json()
         for ds in hq_datasources['objects']:
@@ -83,7 +95,7 @@ class HQDatasourceView(BaseSupersetView):
             "hq_datasource_list.html",
             hq_datasources=hq_datasources,
             ucr_id_to_pks=self._ucr_id_to_pks(),
-            hq_base_url=provider.api_base_url,
+            hq_base_url=hq_request.api_base_url
         )
 
     @expose("/delete/<datasource_pk>", methods=["GET"])

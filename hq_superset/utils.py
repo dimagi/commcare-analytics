@@ -19,18 +19,6 @@ SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
 HQ_DB_CONNECTION_NAME = "HQ Data"
 
 
-def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-
-def get_datasource_list_url(domain):
-    return f"a/{domain}/api/v0.5/ucr_data_source/"
-
-
-def get_datasource_details_url(domain, datasource_id):
-    return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
-
-
 def get_hq_database():
     # Todo; cache to avoid multiple lookups in single request
     from superset import db

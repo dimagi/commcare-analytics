@@ -11,11 +11,11 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.sql_parse import Table
 
+from .hq_requests import HQRequest
+from .hq_url import datasource_details, datasource_export, datasource_subscribe
 from .utils import (
     convert_to_array,
     get_column_dtypes,
-    get_datasource_details_url,
-    get_datasource_export_url,
     get_datasource_file,
     get_hq_database,
     get_schema_name_for_domain,
@@ -35,12 +35,14 @@ def download_datasource(provider, oauth_token, domain, datasource_id):
     with open(path, "wb") as f:
         f.write(response.content)
 
+    subscribe_to_hq_datasource(domain, datasource_id)
+
     return path, len(response.content)
 
 
-def get_datasource_defn(provider, oauth_token, domain, datasource_id):
-    url = get_datasource_details_url(domain, datasource_id)
-    response = provider.get(url, token=oauth_token)
+def get_datasource_defn(domain, datasource_id):
+    hq_request = HQRequest(url=datasource_details(domain, datasource_id))
+    response = hq_request.get()
     if response.status_code != 200:
         raise HQAPIException("Error downloading the UCR definition from HQ")
     return response.json()
