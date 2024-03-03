@@ -24,7 +24,7 @@
   scripts to initialize google analytics, intercom, segment, etc.
 #}
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     {% if g.hq_domain %}
         window.onload = function() {
             var element = `
