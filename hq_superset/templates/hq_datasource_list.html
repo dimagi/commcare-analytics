@@ -25,7 +25,7 @@
 						{% endif %}
 					</td>
 					<td class="table-cell" role="cell">
-						<a href="/superset/explore/table/{{ ucr_id_to_pks.get(ds.id) }}/">{{ds.id}}</a>
+						<a href="/explore/?datasource_type=table&datasource_id={{ ucr_id_to_pks.get(ds.id) }}">{{ds.id}}</a>
 					</td>
 					<td class="table-cell" role="cell">
 						<!-- Todo; make a DELETE form -->
