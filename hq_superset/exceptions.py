@@ -8,3 +8,7 @@ class HQAPIException(Exception):
 
 class OAuthSessionExpired(Exception):
     pass
+
+
+class TableMissing(Exception):
+    pass

@@ -11,6 +11,7 @@ from sqlalchemy import update
 from superset import db
 
 from .const import OAUTH2_DATABASE_NAME
+from .exceptions import TableMissing
 from .utils import cast_data_for_table, get_fernet_keys, get_hq_database
 
 
@@ -28,7 +29,7 @@ class DataSetChange:
                 if table.table_name == self.data_source_id
             ))
         except StopIteration:
-            raise ValueError(f'{self.data_source_id} table not found.')
+            raise TableMissing(f'{self.data_source_id} table not found.')
         table = sqla_table.get_sqla_table_object()
 
         with (
