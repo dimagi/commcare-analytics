@@ -1,5 +1,8 @@
 import logging
 import os
+import secrets
+import string
+import uuid
 from datetime import datetime
 from urllib.parse import urljoin
 
@@ -152,10 +155,7 @@ def refresh_hq_datasource(
 
 
 def subscribe_to_hq_datasource(domain, datasource_id):
-    hq_client = OAuth2Client.get_by_domain(domain)
-    if hq_client is None:
-        hq_client = OAuth2Client.create_domain_client(domain)
-
+    client = _get_or_create_oauth2client(domain)
     hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
     webhook_url = urljoin(
         request.root_url,
@@ -165,8 +165,8 @@ def subscribe_to_hq_datasource(domain, datasource_id):
     response = hq_request.post({
         'webhook_url': webhook_url,
         'token_url': token_url,
-        'client_id': hq_client.client_id,
-        'client_secret': hq_client.get_client_secret(),
+        'client_id': client.client_id,
+        'client_secret': client.get_client_secret(),
     })
     if response.status_code == 201:
         return
@@ -178,6 +178,24 @@ def subscribe_to_hq_datasource(domain, datasource_id):
         logger.exception(
             f"Failed to subscribe to data source {datasource_id} due to a remote server error"
         )
+
+
+def _get_or_create_oauth2client(domain):
+    client = db.session.query(OAuth2Client).filter_by(domain=domain).first()
+    if client:
+        return client
+
+    alphabet = string.ascii_letters + string.digits
+    client_secret = ''.join(secrets.choice(alphabet) for i in range(64))
+    client = OAuth2Client(
+        domain=domain,
+        client_id=str(uuid.uuid4()),
+    )
+    client.set_client_secret(client_secret)
+    client.set_client_metadata({"grant_types": ["client_credentials"]})
+    db.session.add(client)
+    db.session.commit()
+    return client
 
 
 class AsyncImportHelper:

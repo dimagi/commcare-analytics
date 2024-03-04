@@ -1,7 +1,4 @@
-import secrets
-import string
 import time
-import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -83,24 +80,6 @@ class OAuth2Client(db.Model, OAuth2ClientMixin):
         )
         db.session.execute(stmt)
         db.session.commit()
-
-    @classmethod
-    def get_by_domain(cls, domain):
-        return db.session.query(OAuth2Client).filter_by(domain=domain).first()
-
-    @classmethod
-    def create_domain_client(cls, domain: str):
-        alphabet = string.ascii_letters + string.digits
-        client_secret = ''.join(secrets.choice(alphabet) for i in range(64))
-        client = OAuth2Client(
-            domain=domain,
-            client_id=str(uuid.uuid4()),
-        )
-        client.set_client_secret(client_secret)
-        client.set_client_metadata({"grant_types": ["client_credentials"]})
-        db.session.add(client)
-        db.session.commit()
-        return client
 
 
 class OAuth2Token(db.Model, OAuth2TokenMixin):
