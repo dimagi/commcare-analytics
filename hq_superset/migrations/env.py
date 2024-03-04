@@ -6,7 +6,7 @@ from flask import current_app
 from sqlalchemy import engine_from_config, pool
 
 from hq_superset.const import OAUTH2_DATABASE_NAME
-from hq_superset.models import HQClient
+from hq_superset.models import OAuth2Client
 
 config = context.config
 if config.config_file_name is not None:
@@ -17,7 +17,7 @@ decoded_uri = urllib.parse.unquote(db_uri)
 config.set_main_option('sqlalchemy.url', decoded_uri)
 
 # add your model's MetaData object here for 'autogenerate' support
-target_metadata = HQClient.metadata
+target_metadata = OAuth2Client.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
