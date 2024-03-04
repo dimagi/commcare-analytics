@@ -2,12 +2,11 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from urllib.parse import urljoin
 
 import pandas
 import sqlalchemy
 import superset
-from flask import g, request, url_for
+from flask import g, current_app
 from sqlalchemy.dialects import postgresql
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
@@ -156,11 +155,11 @@ def refresh_hq_datasource(
 def subscribe_to_hq_datasource(domain, datasource_id):
     client = _get_or_create_oauth2client(domain)
     hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
-    webhook_url = urljoin(
-        request.root_url,
-        url_for('DataSetChangeAPI.post_dataset_change'),
+    webhook_url = current_app.url_for(
+        'DataSetChangeAPI.post_dataset_change',
+        _external=True,
     )
-    token_url = urljoin(request.root_url, url_for('OAuth.issue_access_token'))
+    token_url = current_app.url_for('OAuth.issue_access_token', _external=True)
     response = hq_request.post({
         'webhook_url': webhook_url,
         'token_url': token_url,
