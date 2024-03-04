@@ -1,4 +1,6 @@
 import ast
+import secrets
+import string
 import sys
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -276,3 +278,8 @@ def cast_data_for_table(
             else:
                 cast_row[column] = value
         yield cast_row
+
+
+def generate_secret():
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for __ in range(64))

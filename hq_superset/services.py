@@ -1,7 +1,5 @@
 import logging
 import os
-import secrets
-import string
 import uuid
 from datetime import datetime
 from urllib.parse import urljoin
@@ -16,6 +14,7 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.sql_parse import Table
 
+from .exceptions import HQAPIException
 from .hq_requests import HQRequest
 from .hq_url import datasource_details, datasource_export, datasource_subscribe
 from .models import OAuth2Client
@@ -25,9 +24,9 @@ from .utils import (
     get_datasource_file,
     get_hq_database,
     get_schema_name_for_domain,
+    generate_secret,
     parse_date,
 )
-from .exceptions import HQAPIException
 
 logger = logging.getLogger(__name__)
 
@@ -185,13 +184,11 @@ def _get_or_create_oauth2client(domain):
     if client:
         return client
 
-    alphabet = string.ascii_letters + string.digits
-    client_secret = ''.join(secrets.choice(alphabet) for i in range(64))
     client = OAuth2Client(
         domain=domain,
         client_id=str(uuid.uuid4()),
     )
-    client.set_client_secret(client_secret)
+    client.set_client_secret(generate_secret())
     client.set_client_metadata({"grant_types": ["client_credentials"]})
     db.session.add(client)
     db.session.commit()
