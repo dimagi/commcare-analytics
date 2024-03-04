@@ -43,7 +43,7 @@ class DataSetChangeAPI(BaseApi):
     MAX_REQUEST_LENGTH = 10 * 1024 * 1024  # reject JSON requests > 10MB
 
     def __init__(self):
-        self.route_base = '/hq_webhook'
+        self.route_base = '/commcarehq_dataset'
         self.default_view = 'post_dataset_change'
         super().__init__()
 
