@@ -19,17 +19,17 @@ def after_request_hook(response):
 
 
 DOMAIN_EXCLUDED_VIEWS = [
-    "AuthOAuthView.login",
-    "AuthOAuthView.logout",
-    "AuthOAuthView.oauth_authorized",
-    "AuthDBView.logout",
-    "AuthDBView.login",
-    "SelectDomainView.list",
-    "SelectDomainView.select",
-    "OAuth.issue_access_token",
-    "DataSetChangeAPI.post_dataset_change",
-    "appbuilder.static",
-    "static",
+    'AuthDBView.login',
+    'AuthDBView.logout',
+    'AuthOAuthView.login',
+    'AuthOAuthView.logout',
+    'AuthOAuthView.oauth_authorized',
+    'DataSetChangeAPI.post_dataset_change',
+    'OAuth.issue_access_token',
+    'SelectDomainView.list',
+    'SelectDomainView.select',
+    'appbuilder.static',
+    'static',
 ]
 
 
