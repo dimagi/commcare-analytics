@@ -102,8 +102,19 @@ server. (Yes, it's "OAUTHLIB" this time, not "AUTHLIB" as before.)
 $ export OAUTHLIB_INSECURE_TRANSPORT=1
 ```
 
-### Importing UCRs using Redis and Celery
 
+### Logging in as a local admin user
+
+There might be situations where you need to log into Superset as a local
+admin user, for example, to add a database connection. To enable local
+user authentication, in `superset_config.py`, set
+`AUTH_TYPE = AUTH_DB`.
+
+To return to allowing CommCare HQ users to log in, set it back to
+`AUTH_TYPE = AUTH_OAUTH`.
+
+
+### Importing UCRs using Redis and Celery
 
 Celery is used to import UCRs that are larger than
 `hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES`. If you need
