@@ -133,6 +133,14 @@ Here is how celery can be run locally.
   in the Superset virtualenv.
 
 
+### Overwriting templates
+Superset provides a way to update HTML templates by adding a file called
+`tail_js_custom_extra.html`.
+This file can be used to insert HTML or script for all pages.
+This isn't documented in superset but can be seen in the superset's 
+[basic template](https://github.com/apache/superset/blob/f453d5d7e75cfd403b5552d6719b8ebc1f121d9e/superset/templates/superset/basic.html#L131).
+
+
 ### Testing
 
 Tests use pytest, which is included in `requirements_dev.txt`:
