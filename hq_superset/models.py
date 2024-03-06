@@ -22,6 +22,13 @@ class DataSetChange:
     data: list[dict[str, Any]]
 
     def update_dataset(self):
+        """
+        Updates a dataset with ``self.data``.
+
+        ``self.data`` represents the current state of a UCR data source
+        for a form or a case, which is identified by ``self.doc_id``. If
+        the form or case has been deleted, then the list will be empty.
+        """
         database = get_hq_database()
         try:
             sqla_table = next((
