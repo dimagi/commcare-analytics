@@ -33,8 +33,9 @@ from hq_superset.const import OAUTH2_DATABASE_NAME
 # Keys can be bytes or strings.
 # FERNET_KEYS = [...]
 
-AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
-# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
+# Authentication backend
+AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ (only)
+# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB (only)
 
 # Override these for your databases for Superset and HQ Data
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset'

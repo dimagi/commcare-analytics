@@ -110,6 +110,10 @@ admin user, for example, to add a database connection. To enable local
 user authentication, in `superset_config.py`, set
 `AUTH_TYPE = AUTH_DB`.
 
+Doing this will prevent CommCare HQ users from logging in, so it should
+only be done in production environments when CommCare Analytics is not
+in use.
+
 To return to allowing CommCare HQ users to log in, set it back to
 `AUTH_TYPE = AUTH_OAUTH`.
 
