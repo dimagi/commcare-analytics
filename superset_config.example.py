@@ -143,10 +143,6 @@ LANGUAGES = {
    'pt': {'flag':'pt', 'name':'Portuguese'}
 }
 
-OAUTH2_TOKEN_EXPIRES_IN = {
-    'client_credentials': 86400,
-}
-
 # CommCare Analytics extensions
 FLASK_APP_MUTATOR = flask_app_mutator
 CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager
