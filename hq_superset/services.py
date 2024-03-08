@@ -155,11 +155,13 @@ def refresh_hq_datasource(
 def subscribe_to_hq_datasource(domain, datasource_id):
     client = _get_or_create_oauth2client(domain)
     hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    scheme = 'http' if current_app.config.get('OAUTHLIB_INSECURE_TRANSPORT') else 'https'
     webhook_url = current_app.url_for(
         'DataSetChangeAPI.post_dataset_change',
         _external=True,
+        _scheme=scheme,
     )
-    token_url = current_app.url_for('OAuth.issue_access_token', _external=True)
+    token_url = current_app.url_for('OAuth.issue_access_token', _external=True, _scheme=scheme)
     response = hq_request.post({
         'webhook_url': webhook_url,
         'token_url': token_url,
