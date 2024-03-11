@@ -155,15 +155,16 @@ def refresh_hq_datasource(
 def subscribe_to_hq_datasource(domain, datasource_id):
     client = _get_or_create_oauth2client(domain)
     hq_request = HQRequest(url=datasource_subscribe(domain, datasource_id))
+    scheme = _get_url_scheme()
     webhook_url = current_app.url_for(
         'DataSetChangeAPI.post_dataset_change',
         _external=True,
-        _scheme=request.scheme,
+        _scheme=scheme,
     )
     token_url = current_app.url_for(
         'OAuth.issue_access_token',
         _external=True,
-        _scheme=request.scheme,
+        _scheme=scheme,
     )
     response = hq_request.post({
         'webhook_url': webhook_url,
@@ -181,6 +182,17 @@ def subscribe_to_hq_datasource(domain, datasource_id):
         logger.exception(
             f"Failed to subscribe to data source {datasource_id} due to a remote server error"
         )
+
+
+def _get_url_scheme():
+    scheme = 'https'
+    # Allow "http" for localhost only. Use request.server because
+    # request.scheme can return "http" for HTTPS requests. :facepalm:
+    if request.server:
+        host, port = request.server
+        if host == '127.0.0.1':  # Also True if hostname is "localhost"
+            scheme = 'http'
+    return scheme
 
 
 def _get_or_create_oauth2client(domain):
