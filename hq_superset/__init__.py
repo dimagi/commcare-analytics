@@ -17,12 +17,8 @@ def flask_app_mutator(app):
     appbuilder.add_api(api.DataSetChangeAPI)
     oauth2_server.config_oauth2(app)
 
-    app.before_request_funcs.setdefault(None, []).append(
-        hq_domain.before_request_hook
-    )
-    app.after_request_funcs.setdefault(None, []).append(
-        hq_domain.after_request_hook
-    )
+    app.before_request(hq_domain.before_request_hook)
+    app.after_request(hq_domain.after_request_hook)
     app.strict_slashes = False
     override_jinja2_template_loader(app)
 
