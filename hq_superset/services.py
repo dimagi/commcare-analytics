@@ -51,7 +51,10 @@ def get_datasource_defn(domain, datasource_id):
     hq_request = HQRequest(url=datasource_details(domain, datasource_id))
     response = hq_request.get()
     if response.status_code != 200:
-        raise HQAPIException("Error downloading the UCR definition from HQ")
+        raise HQAPIException(
+            "Error downloading the UCR definition from HQ: "
+            f"HTTP status {response.status_code}: {response.content}"
+        )
     return response.json()
 
 
