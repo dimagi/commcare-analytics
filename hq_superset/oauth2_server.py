@@ -1,4 +1,5 @@
-from datetime import timedelta
+import logging
+import sys
 
 from authlib.integrations.flask_oauth2 import (
     AuthorizationServer,
@@ -39,6 +40,10 @@ require_oauth = ResourceProtector()
 
 
 def config_oauth2(app):
+    authlib_logger = logging.getLogger('authlib')
+    authlib_logger.addHandler(logging.StreamHandler(sys.stdout))
+    authlib_logger.setLevel(logging.DEBUG)
+
     authorization.init_app(app)
     authorization.register_grant(grants.ClientCredentialsGrant)
 
