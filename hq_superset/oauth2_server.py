@@ -5,6 +5,7 @@ from authlib.integrations.flask_oauth2 import (
     AuthorizationServer,
     ResourceProtector,
 )
+from authlib.integrations.flask_oauth2.requests import FlaskOAuth2Request
 from authlib.integrations.sqla_oauth2 import (
     create_bearer_token_validator,
     create_query_client_func,
@@ -15,7 +16,7 @@ from authlib.oauth2.rfc6749 import grants
 from .models import OAuth2Client, OAuth2Token, db
 
 
-def save_token(token, request):
+def save_token(token: dict, request: FlaskOAuth2Request) -> None:
     client = request.client
     client.revoke_tokens()
 
