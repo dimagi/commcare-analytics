@@ -22,6 +22,13 @@ def flask_app_mutator(app):
     app.strict_slashes = False
     override_jinja2_template_loader(app)
 
+    # A proxy (maybe) is changing the URL scheme from "https" to "http"
+    # on commcare-analytics-staging.dimagi.com, which breaks the OAuth
+    # 2.0 secure transport check despite transport being over HTTPS. I
+    # hate to do this, but werkzeug.contrib.fixers.ProxyFix didn't fix
+    # it. So I've run out of better options. (Norman 2024-03-13)
+    os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 
 def override_jinja2_template_loader(app):
     # Allow loading templates from the templates directory in this project as well

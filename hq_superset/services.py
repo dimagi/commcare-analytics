@@ -190,7 +190,7 @@ def subscribe_to_hq_datasource(domain, datasource_id):
 def _get_url_scheme():
     scheme = 'https'
     # Allow "http" for localhost only. Use request.server because
-    # request.scheme can return "http" for HTTPS requests. :facepalm:
+    # request.scheme can return "http" for HTTPS requests (because proxy?)
     if request.server:
         host, port = request.server
         if host == '127.0.0.1':  # Also True if hostname is "localhost"
