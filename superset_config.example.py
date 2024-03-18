@@ -13,17 +13,37 @@ from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from hq_superset import flask_app_mutator, oauth
-
+from hq_superset.const import OAUTH2_DATABASE_NAME
 
 # Use a tool to generate a sufficiently random string, e.g.
 #     $ openssl rand -base64 42
 # SECRET_KEY = ...
 
-AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
-# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
+# [Fernet](https://cryptography.io/en/latest/fernet/) (symmetric
+# encryption) is used to encrypt and decrypt client secrets so that the
+# same credentials can be used to subscribe to many data sources.
+#
+# FERNET_KEYS is a list of keys where the first key is the current one,
+# the second is the previous one, etc. Encryption uses the first key.
+# Decryption is attempted with each key in turn.
+#
+# To generate a key:
+#     >>> from cryptography.fernet import Fernet
+#     >>> Fernet.generate_key()
+# Keys can be bytes or strings.
+# FERNET_KEYS = [...]
 
-# Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
+# Authentication backend
+AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ (only)
+# AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB (only)
+
+# Override these for your databases for Superset and HQ Data
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset'
+SQLALCHEMY_BINDS = {
+    OAUTH2_DATABASE_NAME: 'postgresql://postgres:postgres@localhost:5432/superset_oauth2'
+}
+
+HQ_DATABASE_URI = "postgresql://commcarehq:commcarehq@localhost:5432/superset_hq_data"
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [

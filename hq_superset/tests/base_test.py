@@ -12,8 +12,6 @@ from superset.app import create_app
 
 from hq_superset.utils import DOMAIN_PREFIX, get_hq_database
 
-from .utils import setup_hq_db
-
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
 shutil.rmtree(superset_test_home, ignore_errors=True)
 os.environ["SUPERSET_HOME"] = superset_test_home
@@ -35,7 +33,7 @@ class HQDBTestCase(SupersetTestCase):
 
     def setUp(self):
         super(HQDBTestCase, self).setUp()
-        self.hq_db = setup_hq_db()
+        self.hq_db = get_hq_database()
 
     def tearDown(self):
         # Drop HQ DB Schemas

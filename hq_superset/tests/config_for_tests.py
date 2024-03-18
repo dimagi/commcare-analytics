@@ -16,17 +16,21 @@
 from flask_appbuilder.security.manager import AUTH_OAUTH
 
 from hq_superset import flask_app_mutator, oauth
+from hq_superset.const import OAUTH2_DATABASE_NAME
 
 WTF_CSRF_ENABLED = False
 TESTING = True
 SECRET_KEY = 'abc'
+FERNET_KEYS = [
+    '0fXurIGyQM4HQYoe7feuwV8c1Kz_88BdmCNutLKiO38=',  # Don't reuse this!
+]
 
 # Any other additional roles to be assigned to the user on top of the base role
 # Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
 # specify more than one role
 AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
 
-HQ_DATA_DB = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
+HQ_DATABASE_URI = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
 
 AUTH_TYPE = AUTH_OAUTH
 
@@ -48,6 +52,9 @@ OAUTH_PROVIDERS = [
 ]
 
 SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+SQLALCHEMY_BINDS = {
+    OAUTH2_DATABASE_NAME: 'sqlite:///test_oauth2.db'
+}
 SHARED_DIR = "shared_dir"
 ENABLE_ASYNC_UCR_IMPORTS = True
 CACHE_CONFIG = {

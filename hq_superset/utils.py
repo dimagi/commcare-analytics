@@ -1,37 +1,51 @@
 import ast
+import secrets
+import string
+import sys
 from contextlib import contextmanager
 from datetime import date, datetime
+from functools import partial
+from typing import Any, Generator
 from zipfile import ZipFile
 
 import pandas
 import sqlalchemy
+from cryptography.fernet import Fernet
+from flask import current_app
 from flask_login import current_user
+from sqlalchemy.sql import TableClause
+from superset.utils.database import get_or_create_db
+
+from .const import HQ_DATABASE_NAME
+from .exceptions import DatabaseMissing
 
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
-HQ_DB_CONNECTION_NAME = "HQ Data"
-
-
-def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
-
-
-def get_datasource_list_url(domain):
-    return f"a/{domain}/api/v0.5/ucr_data_source/"
-
-
-def get_datasource_details_url(domain, datasource_id):
-    return f"a/{domain}/api/v0.5/ucr_data_source/{datasource_id}/"
 
 
 def get_hq_database():
-    # Todo; cache to avoid multiple lookups in single request
-    from superset import db
+    """
+    Returns the user-created database for datasets imported from
+    CommCare HQ. If it has not been created and its URI is set in
+    ``superset_config``, it will create it. Otherwise, it will raise a
+    ``DatabaseMissing`` exception.
+    """
+    from superset import app, db
     from superset.models.core import Database
 
-    # Todo; get actual DB once that's implemented
-    return db.session.query(Database).filter_by(database_name=HQ_DB_CONNECTION_NAME).one()
+    try:
+        return (
+            db.session
+            .query(Database)
+            .filter_by(database_name=HQ_DATABASE_NAME)
+            .one()
+        )
+    except sqlalchemy.orm.exc.NoResultFound:
+        db_uri = app.config.get('HQ_DATABASE_URI')
+        if db_uri:
+            return get_or_create_db(HQ_DATABASE_NAME, db_uri)
+        raise DatabaseMissing('CommCare HQ database missing')
 
 
 def get_schema_name_for_domain(domain):
@@ -157,6 +171,31 @@ def get_datasource_file(path):
         yield zipfile.open(filename)
 
 
+def get_fernet_keys():
+    return [
+        Fernet(encoded(key, 'ascii'))
+        for key in current_app.config['FERNET_KEYS']
+    ]
+
+
+def encoded(string_maybe, encoding):
+    """
+    Returns ``string_maybe`` encoded with ``encoding``, otherwise
+    returns it unchanged.
+
+    >>> encoded('abc', 'utf-8')
+    b'abc'
+    >>> encoded(b'abc', 'ascii')
+    b'abc'
+    >>> encoded(123, 'utf-8')
+    123
+
+    """
+    if hasattr(string_maybe, 'encode'):
+        return string_maybe.encode(encoding)
+    return string_maybe
+
+
 def convert_to_array(string_array):
     """
     Converts the string representation of a list to a list.
@@ -189,3 +228,58 @@ def convert_to_array(string_array):
         return []
 
     return array_values
+
+
+def js_to_py_datetime(jsdt, preserve_tz=True):
+    """
+    JavaScript UTC datetimes end in "Z". In Python < 3.11,
+    ``datetime.isoformat()`` doesn't like it, and raises
+    "ValueError: Invalid isoformat string"
+
+    >>> jsdt = '2024-02-24T14:01:25.397469Z'
+    >>> js_to_py_datetime(jsdt)
+    datetime.datetime(2024, 2, 24, 14, 1, 25, 397469, tzinfo=datetime.timezone.utc)
+    >>> js_to_py_datetime(jsdt, preserve_tz=False)
+    datetime.datetime(2024, 2, 24, 14, 1, 25, 397469)
+
+    """
+    if preserve_tz:
+        if sys.version_info >= (3, 11):
+            return datetime.fromisoformat(jsdt)
+        pydt = jsdt.replace('Z', '+00:00')
+    else:
+        pydt = jsdt.replace('Z', '')
+    return datetime.fromisoformat(pydt)
+
+
+def cast_data_for_table(
+    data: list[dict[str, Any]],
+    table: TableClause,
+) -> Generator[dict[str, Any], None, None]:
+    """
+    Returns ``data`` with values cast in the correct data types for
+    the columns of ``table``.
+    """
+    cast_functions = {
+        # 'BIGINT': int,
+        # 'TEXT': str,
+        'TIMESTAMP': partial(js_to_py_datetime, preserve_tz=False),
+        # TODO: What else?
+    }
+
+    column_types = {c.name: str(c.type) for c in table.columns}
+    for row in data:
+        cast_row = {}
+        for column, value in row.items():
+            type_name = column_types[column]
+            if type_name in cast_functions:
+                cast_func = cast_functions[type_name]
+                cast_row[column] = cast_func(value)
+            else:
+                cast_row[column] = value
+        yield cast_row
+
+
+def generate_secret():
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for __ in range(64))

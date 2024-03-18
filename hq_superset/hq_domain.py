@@ -19,15 +19,17 @@ def after_request_hook(response):
 
 
 DOMAIN_EXCLUDED_VIEWS = [
-    "AuthOAuthView.login",
-    "AuthOAuthView.logout",
-    "AuthOAuthView.oauth_authorized",
-    "AuthDBView.logout",
-    "AuthDBView.login",
-    "SelectDomainView.list",
-    "SelectDomainView.select",
-    "appbuilder.static",
-    "static",
+    'AuthDBView.login',
+    'AuthDBView.logout',
+    'AuthOAuthView.login',
+    'AuthOAuthView.logout',
+    'AuthOAuthView.oauth_authorized',
+    'DataSetChangeAPI.post_dataset_change',
+    'OAuth.issue_access_token',
+    'SelectDomainView.list',
+    'SelectDomainView.select',
+    'appbuilder.static',
+    'static',
 ]
 
 
@@ -39,7 +41,10 @@ def is_user_admin():
 def ensure_domain_selected():
     # Check if a hq_domain cookie is set
     #   Ensure necessary roles, permissions and DB schemas are created for the domain
-    if is_user_admin() or (request.url_rule and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS):
+    if is_user_admin() or (
+        request.url_rule
+        and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS
+    ):
         return
     hq_domain = request.cookies.get('hq_domain')
     valid_domains = user_domains()

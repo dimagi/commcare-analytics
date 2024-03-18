@@ -14,7 +14,7 @@ from hq_superset.utils import (
 )
 
 from .base_test import HQDBTestCase
-from .utils import TEST_DATASOURCE
+from .const import TEST_DATASOURCE
 
 
 class MockResponse:
@@ -35,6 +35,7 @@ class UserMock():
 
     def get_id(self):
         return self.user_id
+
 
 class OAuthMock():
 
@@ -105,6 +106,7 @@ a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
 a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
 a3, 2021-11-22, 2022-01-19, 10, 2022-03-20, some_other_text2
 """
+
 
 class TestViews(HQDBTestCase):
 
@@ -197,7 +199,7 @@ class TestViews(HQDBTestCase):
         self.assertTrue('/domain/list' in response.request.path)
         self.logout(client)
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
     def test_datasource_list(self, *args):
         def _do_assert(datasources):
             self.assert_template_used("hq_datasource_list.html")
@@ -229,7 +231,8 @@ class TestViews(HQDBTestCase):
                 'ds1'
             )
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.services.subscribe_to_hq_datasource')
     @patch('hq_superset.views.os.remove')
     def test_trigger_datasource_refresh(self, *args):
         from hq_superset.views import (
@@ -244,10 +247,12 @@ class TestViews(HQDBTestCase):
 
         def _test_sync_or_async(ds_size, routing_method, user_id):
 
-            with patch("hq_superset.views.download_datasource") as download_ds_mock, \
-                patch("hq_superset.views.get_datasource_defn") as ds_defn_mock, \
-                patch(routing_method) as refresh_mock, \
-                patch("hq_superset.views.g") as mock_g:
+            with (
+                patch("hq_superset.views.download_and_subscribe_to_datasource") as download_ds_mock,
+                patch("hq_superset.views.get_datasource_defn") as ds_defn_mock,
+                patch(routing_method) as refresh_mock,
+                patch("hq_superset.views.g") as mock_g
+            ):
                 mock_g.user = UserMock()
                 download_ds_mock.return_value = file_path, ds_size
                 ds_defn_mock.return_value = TEST_DATASOURCE
@@ -276,18 +281,28 @@ class TestViews(HQDBTestCase):
             None
         )
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
-    def test_download_datasource(self, *args):
-        from hq_superset.services import download_datasource
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.services.subscribe_to_hq_datasource')
+    @patch('hq_superset.hq_requests.HQRequest.get')
+    def test_download_datasource(self, hq_request_get_mock, subscribe_mock, *args):
+        from hq_superset.services import download_and_subscribe_to_datasource
 
+        hq_request_get_mock.return_value = MockResponse(
+            json_data=TEST_UCR_CSV_V1,
+            status_code=200,
+        )
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
-        path, size = download_datasource(self.oauth_mock, '_', 'test1', ucr_id)
+        path, size = download_and_subscribe_to_datasource('test1', ucr_id)
+        subscribe_mock.assert_called_once_with(
+            'test1',
+            ucr_id,
+        )
         with open(path, 'rb') as f:
             self.assertEqual(pickle.load(f), TEST_UCR_CSV_V1)
             self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
         os.remove(path)
 
-    @patch('hq_superset.views.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
     def test_refresh_hq_datasource(self, *args):
         from hq_superset.services import refresh_hq_datasource
 

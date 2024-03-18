@@ -1,11 +1,8 @@
-import logging
 import os
 
 from superset.extensions import celery_app
 
 from .services import AsyncImportHelper, refresh_hq_datasource
-
-logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='refresh_hq_datasource_task')

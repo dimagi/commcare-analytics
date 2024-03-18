@@ -1,30 +1,3 @@
-from functools import wraps
-
-from hq_superset.exceptions import UnitTestingOnly
-from hq_superset.utils import HQ_DB_CONNECTION_NAME
-
-
-def unit_testing_only(fn):
-    import superset
-
-    @wraps(fn)
-    def inner(*args, **kwargs):
-        if not superset.app.config.get('TESTING'):
-            raise UnitTestingOnly(
-                'You may only call {} during unit testing'.format(fn.__name__))
-        return fn(*args, **kwargs)
-    return inner
-
-
-@unit_testing_only
-def setup_hq_db():
-    import superset
-    from superset.utils.database import get_or_create_db
-
-    db_uri = superset.app.config['HQ_DATA_DB']
-    return get_or_create_db(HQ_DB_CONNECTION_NAME, db_uri)
-
-
 TEST_DATASOURCE = {
   "configured_filter": {
     "filters": [
@@ -135,9 +108,3 @@ TEST_DATASOURCE = {
   "id": "test1_ucr1",
   "resource_uri": "/a/demo/api/v0.5/ucr_data_source/52a134da12c9b801bd85d2122901b30c/"
 }
-
-TEST_UCR_CSV = """\
-doc_id,inserted_at,data_visit_date_eaece89e,data_visit_number_33d63739,data_lmp_date_5e24b993,data_visit_comment_fb984fda
-a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
-a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
-"""
