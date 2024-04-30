@@ -34,8 +34,11 @@ DOMAIN_EXCLUDED_VIEWS = [
 
 
 def is_user_admin():
-    from superset import security_manager
-    return security_manager.is_admin()
+    try:
+        from superset import security_manager
+        return security_manager.is_admin()
+    except AttributeError:
+        return False
 
 
 def ensure_domain_selected():
