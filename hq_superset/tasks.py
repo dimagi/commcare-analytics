@@ -12,4 +12,6 @@ def refresh_hq_datasource_task(domain, datasource_id, display_name, export_path,
     except Exception:
         AsyncImportHelper(domain, datasource_id).mark_as_complete()
         raise
-    os.remove(export_path)
+    finally:
+        if os.path.exists(export_path):
+            os.remove(export_path)
