@@ -68,7 +68,10 @@ def refresh_hq_datasource(
 ):
     """
     Pulls the data from CommCare HQ and creates/replaces the
-    corresponding Superset dataset
+    corresponding Superset dataset.
+
+    The file on the file path passed is not removed and
+    should be done outside this function.
     """
     # See `CsvToDatabaseView.form_post()` in
     # https://github.com/apache/superset/blob/master/superset/views/database/views.py

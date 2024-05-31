@@ -127,10 +127,18 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
     path, size = download_and_subscribe_to_datasource(domain, datasource_id)
     datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
-        refresh_hq_datasource(
-            domain, datasource_id, display_name, path, datasource_defn, None
-        )
-        os.remove(path)
+        try:
+            refresh_hq_datasource(
+                domain, datasource_id, display_name, path, datasource_defn, None
+            )
+        except Exception:
+            flash(
+                "The datasource refresh failed. "
+                "Please try again or report if issue persists.",
+                "danger",
+            )
+        finally:
+            os.remove(path)
         return redirect("/tablemodelview/list/")
     else:
         limit_in_mb = int(ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES / 1000000)
