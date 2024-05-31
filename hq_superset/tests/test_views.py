@@ -231,6 +231,26 @@ class TestViews(HQDBTestCase):
                 'ds1'
             )
 
+    def test_trigger_datasource_refresh_with_errors(self, *args):
+        from hq_superset.views import (
+            ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES,
+            trigger_datasource_refresh,
+        )
+
+        file_path = '/file_path/towards/dimagi'
+        file_size = ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES - 1
+        with (
+            patch("hq_superset.views.download_and_subscribe_to_datasource", return_value=(file_path, file_size)),
+            patch("hq_superset.views.get_datasource_defn", return_value=TEST_DATASOURCE),
+            patch("hq_superset.views.refresh_hq_datasource", side_effect=Exception('mocked error')),
+            patch('hq_superset.views.os.remove') as os_remove_mock
+        ):
+            response = trigger_datasource_refresh('test1', 1, 'ds_name')
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.location, "/tablemodelview/list/")
+            os_remove_mock.assert_called_once_with(file_path)
+
     @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
     @patch('hq_superset.services.subscribe_to_hq_datasource')
     @patch('hq_superset.views.os.remove')
