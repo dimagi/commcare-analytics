@@ -16,6 +16,7 @@ from superset.commands.dataset.delete import (
 from superset.connectors.sqla.models import SqlaTable
 from superset.views.base import BaseSupersetView
 
+from .exceptions import HQAPIException
 from .hq_domain import user_domains
 from .hq_url import datasource_list
 from .hq_requests import HQRequest
@@ -124,7 +125,16 @@ def trigger_datasource_refresh(domain, datasource_id, display_name):
         )
         return redirect("/tablemodelview/list/")
 
-    path, size = download_and_subscribe_to_datasource(domain, datasource_id)
+    try:
+        path, size = download_and_subscribe_to_datasource(domain, datasource_id)
+    except HQAPIException as e:
+        flash(
+            f"The datasource refresh failed: {e}. "
+            "Please try again or report if issue persists.",
+            "danger"
+        )
+        return redirect("/tablemodelview/list/")
+
     datasource_defn = get_datasource_defn(domain, datasource_id)
     if size < ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES:
         try:

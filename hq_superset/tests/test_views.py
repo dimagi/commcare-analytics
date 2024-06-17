@@ -8,6 +8,7 @@ import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
 
+from hq_superset.exceptions import HQAPIException
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
@@ -230,6 +231,23 @@ class TestViews(HQDBTestCase):
                 ucr_id,
                 'ds1'
             )
+
+    def test_trigger_datasource_refresh_with_api_exception(self):
+        with patch("hq_superset.views.download_and_subscribe_to_datasource", side_effect=HQAPIException('mocked error')):
+            client = self.app.test_client()
+            self.login(client)
+            client.get('/domain/select/test1/', follow_redirects=True)
+            ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
+            response = client.get(f'/hq_datasource/update/{ucr_id}?name=ds1')
+
+            with client.session_transaction() as session:
+                flash_danger_message = dict(session['_flashes']).get('danger')
+                self.assertEqual(
+                    flash_danger_message,
+                    'The datasource refresh failed: mocked error. Please try again or report if issue persists.'
+                )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.location, "/tablemodelview/list/")
 
     def test_trigger_datasource_refresh_with_errors(self, *args):
         from hq_superset.views import (
