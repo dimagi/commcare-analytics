@@ -18,8 +18,8 @@ from superset.views.base import BaseSupersetView
 
 from .exceptions import HQAPIException
 from .hq_domain import user_domains
-from .hq_url import datasource_list
 from .hq_requests import HQRequest
+from .hq_url import datasource_list
 from .services import (
     AsyncImportHelper,
     download_and_subscribe_to_datasource,

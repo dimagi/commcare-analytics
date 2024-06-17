@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas
 import sqlalchemy
 import superset
-from flask import g, current_app, request
+from flask import current_app, g, request
 from sqlalchemy.dialects import postgresql
 from superset import db
 from superset.connectors.sqla.models import SqlaTable
@@ -19,11 +19,11 @@ from .hq_url import datasource_details, datasource_export, datasource_subscribe
 from .models import OAuth2Client
 from .utils import (
     convert_to_array,
+    generate_secret,
     get_column_dtypes,
     get_datasource_file,
     get_hq_database,
     get_schema_name_for_domain,
-    generate_secret,
     parse_date,
 )
 
