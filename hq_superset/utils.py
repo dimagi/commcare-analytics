@@ -241,8 +241,12 @@ def js_to_py_datetime(jsdt, preserve_tz=True):
     datetime.datetime(2024, 2, 24, 14, 1, 25, 397469, tzinfo=datetime.timezone.utc)
     >>> js_to_py_datetime(jsdt, preserve_tz=False)
     datetime.datetime(2024, 2, 24, 14, 1, 25, 397469)
+    >>> js_to_py_datetime(None) is None
+    True
 
     """
+    if jsdt is None or jsdt == '':
+        return None
     if preserve_tz:
         if sys.version_info >= (3, 11):
             return datetime.fromisoformat(jsdt)
