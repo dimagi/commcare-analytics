@@ -20,13 +20,12 @@ def save_token(token: dict, request: FlaskOAuth2Request) -> None:
     client = request.client
     client.revoke_tokens()
 
-    one_day = 24 * 60 * 60
     token = OAuth2Token(
         client_id=client.client_id,
         token_type=token['token_type'],
         access_token=token['access_token'],
         scope=client.domain,
-        expires_in=one_day,
+        expires_in=0,  # Token does not expire
     )
     db.session.add(token)
     db.session.commit()
