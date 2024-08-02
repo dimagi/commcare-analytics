@@ -117,3 +117,4 @@ tests/.superset/
 superset_config.py
 shared_dir/
 *superset.db
+.idea
