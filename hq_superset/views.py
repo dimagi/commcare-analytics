@@ -25,6 +25,7 @@ from .services import (
     download_and_subscribe_to_datasource,
     get_datasource_defn,
     refresh_hq_datasource,
+    unsubscribe_from_hq_datasource,
 )
 from .tasks import refresh_hq_datasource_task
 from .utils import (
@@ -50,6 +51,15 @@ class HQDatasourceView(BaseSupersetView):
             database_id=get_hq_database().id,
         )
         return {table.table_name: table.id for table in tables.all()}
+
+    def _ucr_id_from_pk(self, datasource_pk):
+        # The table name is the UCR datasource id
+        try:
+            return next(
+                (ds_name for ds_name, ds_pk in self._ucr_id_to_pks().items() if ds_pk == datasource_pk)
+            )
+        except StopIteration:
+            return None
 
     @expose("/update/<datasource_id>", methods=["GET"])
     def create_or_update(self, datasource_id):
@@ -99,6 +109,8 @@ class HQDatasourceView(BaseSupersetView):
 
     @expose("/delete/<datasource_pk>", methods=["GET"])
     def delete(self, datasource_pk):
+        datasource_id = self._ucr_id_from_pk(datasource_pk)
+
         try:
             DeleteDatasetCommand([datasource_pk]).run()
         except DatasetNotFoundError:
@@ -113,6 +125,9 @@ class HQDatasourceView(BaseSupersetView):
                 exc_info=True,
             )
             return abort(400, description=str(ex))
+        else:
+            if datasource_id:
+                unsubscribe_from_hq_datasource(g.hq_domain, datasource_id)
         return redirect("/tablemodelview/list/")
 
 
