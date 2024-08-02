@@ -15,7 +15,12 @@ from superset.sql_parse import Table
 
 from .exceptions import HQAPIException
 from .hq_requests import HQRequest
-from .hq_url import datasource_details, datasource_export, datasource_subscribe
+from .hq_url import (
+    datasource_details,
+    datasource_export,
+    datasource_subscribe,
+    datasource_unsubscribe,
+)
 from .models import OAuth2Client
 from .utils import (
     convert_to_array,
@@ -187,6 +192,25 @@ def subscribe_to_hq_datasource(domain, datasource_id):
     if response.status_code >= 500:
         logger.exception(
             f"Failed to subscribe to data source {datasource_id} due to a remote server error"
+        )
+
+
+def unsubscribe_from_hq_datasource(domain, datasource_id):
+    client = _get_or_create_oauth2client(domain)
+    hq_request = HQRequest(url=datasource_unsubscribe(domain, datasource_id))
+
+    response = hq_request.post({
+        'client_id': client.client_id,
+    })
+    if response.status_code == 200:
+        return
+    if response.status_code < 500:
+        logger.error(
+            f"Failed to unsubscribe from data source {datasource_id} due to the following issue: {response.data}"
+        )
+    if response.status_code >= 500:
+        logger.exception(
+            f"Failed to unsubscribe from data source {datasource_id} due to a remote server error"
         )
 
 
