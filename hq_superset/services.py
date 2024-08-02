@@ -196,9 +196,11 @@ def subscribe_to_hq_datasource(domain, datasource_id):
 
 
 def unsubscribe_from_hq_datasource(domain, datasource_id):
-    client = _get_or_create_oauth2client(domain)
-    hq_request = HQRequest(url=datasource_unsubscribe(domain, datasource_id))
+    client = _get_oauth2client(domain)
+    if not client:
+        return
 
+    hq_request = HQRequest(url=datasource_unsubscribe(domain, datasource_id))
     response = hq_request.post({
         'client_id': client.client_id,
     })
@@ -225,8 +227,12 @@ def _get_url_scheme():
     return scheme
 
 
+def _get_oauth2client(domain):
+    return db.session.query(OAuth2Client).filter_by(domain=domain).first()
+
+
 def _get_or_create_oauth2client(domain):
-    client = db.session.query(OAuth2Client).filter_by(domain=domain).first()
+    client = _get_oauth2client(domain)
     if client:
         return client
 
