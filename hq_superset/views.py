@@ -53,10 +53,11 @@ class HQDatasourceView(BaseSupersetView):
         return {table.table_name: table.id for table in tables.all()}
 
     def _ucr_id_from_pk(self, datasource_pk):
+        datasource_pk_int = int(datasource_pk)
         # The table name is the UCR datasource id
         try:
             return next(
-                (ds_name for ds_name, ds_pk in self._ucr_id_to_pks().items() if ds_pk == datasource_pk)
+                (ds_name for ds_name, ds_pk in self._ucr_id_to_pks().items() if ds_pk == datasource_pk_int)
             )
         except StopIteration:
             return None
