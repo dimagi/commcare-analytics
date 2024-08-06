@@ -43,7 +43,14 @@ def download_and_subscribe_to_datasource(domain, datasource_id):
         raise HQAPIException("Error downloading the UCR export from HQ")
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
-    path = os.path.join(superset.config.SHARED_DIR, filename)
+
+    directory = superset.config.SHARED_DIR
+    path = os.path.join(directory, filename)
+
+    # Ensure the directory exists
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     with open(path, "wb") as f:
         f.write(response.content)
 
