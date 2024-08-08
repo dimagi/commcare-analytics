@@ -10,6 +10,7 @@ from superset.views.base import (
     json_error_response,
     json_success,
 )
+from .exceptions import TableMissing
 
 from .models import DataSetChange
 from .oauth2_server import authorization, require_oauth
@@ -66,4 +67,9 @@ class DataSetChangeAPI(BaseApi):
             return json_error_response(
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
+            )
+        except TableMissing:
+            return json_error_response(
+                'Data source not found',
+                status=HTTPStatus.HTTP_404_NOT_FOUND.value,
             )
