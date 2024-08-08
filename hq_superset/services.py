@@ -15,7 +15,12 @@ from superset.sql_parse import Table
 
 from .exceptions import HQAPIException
 from .hq_requests import HQRequest
-from .hq_url import datasource_details, datasource_export, datasource_subscribe
+from .hq_url import (
+    datasource_details,
+    datasource_export,
+    datasource_subscribe,
+    datasource_unsubscribe,
+)
 from .models import OAuth2Client
 from .utils import (
     convert_to_array,
@@ -38,7 +43,14 @@ def download_and_subscribe_to_datasource(domain, datasource_id):
         raise HQAPIException("Error downloading the UCR export from HQ")
 
     filename = f"{datasource_id}_{datetime.now()}.zip"
-    path = os.path.join(superset.config.SHARED_DIR, filename)
+
+    directory = superset.config.SHARED_DIR
+    path = os.path.join(directory, filename)
+
+    # Ensure the directory exists
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     with open(path, "wb") as f:
         f.write(response.content)
 
@@ -190,6 +202,27 @@ def subscribe_to_hq_datasource(domain, datasource_id):
         )
 
 
+def unsubscribe_from_hq_datasource(domain, datasource_id):
+    client = _get_oauth2client(domain)
+    if not client:
+        return
+
+    hq_request = HQRequest(url=datasource_unsubscribe(domain, datasource_id))
+    response = hq_request.post({
+        'client_id': client.client_id,
+    })
+    if response.status_code == 200:
+        return
+    if response.status_code < 500:
+        logger.error(
+            f"Failed to unsubscribe from data source {datasource_id} due to the following issue: {response.data}"
+        )
+    if response.status_code >= 500:
+        logger.exception(
+            f"Failed to unsubscribe from data source {datasource_id} due to a remote server error"
+        )
+
+
 def _get_url_scheme():
     scheme = 'https'
     # Allow "http" for localhost only. Use request.server because
@@ -201,8 +234,12 @@ def _get_url_scheme():
     return scheme
 
 
+def _get_oauth2client(domain):
+    return db.session.query(OAuth2Client).filter_by(domain=domain).first()
+
+
 def _get_or_create_oauth2client(domain):
-    client = db.session.query(OAuth2Client).filter_by(domain=domain).first()
+    client = _get_oauth2client(domain)
     if client:
         return client
 

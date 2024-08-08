@@ -340,8 +340,9 @@ class TestViews(HQDBTestCase):
             self.assertEqual(size, len(pickle.dumps(TEST_UCR_CSV_V1)))
         os.remove(path)
 
+    @patch('hq_superset.services.unsubscribe_from_hq_datasource')
     @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
-    def test_refresh_hq_datasource(self, *args):
+    def test_refresh_hq_datasource(self, unsubscribe_mock, *args):
         from hq_superset.services import refresh_hq_datasource
 
         ucr_id = self.oauth_mock.test1_datasources['objects'][0]['id']
@@ -388,5 +389,7 @@ class TestViews(HQDBTestCase):
             _id = datasets['result'][0]['id']
             response = client.get(f'/hq_datasource/delete/{_id}')
             self.assertEqual(response.status, "302 FOUND")
+            unsubscribe_mock.assert_called()
+
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})

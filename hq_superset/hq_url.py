@@ -23,3 +23,10 @@ def datasource_subscribe(domain, datasource_id):
         f"a/{domain}/configurable_reports/data_sources/subscribe/"
         f"{datasource_id}/"
     )
+
+
+def datasource_unsubscribe(domain, datasource_id):
+    return (
+        f"a/{domain}/configurable_reports/data_sources/unsubscribe/"
+        f"{datasource_id}/"
+    )
