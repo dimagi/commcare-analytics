@@ -20,21 +20,15 @@ from .base_test import HQDBTestCase, SupersetTestCase
 from .utils import setup_hq_db
 
 MOCK_DOMAIN_SESSION = {
-    SESSION_USER_DOMAINS_KEY:[
-        {
-            "domain_name":"test1",
-            "project_name":"test1"
-        },
-        {
-            "domain_name":"test2",
-            "project_name":"test 1"
-        },
+    SESSION_USER_DOMAINS_KEY: [
+        {'domain_name': 'test1', 'project_name': 'test1'},
+        {'domain_name': 'test2', 'project_name': 'test 1'},
     ]
 }
 
+
 @patch('hq_superset.hq_domain.session', new=MOCK_DOMAIN_SESSION)
 class TestDomainUtils(SupersetTestCase):
-
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_user_domains_returns_session_domains(self, mock):
         self.assertEqual(user_domains(), ['test1', 'test2'])
@@ -53,16 +47,16 @@ class TestDomainUtils(SupersetTestCase):
         self.assertEqual(is_valid_user_domain('test1'), True)
         self.assertEqual(is_valid_user_domain('unknown'), True)
 
+
 @patch('hq_superset.hq_domain.session', new=MOCK_DOMAIN_SESSION)
 class TestEnsureDomainSelected(SupersetTestCase):
-
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_if_domain_not_set_redirects(self, *args):
         with patch('hq_superset.hq_domain.request') as request_mock:
             request_mock.url_rule.endpoint = 'any'
             response = ensure_domain_selected()
             self.assertEqual(response.status, '302 FOUND')
-            self.assertTrue("/domain/list" in str(response.data))
+            self.assertTrue('/domain/list' in str(response.data))
 
     @patch('hq_superset.hq_domain.is_user_admin', return_value=False)
     def test_does_not_redirect_for_special_urls(self, *args):
@@ -87,7 +81,7 @@ class TestEnsureDomainSelected(SupersetTestCase):
             request_mock.cookies = {'hq_domain': 'not-user-domain'}
             response = ensure_domain_selected()
             self.assertEqual(response.status, '302 FOUND')
-            self.assertTrue("/domain/list" in str(response.data))
+            self.assertTrue('/domain/list' in str(response.data))
 
     @patch('hq_superset.hq_domain.is_user_admin', return_value=True)
     def test_does_not_redirect_for_admin(self, *args):
@@ -97,22 +91,19 @@ class TestEnsureDomainSelected(SupersetTestCase):
 
 
 class TestCustomHooks(SupersetTestCase):
-
     def test_hooks_are_registered(self):
         import superset
+
         self.assertEqual(
-            superset.app.before_request_funcs[None][-1],
-            before_request_hook
+            superset.app.before_request_funcs[None][-1], before_request_hook
         )
 
         self.assertEqual(
-            superset.app.after_request_funcs[None][-1],
-            after_request_hook
+            superset.app.after_request_funcs[None][-1], after_request_hook
         )
 
 
 class TestDomainSyncUtil(HQDBTestCase):
-
     def setUp(self):
         super(TestDomainSyncUtil, self).setUp()
         self.domain = 'test-domain'

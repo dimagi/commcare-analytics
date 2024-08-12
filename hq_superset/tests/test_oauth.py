@@ -21,8 +21,7 @@ class MockResponse:
         return self.json_data
 
 
-class OAuthMock():
-
+class OAuthMock:
     def __init__(self):
         self.user_json = {
             'username': 'testuser1',
@@ -31,48 +30,42 @@ class OAuthMock():
             'email': 'test@example.com',
         }
         self.domain_json = {
-            "objects": [
-                {
-                    "domain_name":"test1",
-                    "project_name":"test1"
-                },
-                {
-                    "domain_name":"test2",
-                    "project_name":"test 1"
-                },
+            'objects': [
+                {'domain_name': 'test1', 'project_name': 'test1'},
+                {'domain_name': 'test2', 'project_name': 'test 1'},
             ]
         }
 
     def authorize_access_token(self):
-        return {"access_token": "some-key"}
+        return {'access_token': 'some-key'}
 
     def get(self, url, token):
         return {
             'api/v0.5/identity/': MockResponse(self.user_json, 200),
-            'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true': MockResponse(self.domain_json, 200)
+            'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true': MockResponse(
+                self.domain_json, 200
+            ),
         }[url]
 
 
 class TestOauthSecurityManger(SupersetTestCase):
-
     def tearDown(self):
         session.clear()
 
     def test_oauth_user_info(self):
         oauth_mock = OAuthMock()
         appbuilder = self.app.appbuilder
-        appbuilder.sm.oauth_remotes = {"commcare": oauth_mock}
+        appbuilder.sm.oauth_remotes = {'commcare': oauth_mock}
         self.assertEqual(
-            appbuilder.sm.oauth_user_info("commcare"), 
-            oauth_mock.user_json
+            appbuilder.sm.oauth_user_info('commcare'), oauth_mock.user_json
         )
         self.assertEqual(
             session[SESSION_USER_DOMAINS_KEY],
-            oauth_mock.domain_json["objects"]
+            oauth_mock.domain_json['objects'],
         )
 
-class TestGetOAuthTokenGetter(SupersetTestCase):
 
+class TestGetOAuthTokenGetter(SupersetTestCase):
     def tearDown(self):
         session.clear()
 
@@ -82,30 +75,39 @@ class TestGetOAuthTokenGetter(SupersetTestCase):
 
     def test_returns_current_token_if_not_expired(self):
         session[SESSION_OAUTH_RESPONSE_KEY] = {
-            "access_token": "some key",
-            "expires_at": int((datetime.datetime.now() + datetime.timedelta(minutes=2)).timestamp())
+            'access_token': 'some key',
+            'expires_at': int(
+                (
+                    datetime.datetime.now() + datetime.timedelta(minutes=2)
+                ).timestamp()
+            ),
         }
         self.assertEqual(
-            get_valid_cchq_oauth_token(),
-            session[SESSION_OAUTH_RESPONSE_KEY]
+            get_valid_cchq_oauth_token(), session[SESSION_OAUTH_RESPONSE_KEY]
         )
 
     def test_tries_token_refresh_if_expired(self):
         session[SESSION_OAUTH_RESPONSE_KEY] = {
-            "access_token": "some key",
-            "refresh_token": "refresh token",
-            "expires_at": int((datetime.datetime.now() - datetime.timedelta(minutes=2)).timestamp())
+            'access_token': 'some key',
+            'refresh_token': 'refresh token',
+            'expires_at': int(
+                (
+                    datetime.datetime.now() - datetime.timedelta(minutes=2)
+                ).timestamp()
+            ),
         }
-        with patch('hq_superset.oauth.refresh_and_fetch_token') as refresh_mock, \
-             patch('hq_superset.oauth.CommCareSecurityManager.set_oauth_session') as set_mock:
-            refresh_mock.return_value = {"access_token": "new key"}
+        with patch(
+            'hq_superset.oauth.refresh_and_fetch_token'
+        ) as refresh_mock, patch(
+            'hq_superset.oauth.CommCareSecurityManager.set_oauth_session'
+        ) as set_mock:
+            refresh_mock.return_value = {'access_token': 'new key'}
             self.assertEqual(
-                get_valid_cchq_oauth_token(),
-                {"access_token": "new key"}
+                get_valid_cchq_oauth_token(), {'access_token': 'new key'}
             )
             refresh_mock.assert_called_once_with(
-                session[SESSION_OAUTH_RESPONSE_KEY]["refresh_token"]
+                session[SESSION_OAUTH_RESPONSE_KEY]['refresh_token']
             )
             set_mock.assert_called_once_with(
-                "commcare", {"access_token": "new key"}
+                'commcare', {'access_token': 'new key'}
             )

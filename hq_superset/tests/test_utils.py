@@ -11,16 +11,17 @@ def test_get_column_dtypes():
     assert column_dtypes == {
         'doc_id': 'string',
         'data_visit_comment_fb984fda': 'string',
-        'data_visit_number_33d63739': 'Int64'
+        'data_visit_number_33d63739': 'Int64',
     }
     assert set(date_columns) == {
         'inserted_at',
         'data_lmp_date_5e24b993',
-        'data_visit_date_eaece89e'
+        'data_visit_date_eaece89e',
     }
 
 
 def test_doctests():
     import hq_superset.utils
+
     results = doctest.testmod(hq_superset.utils)
     assert results.failed == 0

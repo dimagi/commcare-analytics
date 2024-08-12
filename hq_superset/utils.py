@@ -12,20 +12,19 @@ from sqlalchemy.dialects import postgresql
 
 from .models import DataSetChange
 
-DOMAIN_PREFIX = "hqdomain_"
-SESSION_USER_DOMAINS_KEY = "user_hq_domains"
-SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
-HQ_DB_CONNECTION_NAME = "HQ Data"
+DOMAIN_PREFIX = 'hqdomain_'
+SESSION_USER_DOMAINS_KEY = 'user_hq_domains'
+SESSION_OAUTH_RESPONSE_KEY = 'oauth_response'
+HQ_DB_CONNECTION_NAME = 'HQ Data'
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 
 
 def get_datasource_export_url(domain, datasource_id):
-    return f"a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv"
+    return f'a/{domain}/configurable_reports/data_sources/export/{datasource_id}/?format=csv'
 
 
 class CCHQApiException(Exception):
     pass
-
 
 
 def get_hq_database():
@@ -35,8 +34,7 @@ def get_hq_database():
 
     try:
         hq_db = (
-            db.session
-            .query(Database)
+            db.session.query(Database)
             .filter_by(database_name=HQ_DB_CONNECTION_NAME)
             .one()
         )
@@ -47,13 +45,13 @@ def get_hq_database():
 
 def get_schema_name_for_domain(domain):
     # Prefix in-case domain name matches with know schemas such as public
-    return f"{DOMAIN_PREFIX}{domain}"
+    return f'{DOMAIN_PREFIX}{domain}'
 
 
 def get_role_name_for_domain(domain):
     # Prefix in-case domain name matches with known role names such as admin
     # Same prefix pattern as schema only by coincidence, not a must.
-    return f"{DOMAIN_PREFIX}{domain}"
+    return f'{DOMAIN_PREFIX}{domain}'
 
 
 def get_column_dtypes(datasource_defn):
@@ -77,7 +75,7 @@ def get_column_dtypes(datasource_defn):
     for ind in datasource_defn['configured_indicators']:
         indicator_datatype = ind.get('datatype', 'string')
 
-        if indicator_datatype == "array":
+        if indicator_datatype == 'array':
             array_type_columns.append(ind['column_id'])
         elif pandas_dtypes[indicator_datatype] == 'datetime64[ns]':
             # the dtype datetime64[ns] is not supported for parsing,
@@ -119,7 +117,7 @@ class AsyncImportHelper:
 
     @property
     def progress_key(self):
-        return f"{self.domain}_{self.datasource_id}_import_task_id"
+        return f'{self.domain}_{self.datasource_id}_import_task_id'
 
     @property
     def task_id(self):
@@ -131,6 +129,7 @@ class AsyncImportHelper:
         if not self.task_id:
             return False
         from celery.result import AsyncResult
+
         res = AsyncResult(self.task_id)
         return not res.ready()
 
@@ -146,7 +145,6 @@ class AsyncImportHelper:
 
 
 class DomainSyncUtil:
-
     def __init__(self, security_manager):
         self.sm = security_manager
 
@@ -155,10 +153,16 @@ class DomainSyncUtil:
         return self.sm.add_role(get_role_name_for_domain(domain))
 
     def _ensure_schema_perm_created(self, domain):
-        menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
-        permission = self.sm.find_permission_view_menu("schema_access", menu_name)
+        menu_name = self.sm.get_schema_perm(
+            get_hq_database(), get_schema_name_for_domain(domain)
+        )
+        permission = self.sm.find_permission_view_menu(
+            'schema_access', menu_name
+        )
         if not permission:
-            permission = self.sm.add_permission_view_menu("schema_access", menu_name)
+            permission = self.sm.add_permission_view_menu(
+                'schema_access', menu_name
+            )
         return permission
 
     @staticmethod
@@ -172,21 +176,25 @@ class DomainSyncUtil:
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
         new_domain_roles = [
-            r
-            for r in existing_roles
-            if not r.name.startswith(DOMAIN_PREFIX)
+            r for r in existing_roles if not r.name.startswith(DOMAIN_PREFIX)
         ] + [new_domain_role]
         additional_roles = [
             self.sm.add_role(r)
-            for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']
+            for r in self.sm.appbuilder.app.config[
+                'AUTH_USER_ADDITIONAL_ROLES'
+            ]
         ]
         return new_domain_roles + additional_roles
 
     def _ensure_datasource_perm_created(self):
         "This allows users to create and update virtual datasets"
-        permission = self.sm.find_permission_view_menu("can_save", "Datasource")
+        permission = self.sm.find_permission_view_menu(
+            'can_save', 'Datasource'
+        )
         if not permission:
-            permission = self.sm.add_permission_view_menu("can_save", "Datasource")
+            permission = self.sm.add_permission_view_menu(
+                'can_save', 'Datasource'
+            )
         return permission
 
     def sync_domain_role(self, domain):
@@ -223,12 +231,12 @@ def download_datasource(domain, datasource_id):
     )
     response = hq_request.get()
     if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR export from HQ")
+        raise CCHQApiException('Error downloading the UCR export from HQ')
 
-    filename = f"{datasource_id}_{datetime.now()}.zip"
+    filename = f'{datasource_id}_{datetime.now()}.zip'
     path = os.path.join(superset.config.SHARED_DIR, filename)
 
-    with open(path, "wb") as f:
+    with open(path, 'wb') as f:
         f.write(response.content)
 
     subscribe_to_hq_datasource_task.delay(domain, datasource_id)
@@ -239,11 +247,13 @@ def download_datasource(domain, datasource_id):
 def get_datasource_defn(domain, datasource_id):
     from hq_superset.hq_requests import HQRequest, HqUrl
 
-    hq_request = HQRequest(url=HqUrl.datasource_details_url(domain, datasource_id))
+    hq_request = HQRequest(
+        url=HqUrl.datasource_details_url(domain, datasource_id)
+    )
     response = hq_request.get()
 
     if response.status_code != 200:
-        raise CCHQApiException("Error downloading the UCR definition from HQ")
+        raise CCHQApiException('Error downloading the UCR definition from HQ')
     return response.json()
 
 
@@ -323,18 +333,17 @@ def refresh_hq_datasource(
             csv_table,
             df,
             to_sql_kwargs={
-                "if_exists": "replace" if replace else "append",
-                "dtype": sqlconverters,
+                'if_exists': 'replace' if replace else 'append',
+                'dtype': sqlconverters,
             },
         )
 
     try:
         with get_datasource_file(file_path) as csv_file:
-
             _iter = pandas.read_csv(
                 chunksize=10000,
                 filepath_or_buffer=csv_file,
-                encoding="utf-8",
+                encoding='utf-8',
                 parse_dates=date_columns,
                 date_parser=parse_date,
                 keep_default_na=True,
@@ -423,15 +432,12 @@ def update_dataset(change: DataSetChange):
         raise ValueError(f'{change.data_source_id} table not found.')
 
     if change.action == 'delete':
-        stmt = (
-            sqla_table
-            .delete()
-            .where(sqla_table.doc_id == change.data['doc_id'])
+        stmt = sqla_table.delete().where(
+            sqla_table.doc_id == change.data['doc_id']
         )
     elif change.action == 'upsert':
         stmt = (
-            sqla_table
-            .insert()
+            sqla_table.insert()
             .values(change.data)  # TODO: Do we need to cast anything?
             .on_conflict_do_update(
                 index_elements=['doc_id'],

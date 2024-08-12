@@ -1,12 +1,12 @@
-import uuid
-import string
 import secrets
+import string
+import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, Literal
 
-from datetime import datetime
-from superset import db
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from superset import db
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -33,7 +33,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
         tokens = db.session.execute(
             db.select(Token).filter_by(client_id=self.client_id, revoked=False)
         ).all()
-        for token, in tokens:
+        for (token,) in tokens:
             token.revoked = True
             db.session.add(token)
         db.session.commit()
@@ -44,7 +44,9 @@ class HQClient(db.Model, OAuth2ClientMixin):
 
     @classmethod
     def get_by_client_id(cls, client_id):
-        return db.session.query(HQClient).filter_by(client_id=client_id).first()
+        return (
+            db.session.query(HQClient).filter_by(client_id=client_id).first()
+        )
 
     @classmethod
     def create_domain_client(cls, domain: str):
@@ -56,7 +58,7 @@ class HQClient(db.Model, OAuth2ClientMixin):
             client_id=str(uuid.uuid4()),
             client_secret=generate_password_hash(client_secret),
         )
-        client.set_client_metadata({"grant_types": ["client_credentials"]})
+        client.set_client_metadata({'grant_types': ['client_credentials']})
 
         db.session.add(client)
         db.session.commit()

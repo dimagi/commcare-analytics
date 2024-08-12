@@ -19,6 +19,12 @@ directly without another `pip install`.
   the config appropriately.
 - Run `pip install -e .`
 
+For formatting and linting, we use ruff. This can be installed as a pre-commit hook so it gets run on each commit. This tool will be installed when you install `dev-requirements.txt`
+- `pip install -r dev-requirements.txt`
+
+Now that the `pre-commit` tool is installed, we need to run the following to install the ruff config.
+- `pre-commit install`
+
 ### CommCare HQ OAuth Integration
 
 - Create an OAuth application on CommCare HQ using Django Admin
@@ -100,9 +106,9 @@ Here is how celery can be run locally.
 
 ### Testing
 
-Tests use pytest, which is included in `requirements_dev.txt`:
+Tests use pytest, which is included in `dev-requirements.txt`:
 
-    $ pip install -r requirements_test.txt
+    $ pip install -r dev-requirements.txt
     $ pytest
 
 The test runner can only run tests that do not import from Superset. The

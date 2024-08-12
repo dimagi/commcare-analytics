@@ -15,24 +15,31 @@ logger = logging.getLogger(__name__)
 
 
 class CommCareSecurityManager(SupersetSecurityManager):
-
     def oauth_user_info(self, provider, response=None):
-        logger.debug("Oauth2 provider: {0}.".format(provider))
+        logger.debug('Oauth2 provider: {0}.'.format(provider))
         if provider == 'commcare':
-            logger.debug("Getting user info from {}".format(provider))
-            user = self._get_hq_response("api/v0.5/identity/", provider, response)
-            domains = self._get_hq_response("api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true", provider, response)
-            session[SESSION_USER_DOMAINS_KEY] = domains["objects"]
-            logger.debug(f"user - {user}, domain - {domains}")
+            logger.debug('Getting user info from {}'.format(provider))
+            user = self._get_hq_response(
+                'api/v0.5/identity/', provider, response
+            )
+            domains = self._get_hq_response(
+                'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true',
+                provider,
+                response,
+            )
+            session[SESSION_USER_DOMAINS_KEY] = domains['objects']
+            logger.debug(f'user - {user}, domain - {domains}')
             return user
 
     def _get_hq_response(self, endpoint, provider, token):
-        response = self.appbuilder.sm.oauth_remotes[provider].get(endpoint, token=token)
+        response = self.appbuilder.sm.oauth_remotes[provider].get(
+            endpoint, token=token
+        )
         if response.status_code != 200:
-            url = f"{self.appbuilder.sm.oauth_remotes[provider].api_base_url}{endpoint}"
-            message = f"There was an error accessing the CommCareHQ endpoint at {url}"
+            url = f'{self.appbuilder.sm.oauth_remotes[provider].api_base_url}{endpoint}'
+            message = f'There was an error accessing the CommCareHQ endpoint at {url}'
             logger.exception(message)
-            flash(message, "danger")
+            flash(message, 'danger')
             raise HTTPError(message)
         else:
             return response.json()
@@ -65,40 +72,39 @@ def get_valid_cchq_oauth_token():
     #   May raise `OAuthSessionExpired`, if a valid working token is not found
     #   The user needs to re-auth using CommCareHQ to get valid tokens
     oauth_response = session.get(SESSION_OAUTH_RESPONSE_KEY, {})
-    if "access_token" not in oauth_response:
+    if 'access_token' not in oauth_response:
         raise OAuthSessionExpired(
-            "access_token not found in oauth_response, possibly because "
+            'access_token not found in oauth_response, possibly because '
             "the user didn't do an OAuth Login yet"
         )
 
     # If token hasn't expired yet, return it
-    expires_at = oauth_response.get("expires_at")
+    expires_at = oauth_response.get('expires_at')
     # TODO: RFC-6749 specifies "expires_in", not "expires_at".
     #       https://www.rfc-editor.org/rfc/rfc6749#section-5.1
     if expires_at is None or expires_at > int(time.time()):
         return oauth_response
 
     # If the token has expired, get a new token using refresh_token
-    refresh_token = oauth_response.get("refresh_token")
+    refresh_token = oauth_response.get('refresh_token')
     if not refresh_token:
         raise OAuthSessionExpired(
-            "access_token is expired but a refresh_token is not found in oauth_response"
+            'access_token is expired but a refresh_token is not found in oauth_response'
         )
     refresh_response = refresh_and_fetch_token(refresh_token)
-    superset.appbuilder.sm.set_oauth_session("commcare", refresh_response)
+    superset.appbuilder.sm.set_oauth_session('commcare', refresh_response)
     return refresh_response
 
 
 def refresh_and_fetch_token(refresh_token):
     try:
-        provider = superset.appbuilder.sm.oauth_remotes["commcare"]
+        provider = superset.appbuilder.sm.oauth_remotes['commcare']
         refresh_response = provider._get_oauth_client().refresh_token(
-            provider.access_token_url,
-            refresh_token=refresh_token
+            provider.access_token_url, refresh_token=refresh_token
         )
         return refresh_response
     except HTTPError:
         # If the refresh token too expired raise exception.
         raise OAuthSessionExpired(
-            "OAuth refresh token has expired. User need to re-authorize the OAuth Application"
+            'OAuth refresh token has expired. User need to re-authorize the OAuth Application'
         )

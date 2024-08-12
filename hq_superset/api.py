@@ -46,7 +46,11 @@ def save_token(token, request):
 
 class HQBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
-        return db.session.query(Token).filter_by(access_token=token_string).first()
+        return (
+            db.session.query(Token)
+            .filter_by(access_token=token_string)
+            .first()
+        )
 
 
 require_oauth.register_token_validator(HQBearerTokenValidator())
@@ -60,22 +64,21 @@ authorization.register_grant(grants.ClientCredentialsGrant)
 
 
 class OAuth(BaseApi):
-
     def __init__(self):
         super().__init__()
-        self.route_base = "/oauth"
+        self.route_base = '/oauth'
 
-    @expose("/token", methods=('POST',))
+    @expose('/token', methods=('POST',))
     def issue_access_token(self):
         try:
             response = authorization.create_token_response()
         except NoResultFound:
-            return jsonify({"error": "Invalid client"}), 401
+            return jsonify({'error': 'Invalid client'}), 401
 
         if response.status_code >= 400:
             return response
 
-        data = json.loads(response.data.decode("utf-8"))
+        data = json.loads(response.data.decode('utf-8'))
         return jsonify(data)
 
 

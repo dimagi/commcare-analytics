@@ -9,11 +9,10 @@
 import sentry_sdk
 from cachelib.redis import RedisCache
 from celery.schedules import crontab
-from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
+from flask_appbuilder.security.manager import AUTH_OAUTH
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from hq_superset import flask_app_mutator, oauth
-
 
 # Use a tool to generate a sufficiently random string, e.g.
 #     $ openssl rand -base64 42
@@ -23,7 +22,9 @@ AUTH_TYPE = AUTH_OAUTH  # Authenticate with CommCare HQ
 # AUTH_TYPE = AUTH_DB  # Authenticate with Superset user DB
 
 # Override this to reflect your local Postgres DB
-SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/superset_meta'
+SQLALCHEMY_DATABASE_URI = (
+    'postgresql://postgres:postgres@localhost:5433/superset_meta'
+)
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
@@ -36,10 +37,8 @@ OAUTH_PROVIDERS = [
             'api_base_url': 'http://127.0.0.1:8000/',
             'access_token_url': 'http://127.0.0.1:8000/oauth/token/',
             'authorize_url': 'http://127.0.0.1:8000/oauth/authorize/',
-            'client_kwargs': {
-                'scope': 'reports:view access_apis'
-            },
-        }
+            'client_kwargs': {'scope': 'reports:view access_apis'},
+        },
     }
 ]
 
@@ -48,12 +47,12 @@ OAUTH_PROVIDERS = [
 AUTH_USER_REGISTRATION = True
 
 # The default user self registration role
-AUTH_USER_REGISTRATION_ROLE = "Gamma"
+AUTH_USER_REGISTRATION_ROLE = 'Gamma'
 
 # Any other additional roles to be assigned to the user on top of the base role
 # Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
 # specify more than one role
-AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
+AUTH_USER_ADDITIONAL_ROLES = ['sql_lab']
 
 # This is where async UCR imports are stored temporarily
 SHARED_DIR = 'shared_dir'
@@ -74,10 +73,10 @@ sentry_sdk.init(
 _REDIS_URL = 'redis://localhost:6379/0'
 
 CACHE_CONFIG = {
-      'CACHE_TYPE': 'RedisCache',
-      'CACHE_DEFAULT_TIMEOUT': 300,
-      'CACHE_KEY_PREFIX': 'superset_',
-      'CACHE_REDIS_URL': _REDIS_URL
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_DEFAULT_TIMEOUT': 300,
+    'CACHE_KEY_PREFIX': 'superset_',
+    'CACHE_REDIS_URL': _REDIS_URL,
 }
 
 RESULTS_BACKEND = RedisCache(
@@ -118,14 +117,14 @@ class CeleryConfig:
 CELERY_CONFIG = CeleryConfig
 
 LANGUAGES = {
-   'en': {'flag':'us', 'name':'English'},
-   'pt': {'flag':'pt', 'name':'Portuguese'}
+    'en': {'flag': 'us', 'name': 'English'},
+    'pt': {'flag': 'pt', 'name': 'Portuguese'},
 }
 
 OAUTH2_TOKEN_EXPIRES_IN = {
     'client_credentials': 86400,
 }
-BASE_URL = "http://localhost:5000"
+BASE_URL = 'http://localhost:5000'
 
 # CommCare Analytics extensions
 FLASK_APP_MUTATOR = flask_app_mutator
