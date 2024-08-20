@@ -16,7 +16,7 @@ from flask_login import current_user
 from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
-from .const import HQ_DATABASE_NAME
+from .const import HQ_DATABASE_NAME, HQ_ROLE_NAME_MAPPING
 from .exceptions import DatabaseMissing
 
 DOMAIN_PREFIX = "hqdomain_"
@@ -136,13 +136,30 @@ class DomainSyncUtil:
     def sync_domain_role(self, domain):
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
+        role = self._create_domain_role(domain)
+        additional_roles = self._get_additional_domain_roles(domain)
+
+        current_user.roles = self.re_eval_roles(current_user.roles, role)
+        self.sm.get_session.add(current_user)
+        self.sm.get_session.commit()
+
+    def _create_domain_role(self, domain):
         self._ensure_schema_created(domain)
         permission = self._ensure_schema_perm_created(domain)
         role = self._ensure_domain_role_created(domain)
         self.sm.add_permission_role(role, permission)
-        current_user.roles = self.re_eval_roles(current_user.roles, role)
-        self.sm.get_session.add(current_user)
-        self.sm.get_session.commit()
+        return role
+
+    def _get_additional_domain_roles(self, domain):
+        domain_permissions, additional_roles_names = self._get_domain_access(domain)
+        domain_roles = self._create_domain_roles_from_permissions(domain, domain_permissions)
+
+        for role_name in additional_roles_names:
+            role = self._get_role_by_name(role_name)
+            if role:
+                domain_roles.append(role)
+
+        return domain_roles
 
     @staticmethod
     def _ensure_schema_created(domain):
@@ -163,6 +180,29 @@ class DomainSyncUtil:
     def _ensure_domain_role_created(self, domain):
         # This inbuilt method creates only if the role doesn't exist.
         return self.sm.add_role(get_role_name_for_domain(domain))
+
+    @staticmethod
+    def _get_domain_access(domain):
+        from .hq_url import user_domain_roles
+        from .hq_requests import HQRequest
+
+        hq_request = HQRequest(url=user_domain_roles(domain))
+        response = hq_request.get().json()
+
+        # Map between HQ and CCA
+        permissions = {
+            "can_write": response["permissions"]["can_edit"],
+            "can_read": response["permissions"]["can_view"],
+        }
+        return permissions, response["roles"]
+
+    def _create_domain_roles_from_permissions(self, domain, permissions):
+        # Todo: create domain permissions
+        return []
+
+    def _get_role_by_name(self, role_name):
+        superset_role_name = HQ_ROLE_NAME_MAPPING[role_name]
+        return self.sm.find_role(superset_role_name)
 
 
 @contextmanager
