@@ -120,25 +120,6 @@ class DomainSyncUtil:
     def __init__(self, security_manager):
         self.sm = security_manager
 
-    def _ensure_domain_role_created(self, domain):
-        # This inbuilt method creates only if the role doesn't exist.
-        return self.sm.add_role(get_role_name_for_domain(domain))
-
-    def _ensure_schema_perm_created(self, domain):
-        menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
-        permission = self.sm.find_permission_view_menu("schema_access", menu_name)
-        if not permission:
-            permission = self.sm.add_permission_view_menu("schema_access", menu_name)
-        return permission
-
-    @staticmethod
-    def _ensure_schema_created(domain):
-        schema_name = get_schema_name_for_domain(domain)
-        database = get_hq_database()
-        with database.get_sqla_engine_with_context() as engine:
-            if not engine.dialect.has_schema(engine, schema_name):
-                engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
-
     def re_eval_roles(self, existing_roles, new_domain_role):
         # Filter out other domain roles
         new_domain_roles = [
@@ -162,6 +143,26 @@ class DomainSyncUtil:
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+
+    @staticmethod
+    def _ensure_schema_created(domain):
+        schema_name = get_schema_name_for_domain(domain)
+        database = get_hq_database()
+        with database.get_sqla_engine_with_context() as engine:
+            if not engine.dialect.has_schema(engine, schema_name):
+                engine.execute(sqlalchemy.schema.CreateSchema(schema_name))
+
+    def _ensure_schema_perm_created(self, domain):
+        menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
+        permission = self.sm.find_permission_view_menu("schema_access", menu_name)
+
+        if not permission:
+            permission = self.sm.add_permission_view_menu("schema_access", menu_name)
+        return permission
+
+    def _ensure_domain_role_created(self, domain):
+        # This inbuilt method creates only if the role doesn't exist.
+        return self.sm.add_role(get_role_name_for_domain(domain))
 
 
 @contextmanager
