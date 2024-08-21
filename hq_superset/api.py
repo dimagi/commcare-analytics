@@ -60,16 +60,19 @@ class DataSetChangeAPI(BaseApi):
 
         try:
             request_json = json.loads(request.get_data(as_text=True))
-            change = DataSetChange(**request_json)
-            change.update_dataset()
-            return json_success('Dataset updated')
         except json.JSONDecodeError:
             return json_error_response(
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
+
+        try:
+            change = DataSetChange(**request_json)
+            change.update_dataset()
         except TableMissing:
             return json_error_response(
                 'Data source not found',
                 status=HTTPStatus.HTTP_404_NOT_FOUND.value,
             )
+        else:
+            return json_success('Dataset updated')
