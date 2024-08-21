@@ -76,4 +76,7 @@ class DataSetChangeAPI(BaseApi):
             )
 
         process_dataset_change.delay(request_json)
-        return json_success('Dataset change accepted')
+        return json_success(
+            'Dataset change accepted',
+            status=HTTPStatus.ACCEPTED.value,
+        )
