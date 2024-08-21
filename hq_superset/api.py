@@ -10,10 +10,9 @@ from superset.views.base import (
     json_error_response,
     json_success,
 )
-from .exceptions import TableMissing
 
-from .models import DataSetChange
 from .oauth2_server import authorization, require_oauth
+from .tasks import process_dataset_change
 
 
 class OAuth(BaseApi):
@@ -66,13 +65,5 @@ class DataSetChangeAPI(BaseApi):
                 status=HTTPStatus.BAD_REQUEST.value,
             )
 
-        try:
-            change = DataSetChange(**request_json)
-            change.update_dataset()
-        except TableMissing:
-            return json_error_response(
-                'Data source not found',
-                status=HTTPStatus.HTTP_404_NOT_FOUND.value,
-            )
-        else:
-            return json_success('Dataset updated')
+        process_dataset_change.delay(request_json)
+        return json_success('Dataset change accepted')
