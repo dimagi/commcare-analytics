@@ -10,10 +10,10 @@ from superset.views.base import (
     json_error_response,
     json_success,
 )
-from .exceptions import TableMissing
 
 from .models import DataSetChange
 from .oauth2_server import authorization, require_oauth
+from .tasks import process_dataset_change
 
 
 class OAuth(BaseApi):
@@ -60,16 +60,23 @@ class DataSetChangeAPI(BaseApi):
 
         try:
             request_json = json.loads(request.get_data(as_text=True))
-            change = DataSetChange(**request_json)
-            change.update_dataset()
-            return json_success('Dataset updated')
         except json.JSONDecodeError:
             return json_error_response(
                 'Invalid JSON syntax',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
-        except TableMissing:
+
+        try:
+            # ensure change request is parsable
+            DataSetChange(**request_json)
+        except:
             return json_error_response(
-                'Data source not found',
-                status=HTTPStatus.HTTP_404_NOT_FOUND.value,
+                'Could not parse change request',
+                status=HTTPStatus.BAD_REQUEST.value,
             )
+
+        process_dataset_change.delay(request_json)
+        return json_success(
+            'Dataset change accepted',
+            status=HTTPStatus.ACCEPTED.value,
+        )
