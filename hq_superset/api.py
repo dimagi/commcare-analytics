@@ -11,6 +11,7 @@ from superset.views.base import (
     json_success,
 )
 
+from .models import DataSetChange
 from .oauth2_server import authorization, require_oauth
 from .tasks import process_dataset_change
 
@@ -62,6 +63,15 @@ class DataSetChangeAPI(BaseApi):
         except json.JSONDecodeError:
             return json_error_response(
                 'Invalid JSON syntax',
+                status=HTTPStatus.BAD_REQUEST.value,
+            )
+
+        try:
+            # ensure change request is parsable
+            DataSetChange(**request_json)
+        except:
+            return json_error_response(
+                'Could not parse change request',
                 status=HTTPStatus.BAD_REQUEST.value,
             )
 
