@@ -8,3 +8,13 @@ HQ_ROLE_NAME_MAPPING = {
     "dataset_editor": "dataset_editor",
     "sql_lab": "sql_lab",
 }
+
+USER_VIEW_MENU_NAMES = [
+    "Chart",
+    "Dashboard",
+    "Dataset",
+]
+
+SCHEMA_ACCESS_PERMISSION = "schema_access"
+CAN_READ_PERMISSION = "can_read"
+CAN_WRITE_PERMISSION = "can_write"

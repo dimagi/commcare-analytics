@@ -16,7 +16,14 @@ from flask_login import current_user
 from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
-from .const import HQ_DATABASE_NAME, HQ_ROLE_NAME_MAPPING
+from .const import (
+    HQ_DATABASE_NAME,
+    HQ_ROLE_NAME_MAPPING,
+    SCHEMA_ACCESS_PERMISSION,
+    USER_VIEW_MENU_NAMES,
+    CAN_READ_PERMISSION,
+    CAN_WRITE_PERMISSION
+)
 from .exceptions import DatabaseMissing
 
 DOMAIN_PREFIX = "hqdomain_"
@@ -138,6 +145,7 @@ class DomainSyncUtil:
         #   assigns the role to the current_user
         role = self._create_domain_role(domain)
         additional_roles = self._get_additional_domain_roles(domain)
+        # todo: Test how role and additional_roles go together; should they?
 
         current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
@@ -150,17 +158,6 @@ class DomainSyncUtil:
         self.sm.add_permission_role(role, permission)
         return role
 
-    def _get_additional_domain_roles(self, domain):
-        domain_permissions, additional_roles_names = self._get_domain_access(domain)
-        domain_roles = self._create_domain_roles_from_permissions(domain, domain_permissions)
-
-        for role_name in additional_roles_names:
-            role = self._get_role_by_name(role_name)
-            if role:
-                domain_roles.append(role)
-
-        return domain_roles
-
     @staticmethod
     def _ensure_schema_created(domain):
         schema_name = get_schema_name_for_domain(domain)
@@ -171,15 +168,27 @@ class DomainSyncUtil:
 
     def _ensure_schema_perm_created(self, domain):
         menu_name = self.sm.get_schema_perm(get_hq_database(), get_schema_name_for_domain(domain))
-        permission = self.sm.find_permission_view_menu("schema_access", menu_name)
+        permission = self.sm.find_permission_view_menu(SCHEMA_ACCESS_PERMISSION, menu_name)
 
         if not permission:
-            permission = self.sm.add_permission_view_menu("schema_access", menu_name)
+            permission = self.sm.add_permission_view_menu(SCHEMA_ACCESS_PERMISSION, menu_name)
         return permission
 
     def _ensure_domain_role_created(self, domain):
         # This inbuilt method creates only if the role doesn't exist.
         return self.sm.add_role(get_role_name_for_domain(domain))
+
+    def _get_additional_domain_roles(self, domain):
+        domain_permissions, platform_roles_names = self._get_domain_access(domain)
+        if self._user_has_no_access(domain_permissions, platform_roles_names):
+            return []
+
+        additional_roles = self._get_platform_roles(platform_roles_names)
+        additional_roles.append(
+            self._get_user_domain_role_for_permissions(domain, domain_permissions)
+        )
+
+        return additional_roles
 
     @staticmethod
     def _get_domain_access(domain):
@@ -191,18 +200,62 @@ class DomainSyncUtil:
 
         # Map between HQ and CCA
         permissions = {
-            "can_write": response["permissions"]["can_edit"],
-            "can_read": response["permissions"]["can_view"],
+            CAN_WRITE_PERMISSION: response["permissions"]["can_edit"],
+            CAN_READ_PERMISSION: response["permissions"]["can_view"],
         }
         return permissions, response["roles"]
 
-    def _create_domain_roles_from_permissions(self, domain, permissions):
-        # Todo: create domain permissions
-        return []
+    @staticmethod
+    def _user_has_no_access(permissions: dict, platform_roles: list):
+        user_has_access = any([permissions[p] for p in permissions]) or platform_roles
+        return not user_has_access
 
-    def _get_role_by_name(self, role_name):
-        superset_role_name = HQ_ROLE_NAME_MAPPING[role_name]
-        return self.sm.find_role(superset_role_name)
+    def _get_platform_roles(self, roles_names):
+        platform_roles = []
+        for role_name in roles_names:
+            superset_role_name = HQ_ROLE_NAME_MAPPING.get(role_name, role_name)
+            role = self.sm.find_role(superset_role_name)
+            if role:
+                platform_roles.append(role)
+        return platform_roles
+
+    def _get_user_domain_role_for_permissions(self, domain, permissions):
+        role = self._get_domain_user_role(domain, current_user)
+
+        role_permissions = []
+        for view_menu_name in USER_VIEW_MENU_NAMES:
+            if permissions[CAN_READ_PERMISSION]:
+                role_permissions.extend(
+                    self._read_permissions_for_view_menu(view_menu_name)
+                )
+            if permissions[CAN_WRITE_PERMISSION]:
+                role_permissions.extend(
+                    self._write_permissions_for_view_menu(view_menu_name)
+                )
+
+        self.sm.set_role_permissions(role, role_permissions)
+        return role
+
+    def _get_domain_user_role(self, domain, user):
+        role_name = self._domain_user_role_name(domain, user)
+        role = self.sm.find_role(role_name)
+        if not role:
+            return self.sm.add_role(role_name)
+        return role
+
+    def _read_permissions_for_view_menu(self, view_menu_name):
+        # todo: should user have all the READ_ONLY_PERMISSION permissions set?
+        for permission in [CAN_READ_PERMISSION]:
+            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+
+    def _write_permissions_for_view_menu(self, view_menu_name):
+        # todo: should user be able to add/delete?
+        for permission in [CAN_WRITE_PERMISSION]:
+            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+
+    @staticmethod
+    def _domain_user_role_name(domain, user):
+        return f"{domain}_user_{user.id}"
 
 
 @contextmanager
