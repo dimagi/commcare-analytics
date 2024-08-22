@@ -41,7 +41,7 @@ require_oauth = ResourceProtector()
 def config_oauth2(app):
     authlib_logger = logging.getLogger('authlib')
     authlib_logger.addHandler(logging.StreamHandler(sys.stdout))
-    authlib_logger.setLevel(logging.DEBUG)
+    authlib_logger.setLevel(logging.INFO)
 
     authorization.init_app(app)
     authorization.register_grant(grants.ClientCredentialsGrant)
