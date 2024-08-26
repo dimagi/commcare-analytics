@@ -70,11 +70,6 @@ AUTH_USER_REGISTRATION = True
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
-# Any other additional roles to be assigned to the user on top of the base role
-# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
-# specify more than one role
-AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
-
 # This is where async UCR imports are stored temporarily
 SHARED_DIR = 'shared_dir'
 

@@ -127,27 +127,13 @@ class DomainSyncUtil:
     def __init__(self, security_manager):
         self.sm = security_manager
 
-    def re_eval_roles(self, existing_roles, new_domain_role):
-        # Filter out other domain roles
-        new_domain_roles = [
-            r
-            for r in existing_roles
-            if not r.name.startswith(DOMAIN_PREFIX)
-        ] + [new_domain_role]
-        additional_roles = [
-            self.sm.add_role(r)
-            for r in self.sm.appbuilder.app.config['AUTH_USER_ADDITIONAL_ROLES']
-        ]
-        return new_domain_roles + additional_roles
-
     def sync_domain_role(self, domain):
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
-        role = self._create_domain_role(domain)
+        domain_schema_role = self._create_domain_role(domain)
         additional_roles = self._get_additional_domain_roles(domain)
-        # todo: Test how role and additional_roles go together; should they?
+        current_user.roles = [domain_schema_role] + additional_roles
 
-        current_user.roles = self.re_eval_roles(current_user.roles, role)
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
 
