@@ -226,14 +226,17 @@ class DomainSyncUtil:
         return role
 
     def _read_permissions_for_view_menu(self, view_menu_name):
-        # todo: should user have all the READ_ONLY_PERMISSION permissions set?
-        for permission in [CAN_READ_PERMISSION]:
-            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+        read_permissions = self.sm.READ_ONLY_PERMISSION
+        return [
+            self.sm.add_permission_view_menu(permission_name, view_menu_name)
+            for permission_name in read_permissions
+        ]
 
     def _write_permissions_for_view_menu(self, view_menu_name):
-        # todo: should user be able to add/delete?
-        for permission in [CAN_WRITE_PERMISSION]:
-            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+        return [
+            self.sm.add_permission_view_menu(permission_name, view_menu_name)
+            for permission_name in [CAN_WRITE_PERMISSION]
+        ]
 
     @staticmethod
     def _domain_user_role_name(domain, user):
