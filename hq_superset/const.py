@@ -11,12 +11,24 @@ HQ_ROLE_NAME_MAPPING = {
     "sql_lab": "sql_lab",
 }
 
-USER_VIEW_MENU_NAMES = [
+HQ_CONFIGURABLE_VIEW_MENUS = [
     "Chart",
     "Dashboard",
     "Dataset",
+    "Datasource",
+    "Database",
+]
+
+MENU_ACCESS_VIEW_MENUS = [
+    "Select a Domain",
+    "Home",
+    "Data",
+    "Dashboards",
+    "Charts",
+    "Datasets",
 ]
 
 SCHEMA_ACCESS_PERMISSION = "schema_access"
 CAN_READ_PERMISSION = "can_read"
 CAN_WRITE_PERMISSION = "can_write"
+MENU_ACCESS_PERMISSIONS = "menu_access"

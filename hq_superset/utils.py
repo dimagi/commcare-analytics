@@ -19,11 +19,13 @@ from superset.utils.database import get_or_create_db
 from .const import (
     HQ_DATABASE_NAME,
     HQ_ROLE_NAME_MAPPING,
+    HQ_USER_ROLE_NAME,
     SCHEMA_ACCESS_PERMISSION,
-    USER_VIEW_MENU_NAMES,
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
-    HQ_USER_ROLE_NAME,
+    MENU_ACCESS_PERMISSIONS,
+    HQ_CONFIGURABLE_VIEW_MENUS,
+    MENU_ACCESS_VIEW_MENUS,
 )
 from .exceptions import DatabaseMissing
 
@@ -135,6 +137,9 @@ class DomainSyncUtil:
         hq_user_role = self._ensure_hq_user_role()
 
         domain_user_role, platform_roles = self._get_additional_user_roles(domain)
+        if not domain_user_role and not platform_roles:
+            return
+
         current_user.roles = [hq_user_role, domain_schema_role, domain_user_role] + platform_roles
 
         self.sm.get_session.add(current_user)
@@ -226,17 +231,17 @@ class DomainSyncUtil:
 
     def _get_user_domain_role_for_permissions(self, domain, permissions):
         role = self._get_domain_user_role(domain, current_user)
-
         role_permissions = []
-        for view_menu_name in USER_VIEW_MENU_NAMES:
-            if permissions[CAN_READ_PERMISSION]:
-                role_permissions.extend(
-                    self._read_permissions_for_view_menu(view_menu_name)
-                )
-            if permissions[CAN_WRITE_PERMISSION]:
-                role_permissions.extend(
-                    self._write_permissions_for_view_menu(view_menu_name)
-                )
+
+        if permissions[CAN_READ_PERMISSION]:
+            role_permissions.extend(
+                self._read_permissions_for_user
+            )
+
+        if permissions[CAN_WRITE_PERMISSION]:
+            role_permissions.extend(
+                self._write_permissions_for_user
+            )
 
         self.sm.set_role_permissions(role, role_permissions)
         return role
@@ -248,15 +253,37 @@ class DomainSyncUtil:
             return self.sm.add_role(role_name)
         return role
 
-    def _read_permissions_for_view_menu(self, view_menu_name):
-        # todo: should user have all the READ_ONLY_PERMISSION permissions set?
-        for permission in [CAN_READ_PERMISSION]:
-            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+    @property
+    def _read_permissions_for_user(self):
+        read_only_menu_permissions = self._get_view_menu_permissions(
+            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
+            permissions=self.sm.READ_ONLY_PERMISSION,
+        )
+        menu_access_views = self._get_view_menu_permissions(
+            view_menus=MENU_ACCESS_VIEW_MENUS,
+            permissions=[MENU_ACCESS_PERMISSIONS],
+        )
 
-    def _write_permissions_for_view_menu(self, view_menu_name):
-        # todo: should user be able to add/delete?
-        for permission in [CAN_WRITE_PERMISSION]:
-            yield self.sm.add_permission_view_menu(permission, view_menu_name)
+        return read_only_menu_permissions + menu_access_views
+
+    @property
+    def _write_permissions_for_user(self):
+        return self._get_view_menu_permissions(
+            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
+            permissions=[CAN_WRITE_PERMISSION],
+        )
+
+    def _get_view_menu_permissions(self, view_menus, permissions):
+        """
+        This method returns combinations for all 'view_menus' and 'permissions'
+        """
+        menus_permissions = []
+        for view_menu_name in view_menus:
+            menus_permissions.extend([
+                self.sm.add_permission_view_menu(permission_name, view_menu_name)
+                for permission_name in permissions
+            ])
+        return menus_permissions
 
     @staticmethod
     def _domain_user_role_name(domain, user):
