@@ -71,10 +71,10 @@ class TestDomainSyncUtil(SupersetTestCase):
             can_read=True,
             roles=["Gamma", "sql_lab", "dataset_editor"],
         )
-        roles = DomainSyncUtil(security_manager)._get_additional_domain_roles("test-domain")
+        domain_user_role, platform_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
 
-        expect_roles_names = self.PLATFORM_ROLE_NAMES + [domain_user_role_name]
-        assert sorted([role.name for role in roles]) == sorted(expect_roles_names)
+        assert domain_user_role.name == "test-domain_user_1"
+        assert sorted([role.name for role in platform_roles]) == sorted(self.PLATFORM_ROLE_NAMES)
 
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
@@ -90,10 +90,10 @@ class TestDomainSyncUtil(SupersetTestCase):
             can_read=True,
             roles=["sql_lab"],
         )
-        roles = DomainSyncUtil(security_manager)._get_additional_domain_roles("test-domain")
+        _, platform_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
 
-        expect_roles_names = ["sql_lab", domain_user_role_name]
-        assert sorted([role.name for role in roles]) == sorted(expect_roles_names)
+        assert len(platform_roles) == 1
+        assert platform_roles[0].name == "sql_lab"
 
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
@@ -109,10 +109,9 @@ class TestDomainSyncUtil(SupersetTestCase):
             can_read=False,
             roles=[],
         )
-        roles = DomainSyncUtil(security_manager)._get_additional_domain_roles("test-domain")
-
-        expect_roles_names = []
-        assert roles == expect_roles_names
+        domain_user_role, platform_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
+        assert domain_user_role is None
+        assert platform_roles == []
 
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
@@ -129,10 +128,9 @@ class TestDomainSyncUtil(SupersetTestCase):
             can_read=True,
             roles=["sql_lab"],
         )
-        roles = DomainSyncUtil(security_manager)._get_additional_domain_roles("test-domain")
+        _, platform_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
 
-        expect_roles_names = ["sql_lab", domain_user_role_name]
-        assert sorted([role.name for role in roles]) == sorted(expect_roles_names)
+        assert platform_roles[0].name == "sql_lab"
 
         # user has no access
         get_domain_access_mock.return_value = self._to_permissions_response(
@@ -140,10 +138,9 @@ class TestDomainSyncUtil(SupersetTestCase):
             can_read=False,
             roles=[],
         )
-        roles = DomainSyncUtil(security_manager)._get_additional_domain_roles("test-domain")
-
-        expect_roles_names = []
-        assert roles == expect_roles_names
+        domain_user_role, platform_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
+        assert domain_user_role is None
+        assert platform_roles == []
 
     def _ensure_platform_roles_exist(self, sm):
         for role_name in self.PLATFORM_ROLE_NAMES:

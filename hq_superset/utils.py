@@ -131,8 +131,8 @@ class DomainSyncUtil:
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
         domain_schema_role = self._create_domain_role(domain)
-        additional_roles = self._get_additional_domain_roles(domain)
-        current_user.roles = [domain_schema_role] + additional_roles
+        domain_user_role, platform_roles = self._get_additional_user_roles(domain)
+        current_user.roles = [domain_schema_role, domain_user_role] + platform_roles
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
@@ -164,17 +164,13 @@ class DomainSyncUtil:
         # This inbuilt method creates only if the role doesn't exist.
         return self.sm.add_role(get_role_name_for_domain(domain))
 
-    def _get_additional_domain_roles(self, domain):
+    def _get_additional_user_roles(self, domain):
         domain_permissions, platform_roles_names = self._get_domain_access(domain)
         if self._user_has_no_access(domain_permissions, platform_roles_names):
-            return []
+            return None, []
 
-        additional_roles = self._get_platform_roles(platform_roles_names)
-        additional_roles.append(
-            self._get_user_domain_role_for_permissions(domain, domain_permissions)
-        )
-
-        return additional_roles
+        domain_user_role = self._get_user_domain_role_for_permissions(domain, domain_permissions)
+        return domain_user_role, self._get_platform_roles(platform_roles_names)
 
     @staticmethod
     def _get_domain_access(domain):
