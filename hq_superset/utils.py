@@ -22,7 +22,8 @@ from .const import (
     SCHEMA_ACCESS_PERMISSION,
     USER_VIEW_MENU_NAMES,
     CAN_READ_PERMISSION,
-    CAN_WRITE_PERMISSION
+    CAN_WRITE_PERMISSION,
+    HQ_USER_ROLE_NAME,
 )
 from .exceptions import DatabaseMissing
 
@@ -131,11 +132,33 @@ class DomainSyncUtil:
         # This creates DB schema, role and schema permissions for the domain and
         #   assigns the role to the current_user
         domain_schema_role = self._create_domain_role(domain)
+        hq_user_role = self._ensure_hq_user_role()
+
         domain_user_role, platform_roles = self._get_additional_user_roles(domain)
-        current_user.roles = [domain_schema_role, domain_user_role] + platform_roles
+        current_user.roles = [hq_user_role, domain_schema_role, domain_user_role] + platform_roles
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+
+    def _ensure_hq_user_role(self):
+        """
+        This role is the bare minimum required for a user to be able to have an account on
+        superset
+        """
+        hq_user_role = self.sm.add_role(HQ_USER_ROLE_NAME)
+
+        hq_user_base_permissions = [
+            self.sm.add_permission_view_menu("can_profile", "Superset"),
+            self.sm.add_permission_view_menu("can_recent_activity", "Log"),
+        ]
+        self.sm.set_role_permissions(hq_user_role, hq_user_base_permissions)
+
+        if hq_user_role not in current_user.roles:
+            current_user.roles = current_user.roles + [hq_user_role]
+            self.sm.get_session.add(current_user)
+            self.sm.get_session.commit()
+
+        return hq_user_role
 
     def _create_domain_role(self, domain):
         self._ensure_schema_created(domain)

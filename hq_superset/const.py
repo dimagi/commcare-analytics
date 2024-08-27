@@ -3,6 +3,8 @@ HQ_DATABASE_NAME = "HQ Data"
 
 OAUTH2_DATABASE_NAME = "oauth2-server-data"
 
+HQ_USER_ROLE_NAME = "hq_user"
+
 HQ_ROLE_NAME_MAPPING = {
     "gamma": "Gamma",
     "dataset_editor": "dataset_editor",
