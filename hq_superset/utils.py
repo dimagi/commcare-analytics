@@ -147,10 +147,12 @@ class DomainSyncUtil:
         superset
         """
         hq_user_role = self.sm.add_role(HQ_USER_ROLE_NAME)
-        profile_permission = self.sm.add_permission_view_menu("can_profile", "Superset")
 
-        if hq_user_role.permissions != [profile_permission]:
-            self.sm.set_role_permissions(hq_user_role, [profile_permission])
+        hq_user_base_permissions = [
+            self.sm.add_permission_view_menu("can_profile", "Superset"),
+            self.sm.add_permission_view_menu("can_recent_activity", "Log"),
+        ]
+        self.sm.set_role_permissions(hq_user_role, hq_user_base_permissions)
 
         if hq_user_role not in current_user.roles:
             current_user.roles = current_user.roles + [hq_user_role]
