@@ -242,5 +242,11 @@ class SelectDomainView(BaseSupersetView):
             )
             return redirect(url_for('SelectDomainView.list', next=request.url))
         response.set_cookie('hq_domain', hq_domain)
-        DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
+        if not DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain):
+            flash(
+                "You don't have the necessary HQ permissions to access this domain.",
+                'warning',
+            )
+            return redirect(url_for('SelectDomainView.list', next=request.url))
+
         return response
