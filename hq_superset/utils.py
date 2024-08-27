@@ -26,6 +26,7 @@ from .const import (
     MENU_ACCESS_PERMISSIONS,
     HQ_CONFIGURABLE_VIEW_MENUS,
     MENU_ACCESS_VIEW_MENUS,
+    WRITE_PERMISSIONS,
 )
 from .exceptions import DatabaseMissing
 
@@ -271,7 +272,7 @@ class DomainSyncUtil:
     def _write_permissions_for_user(self):
         return self._get_view_menu_permissions(
             view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
-            permissions=[CAN_WRITE_PERMISSION],
+            permissions=WRITE_PERMISSIONS,
         )
 
     def _get_view_menu_permissions(self, view_menus, permissions):
