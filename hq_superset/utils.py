@@ -19,12 +19,13 @@ from superset.utils.database import get_or_create_db
 from .const import (
     HQ_DATABASE_NAME,
     HQ_ROLE_NAME_MAPPING,
+    HQ_USER_ROLE_NAME,
     SCHEMA_ACCESS_PERMISSION,
-    READ_ONLY_MENU_NAMES,
-    EDIT_MENU_NAMES,
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
-    HQ_USER_ROLE_NAME,
+    MENU_ACCESS_PERMISSIONS,
+    HQ_CONFIGURABLE_VIEW_MENUS,
+    MENU_ACCESS_VIEW_MENUS,
 )
 from .exceptions import DatabaseMissing
 
@@ -136,6 +137,9 @@ class DomainSyncUtil:
         hq_user_role = self._ensure_hq_user_role()
 
         domain_user_role, platform_roles = self._get_additional_user_roles(domain)
+        if not domain_user_role and not platform_roles:
+            return
+
         current_user.roles = [hq_user_role, domain_schema_role, domain_user_role] + platform_roles
 
         self.sm.get_session.add(current_user)
@@ -251,15 +255,21 @@ class DomainSyncUtil:
 
     @property
     def _read_permissions_for_user(self):
-        return self._get_view_menu_permissions(
-            view_menus=READ_ONLY_MENU_NAMES,
+        read_only_menu_permissions = self._get_view_menu_permissions(
+            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
             permissions=self.sm.READ_ONLY_PERMISSION,
         )
+        menu_access_views = self._get_view_menu_permissions(
+            view_menus=MENU_ACCESS_VIEW_MENUS,
+            permissions=[MENU_ACCESS_PERMISSIONS],
+        )
+
+        return read_only_menu_permissions + menu_access_views
 
     @property
     def _write_permissions_for_user(self):
         return self._get_view_menu_permissions(
-            view_menus=EDIT_MENU_NAMES,
+            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
             permissions=[CAN_WRITE_PERMISSION],
         )
 
