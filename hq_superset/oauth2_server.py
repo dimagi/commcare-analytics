@@ -18,14 +18,13 @@ from .models import OAuth2Client, OAuth2Token, db
 
 def save_token(token: dict, request: FlaskOAuth2Request) -> None:
     client = request.client
-    client.revoke_tokens()
 
     token = OAuth2Token(
         client_id=client.client_id,
         token_type=token['token_type'],
         access_token=token['access_token'],
         scope=client.domain,
-        expires_in=0,  # Token does not expire
+        expires_in=10, # 10 Seconds
     )
     db.session.add(token)
     db.session.commit()
@@ -42,7 +41,7 @@ require_oauth = ResourceProtector()
 def config_oauth2(app):
     authlib_logger = logging.getLogger('authlib')
     authlib_logger.addHandler(logging.StreamHandler(sys.stdout))
-    authlib_logger.setLevel(logging.DEBUG)
+    authlib_logger.setLevel(logging.INFO)
 
     authorization.init_app(app)
     authorization.register_grant(grants.ClientCredentialsGrant)
