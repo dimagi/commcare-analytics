@@ -11,10 +11,20 @@ HQ_ROLE_NAME_MAPPING = {
     "sql_lab": "sql_lab",
 }
 
-USER_VIEW_MENU_NAMES = [
+READ_ONLY_MENU_NAMES = [
     "Chart",
     "Dashboard",
     "Dataset",
+    "Datasource",
+    "Database",
+]
+
+EDIT_MENU_NAMES = [
+    "Chart",
+    "Dashboard",
+    "Dataset",
+    "Datasource",
+    "Database",
 ]
 
 SCHEMA_ACCESS_PERMISSION = "schema_access"
