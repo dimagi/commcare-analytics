@@ -138,12 +138,13 @@ class DomainSyncUtil:
 
         domain_user_role, platform_roles = self._get_additional_user_roles(domain)
         if not domain_user_role and not platform_roles:
-            return
+            return False
 
         current_user.roles = [hq_user_role, domain_schema_role, domain_user_role] + platform_roles
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+        return True
 
     def _ensure_hq_user_role(self):
         """
