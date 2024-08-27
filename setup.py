@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='hq_superset',
-    version='0.3.4',
+    version='0.3.5',
     description='CommCare HQ Superset Integration',
     license='Apache2',
     author='Dimagi Inc.',
