@@ -11,22 +11,30 @@ HQ_ROLE_NAME_MAPPING = {
     "sql_lab": "sql_lab",
 }
 
-HQ_CONFIGURABLE_VIEW_MENUS = [
+BASE_USER_VIEW_MENUS = {
     "Chart",
-    "Dashboard",
     "Dataset",
+    "Dashboard",
     "Datasource",
-    "Database",
-]
+}
 
-MENU_ACCESS_VIEW_MENUS = [
+READ_ONLY_VIEW_MENUS = {
+    "OpenApi",
+    "Explore",
+} | BASE_USER_VIEW_MENUS
+
+WRITE_VIEW_MENUS = {
+    "ExploreFormDataRestApi",
+} | BASE_USER_VIEW_MENUS
+
+MENU_ACCESS_VIEW_MENUS = {
     "Select a Domain",
     "Home",
     "Data",
     "Dashboards",
     "Charts",
     "Datasets",
-]
+}
 
 SCHEMA_ACCESS_PERMISSION = "schema_access"
 MENU_ACCESS_PERMISSIONS = "menu_access"
@@ -36,9 +44,9 @@ CAN_EDIT_PERMISSION = "can_edit"
 CAN_ADD_PERMISSION = "can_add"
 CAN_DELETE_PERMISSIONS = "can_delete"
 
-WRITE_PERMISSIONS = [
+WRITE_PERMISSIONS = {
     CAN_WRITE_PERMISSION,
     CAN_ADD_PERMISSION,
     CAN_DELETE_PERMISSIONS,
     CAN_EDIT_PERMISSION,
-]
+}
