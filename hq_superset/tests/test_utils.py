@@ -2,7 +2,7 @@ import doctest
 from unittest.mock import patch
 
 from hq_superset.utils import get_column_dtypes, DomainSyncUtil
-from hq_superset.const import USER_VIEW_MENU_NAMES
+from hq_superset.const import READ_ONLY_MENU_PERMISSIONS, WRITE_MENU_PERMISSIONS
 from .base_test import SupersetTestCase
 from .const import TEST_DATASOURCE
 
@@ -32,30 +32,44 @@ class TestDomainSyncUtil(SupersetTestCase):
     PLATFORM_ROLE_NAMES = ["Gamma", "sql_lab", "dataset_editor"]
 
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
-    def test_get_user_domain_role_for_permissions(self, domain_user_role_name_mock):
+    def test_get_user_domain_role_for_permissions_read_only(self, domain_user_role_name_mock):
         role_name = "test-domain_user_1"
         domain_user_role_name_mock.return_value = role_name
-
-        permissions_test_cases = [
-            {"can_write": True, "can_read": True},
-            {"can_write": True, "can_read": False},
-            {"can_write": False, "can_read": False},
-            {"can_write": False, "can_read": True},
-        ]
         security_manager = self.app.appbuilder.sm
 
-        for permissions in permissions_test_cases:
-            role = DomainSyncUtil(security_manager)._get_user_domain_role_for_permissions(
-                "test-domain", permissions
-            )
+        role = DomainSyncUtil(security_manager)._get_user_domain_role_for_permissions(
+            "test-domain", {"can_read": True, "can_write": False}
+        )
+        assert role.name == role_name
 
-            for view_menu_name in USER_VIEW_MENU_NAMES:
-                for permission_name in ["can_write", "can_read"]:
-                    pv = security_manager.find_permission_view_menu(permission_name, view_menu_name)
-                    if permissions[permission_name]:
-                        assert pv in role.permissions
-                    else:
-                        assert pv not in role.permissions
+        expected_permissions_count = 0
+        for view_menu_name, permissions_names in READ_ONLY_MENU_PERMISSIONS.items():
+            for permission_name in permissions_names:
+                expected_permissions_count += 1
+                pv = security_manager.find_permission_view_menu(permission_name, view_menu_name)
+                assert pv in role.permissions
+
+        assert len(role.permissions) == expected_permissions_count
+
+    @patch.object(DomainSyncUtil, "_domain_user_role_name")
+    def test_get_user_domain_role_for_permissions_write_only(self, domain_user_role_name_mock):
+        role_name = "test-domain_user_1"
+        domain_user_role_name_mock.return_value = role_name
+        security_manager = self.app.appbuilder.sm
+
+        role = DomainSyncUtil(security_manager)._get_user_domain_role_for_permissions(
+            "test-domain", {"can_read": False, "can_write": True}
+        )
+        assert role.name == role_name
+
+        expected_permissions_count = 0
+        for view_menu_name, permissions_names in WRITE_MENU_PERMISSIONS.items():
+            for permission_name in permissions_names:
+                expected_permissions_count += 1
+                pv = security_manager.find_permission_view_menu(permission_name, view_menu_name)
+                assert pv in role.permissions
+
+        assert len(role.permissions) == expected_permissions_count
 
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
