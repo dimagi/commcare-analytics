@@ -11,42 +11,58 @@ HQ_ROLE_NAME_MAPPING = {
     "sql_lab": "sql_lab",
 }
 
-BASE_USER_VIEW_MENUS = {
-    "Chart",
-    "Dataset",
-    "Dashboard",
-    "Datasource",
-}
-
-READ_ONLY_VIEW_MENUS = {
-    "OpenApi",
-    "Explore",
-} | BASE_USER_VIEW_MENUS
-
-WRITE_VIEW_MENUS = {
-    "ExploreFormDataRestApi",
-} | BASE_USER_VIEW_MENUS
-
-MENU_ACCESS_VIEW_MENUS = {
-    "Select a Domain",
-    "Home",
-    "Data",
-    "Dashboards",
-    "Charts",
-    "Datasets",
-}
-
+# Permissions
 SCHEMA_ACCESS_PERMISSION = "schema_access"
-MENU_ACCESS_PERMISSIONS = "menu_access"
+MENU_ACCESS_PERMISSION = "menu_access"
+
+CAN_SHOW_PERMISSION = "can_show"
+CAN_LIST_PERMISSION = "can_list"
+CAN_GET_PERMISSION = "can_get"
+CAN_EXTERNAL_METADATA_PERMISSION = "can_external_metadata"
+CAN_EXTERNAL_METADATA_BY_NAME_PERMISSION = "can_external_metadata_by_name"
 CAN_READ_PERMISSION = "can_read"
+
+READ_ONLY_PERMISSIONS = [
+    CAN_SHOW_PERMISSION,
+    CAN_LIST_PERMISSION,
+    CAN_GET_PERMISSION,
+    CAN_EXTERNAL_METADATA_PERMISSION,
+    CAN_EXTERNAL_METADATA_BY_NAME_PERMISSION,
+    CAN_READ_PERMISSION,
+]
+
 CAN_WRITE_PERMISSION = "can_write"
 CAN_EDIT_PERMISSION = "can_edit"
 CAN_ADD_PERMISSION = "can_add"
 CAN_DELETE_PERMISSIONS = "can_delete"
 
-WRITE_PERMISSIONS = {
+WRITE_PERMISSIONS = [
     CAN_WRITE_PERMISSION,
+    CAN_EDIT_PERMISSION,
     CAN_ADD_PERMISSION,
     CAN_DELETE_PERMISSIONS,
-    CAN_EDIT_PERMISSION,
+]
+
+READ_ONLY_MENU_PERMISSIONS = {
+    "Chart": READ_ONLY_PERMISSIONS,
+    "Dataset": READ_ONLY_PERMISSIONS,
+    "Dashboard": READ_ONLY_PERMISSIONS,
+    "Datasource": READ_ONLY_PERMISSIONS,
+    "OpenApi": READ_ONLY_PERMISSIONS,
+    "Explore": READ_ONLY_PERMISSIONS,
+    "Select a Domain": [MENU_ACCESS_PERMISSION],
+    "Home": [MENU_ACCESS_PERMISSION],
+    "Data": [MENU_ACCESS_PERMISSION],
+    "Dashboards": [MENU_ACCESS_PERMISSION],
+    "Charts": [MENU_ACCESS_PERMISSION],
+    "Datasets": [MENU_ACCESS_PERMISSION],
+    "ExploreFormDataRestApi": [CAN_READ_PERMISSION]
+}
+
+WRITE_MENU_PERMISSIONS = {
+    "Chart": WRITE_PERMISSIONS,
+    "Dataset": WRITE_PERMISSIONS,
+    "Dashboard": WRITE_PERMISSIONS,
+    "Datasource": WRITE_PERMISSIONS,
+    "ExploreFormDataRestApi": [CAN_WRITE_PERMISSION],
 }

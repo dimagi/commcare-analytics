@@ -23,11 +23,8 @@ from .const import (
     SCHEMA_ACCESS_PERMISSION,
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
-    MENU_ACCESS_PERMISSIONS,
-    READ_ONLY_VIEW_MENUS,
-    WRITE_VIEW_MENUS,
-    MENU_ACCESS_VIEW_MENUS,
-    WRITE_PERMISSIONS,
+    READ_ONLY_MENU_PERMISSIONS,
+    WRITE_MENU_PERMISSIONS,
 )
 from .exceptions import DatabaseMissing
 
@@ -258,33 +255,25 @@ class DomainSyncUtil:
 
     @property
     def _read_permissions_for_user(self):
-        read_only_menu_permissions = self._get_view_menu_permissions(
-            view_menus=READ_ONLY_VIEW_MENUS,
-            permissions=self.sm.READ_ONLY_PERMISSION,
+        return self._get_view_menu_permissions(
+            menu_permissions=READ_ONLY_MENU_PERMISSIONS
         )
-        menu_access_views = self._get_view_menu_permissions(
-            view_menus=MENU_ACCESS_VIEW_MENUS,
-            permissions=[MENU_ACCESS_PERMISSIONS],
-        )
-
-        return read_only_menu_permissions + menu_access_views
 
     @property
     def _write_permissions_for_user(self):
         return self._get_view_menu_permissions(
-            view_menus=WRITE_VIEW_MENUS,
-            permissions=WRITE_PERMISSIONS,
+            menu_permissions=WRITE_MENU_PERMISSIONS
         )
 
-    def _get_view_menu_permissions(self, view_menus, permissions):
+    def _get_view_menu_permissions(self, menu_permissions):
         """
-        This method returns combinations for all 'view_menus' and 'permissions'
+        This method returns combinations for all view menus and permissions
         """
         menus_permissions = []
-        for view_menu_name in view_menus:
+        for view_menu_name, permissions_names in menu_permissions.items():
             menus_permissions.extend([
                 self.sm.add_permission_view_menu(permission_name, view_menu_name)
-                for permission_name in permissions
+                for permission_name in permissions_names
             ])
         return menus_permissions
 
