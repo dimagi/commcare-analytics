@@ -24,7 +24,8 @@ from .const import (
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
     MENU_ACCESS_PERMISSIONS,
-    HQ_CONFIGURABLE_VIEW_MENUS,
+    READ_ONLY_VIEW_MENUS,
+    WRITE_VIEW_MENUS,
     MENU_ACCESS_VIEW_MENUS,
     WRITE_PERMISSIONS,
 )
@@ -258,7 +259,7 @@ class DomainSyncUtil:
     @property
     def _read_permissions_for_user(self):
         read_only_menu_permissions = self._get_view_menu_permissions(
-            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
+            view_menus=READ_ONLY_VIEW_MENUS,
             permissions=self.sm.READ_ONLY_PERMISSION,
         )
         menu_access_views = self._get_view_menu_permissions(
@@ -271,7 +272,7 @@ class DomainSyncUtil:
     @property
     def _write_permissions_for_user(self):
         return self._get_view_menu_permissions(
-            view_menus=HQ_CONFIGURABLE_VIEW_MENUS,
+            view_menus=WRITE_VIEW_MENUS,
             permissions=WRITE_PERMISSIONS,
         )
 
