@@ -130,10 +130,19 @@ class DomainSyncUtil:
         self.sm = security_manager
 
     def sync_domain_role(self, domain):
-        # This creates DB schema, role and schema permissions for the domain and
-        #   assigns the role to the current_user
-        domain_schema_role = self._create_domain_role(domain)
+        """
+        This method ensures the roles are set up correctly for a particular domain user.
+
+        The user gets assigned at least 3 roles in order to function on any domain:
+        1. hq_user_role: gives access to superset platform
+        2. domain_schema_role: restricts user access to specific domain schema
+        3. domain_user_role: restricts access for particular user on domain in accordance with how the permissions
+        are defined on CommCare HQ.
+
+        Any additional roles defined on CommCare HQ will also be assigned to the user.
+        """
         hq_user_role = self._ensure_hq_user_role()
+        domain_schema_role = self._create_domain_role(domain)
 
         domain_user_role, platform_roles = self._get_additional_user_roles(domain)
         if not domain_user_role and not platform_roles:
