@@ -214,15 +214,26 @@ class DomainSyncUtil:
         from .hq_url import user_domain_roles
         from .hq_requests import HQRequest
 
-        hq_request = HQRequest(url=user_domain_roles(domain))
-        response = hq_request.get().json()
+        hq_request = HQRequest(url=user_domain_roles(current_user.username, domain))
+        response = hq_request.get()
+
+        if response.status_code != 200:
+            return {}, []
+
+        response_data = response.json()
+        if not response_data['objects']:
+            return {}, []
+
+        user = response_data['objects'][0]
+        hq_permissions = user['permissions']
+        roles = user['roles'] or []
 
         # Map between HQ and CCA
         permissions = {
-            CAN_WRITE_PERMISSION: response["permissions"]["can_edit"],
-            CAN_READ_PERMISSION: response["permissions"]["can_view"],
+            CAN_WRITE_PERMISSION: hq_permissions["can_edit"],
+            CAN_READ_PERMISSION: hq_permissions["can_view"],
         }
-        return permissions, response["roles"]
+        return permissions, roles
 
     @staticmethod
     def _user_has_no_access(permissions: dict, platform_roles: list):
