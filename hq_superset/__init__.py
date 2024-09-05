@@ -1,6 +1,6 @@
 import os
-
 import jinja2
+import click
 from flask import Blueprint
 
 
@@ -29,6 +29,8 @@ def flask_app_mutator(app):
     # it. So I've run out of better options. (Norman 2024-03-13)
     os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+    register_commands(app)
+
 
 def override_jinja2_template_loader(app):
     # Allow loading templates from the templates directory in this project as well
@@ -49,3 +51,27 @@ def override_jinja2_template_loader(app):
     ))
     blueprint = Blueprint('Static', __name__, static_url_path='/static/images', static_folder=images_path)
     app.register_blueprint(blueprint)
+
+
+def register_commands(app):
+    @app.cli.command("subscribe-datasources")
+    @click.argument("superset_base_url")
+    @click.argument("hq_base_url")
+    @click.argument("data_sources_file_path")
+    @click.argument("username")
+    @click.argument("apikey")
+    def subscribe_all_data_sources(superset_base_url, hq_base_url, data_sources_file_path, username, apikey):
+        """
+        This command takes all data sources in the data_sources_file_path and subscribe to their changes on HQ.
+
+        Parameters:
+            superset_base_url: The base URL of the superset instance. This is used to construct the callback
+                URL for publishing the changes to.
+            hq_base_url: The base URL of the HQ server containing the data sources you'd like to subscribe to.
+            data_sources_file_path: Path to file containing JSON formatted data source IDs by domain,
+                e.g. {"domain": ["data_source_id"]}
+            username: An HQ superuser username; used for authorization.
+            apikey: An HQ superuser api key; used for authorization.
+        """
+        from hq_superset.commands import subscribe_data_sources
+        subscribe_data_sources(superset_base_url, hq_base_url, data_sources_file_path, username, apikey)
