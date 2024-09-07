@@ -63,6 +63,12 @@ OAUTH_PROVIDERS = [
     }
 ]
 
+# override expiry time for a specific grant type by
+# setting this config
+OAUTH2_TOKEN_EXPIRES_IN = {
+    # 'client_credentials': 3600  # seconds
+}
+
 # Will allow user self registration, allowing to create Flask users from
 # Authorized User
 AUTH_USER_REGISTRATION = True
