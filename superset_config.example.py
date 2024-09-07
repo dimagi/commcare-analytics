@@ -63,6 +63,10 @@ OAUTH_PROVIDERS = [
     }
 ]
 
+OAUTH2_TOKEN_EXPIRES_IN = {
+    'client_credentials': 3600 # seconds; override default 86400 which is 10 day to 1 hour
+}
+
 # Will allow user self registration, allowing to create Flask users from
 # Authorized User
 AUTH_USER_REGISTRATION = True
