@@ -1,9 +1,10 @@
 import os
 
 from superset.extensions import celery_app
+from sqlalchemy import delete
 
 from .exceptions import TableMissing
-from .models import DataSetChange
+from .models import DataSetChange, OAuth2Token, db
 from .services import AsyncImportHelper, refresh_hq_datasource
 
 
@@ -26,3 +27,13 @@ def process_dataset_change(request_json):
         change.update_dataset()
     except TableMissing:
         pass
+
+
+# ToDo: schedule this to run once every week/day
+def delete_revoked_tokens():
+    stmt = (
+        delete(OAuth2Token)
+        .where(OAuth2Token.access_token_revoked_at != 0)
+    )
+    db.session.execute(stmt)
+    db.session.commit()
