@@ -214,7 +214,7 @@ class DomainSyncUtil:
         from .hq_url import user_domain_roles
         from .hq_requests import HQRequest
 
-        hq_request = HQRequest(url=user_domain_roles(current_user.username, domain))
+        hq_request = HQRequest(url=user_domain_roles(domain))
         response = hq_request.get()
 
         if response.status_code != 200:
