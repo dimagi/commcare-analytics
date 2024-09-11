@@ -60,7 +60,7 @@ def register_commands(app):
     @click.argument("data_sources_file_path")
     @click.argument("username")
     @click.argument("apikey")
-    def subscribe_all_data_sources(superset_base_url, hq_base_url, data_sources_file_path, username, apikey):
+    def subscribe_data_sources(superset_base_url, hq_base_url, data_sources_file_path, username, apikey):
         """
         This command takes all data sources in the data_sources_file_path and subscribe to their changes on HQ.
 
