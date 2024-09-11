@@ -24,7 +24,9 @@ def subscribe_data_sources(superset_base_url, hq_base_url, data_sources_file_pat
 
     failed_data_sources_by_id = {}
     for domain, datasource_ids in data_sources_by_domain().items():
+        print(f"Handling domain: {domain}")
         for datasource_id in datasource_ids:
+            print(f"Syncing datasource: {datasource_id}")
             client = _get_or_create_oauth2client(domain)
 
             endpoint = datasource_subscribe(domain, datasource_id)
