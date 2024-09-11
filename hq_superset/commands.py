@@ -22,7 +22,7 @@ def subscribe_data_sources(superset_base_url, hq_base_url, data_sources_file_pat
     webhook_url = f"{superset_base_url}/change/"
     token_url = f"{superset_base_url}/token"
 
-    failed_data_source_ids = {}
+    failed_data_sources_by_id = {}
     for domain, datasource_ids in data_sources_by_domain().items():
         for datasource_id in datasource_ids:
             client = _get_or_create_oauth2client(domain)
@@ -43,9 +43,11 @@ def subscribe_data_sources(superset_base_url, hq_base_url, data_sources_file_pat
             )
 
             if response.status_code != 201:
-                failed_data_source_ids[datasource_id] = response.content
+                failed_data_sources_by_id[datasource_id] = response
 
     print("Done!")
-    if failed_data_source_ids:
-        print("The following data sources failed to subscribe")
-        print(failed_data_source_ids)
+    if failed_data_sources_by_id:
+        print("Some data sources failed to subscribe. See subscribe-datasources.errors for more details")
+        with open("subscribe-datasources.errors", 'w') as file:
+            for ds_id, response in failed_data_sources_by_id.items():
+                file.write(f"ID: {ds_id} :: Status Code: {response.status_code} :: Reason: {response.content}\n")
