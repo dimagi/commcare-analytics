@@ -17,7 +17,7 @@ very complicated or impossible to do inside HQ Superset.
 
 In this spirit, 
 - if the change is specific to CommCare HQ, try to implement the
-  customization in [HQ Superset](https://github.com/dimagi/hq_superset).
+  customization in [Commcare Analytics](https://github.com/dimagi/hq_superset).
 - If the change is not specific to CommCare HQ and is useful to outside
   users, try to create a pull request against the upstream
   [Apache Superset](https://github.com/apache/superset) repo.
@@ -289,6 +289,10 @@ the build instructions have remained the same before proceeding.
   cd superset-frontend/
   npm ci && npm run build
   ```
+
+> Note: If you see a warning/error for npm and node versions, you can use a tool like
+[nvm](https://github.com/nvm-sh/nvm) to install and use the correct version.
+
 - Build translations
   ```
   cd ../
@@ -306,7 +310,13 @@ the build instructions have remained the same before proceeding.
   ```
   twine upload dist/apache-superset-${latest-dimagi-version}.tar.gz
   ```
-  You can refer to 1Password for the PyPI credentials.
+  You can refer to 1Password for the PyPI API token for dimagi-superset.
 
 You should now be able to use this package inside
 https://github.com/dimagi/hq_superset by referring to the release tag.
+
+> Note: <ul><li>pypi package follows the versioning scheme as described [here](https://packaging.python.org/en/latest/discussions/versioning/).
+We make any initial customizations on top of apache upstream version and
+then make a release to pypi with the same version number. For e.g. customizations were made on the upstream version `3.1.0` and this was released to dimagi-superset pypi as `3.1.0`.<li>If any additional customizations are needed on top of initial versions, we are using the post release for numbering 
+i.e. `.post<>` as the suffix with N as an incrementing integer.
+It is acknowledged that using the post release is not the best way, however it was chosen to keep the version in sync to the upstream apache-superset version.</ul>
