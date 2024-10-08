@@ -315,8 +315,18 @@ the build instructions have remained the same before proceeding.
 You should now be able to use this package inside
 https://github.com/dimagi/hq_superset by referring to the release tag.
 
-> Note: <ul><li>pypi package follows the versioning scheme as described [here](https://packaging.python.org/en/latest/discussions/versioning/).
-We make any initial customizations on top of apache upstream version and
-then make a release to pypi with the same version number. For e.g. customizations were made on the upstream version `3.1.0` and this was released to dimagi-superset pypi as `3.1.0`.<li>If any additional customizations are needed on top of initial versions, we are using the post release for numbering 
-i.e. `.post<>` as the suffix with N as an incrementing integer.
-It is acknowledged that using the post release is not the best way, however it was chosen to keep the version in sync to the upstream apache-superset version.</ul>
+> Note:
+> 
+> * PyPI package follows the versioning scheme as described
+>   [here](https://packaging.python.org/en/latest/discussions/versioning/).
+>   We make any initial customizations on top of Apache upstream version
+>   and then make a release to PyPI with the same version number. e.g.
+>   customizations were made on the upstream version `3.1.0` and this
+>   was released to dimagi-superset PyPI as `3.1.0`.
+>
+> * If any additional customizations are needed on top of initial
+>   versions, we are using the post release for numbering i.e.
+>   `.post<>` as the suffix with N as an incrementing integer. It is
+>   acknowledged that using the post release is not the best way,
+>   however it was chosen to keep the version in sync with the upstream
+>   apache-superset version.
