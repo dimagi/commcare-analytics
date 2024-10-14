@@ -1,7 +1,7 @@
 Dimagi Superset Fork
 --------------------
 
-[Dimagi Superset](https://github.com/dimagi/hq_superset) is a fork of
+[Dimagi Superset](https://github.com/dimagi/superset) is a fork of
 [Apache Superset](https://github.com/apache/superset). Dimagi Superset
 is maintained to build a slightly customized version of the
 [Apache Superset PyPI package](https://pypi.org/project/apache-superset/).
