@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -6,6 +7,7 @@ from authlib.integrations.sqla_oauth2 import (
     OAuth2TokenMixin,
 )
 from cryptography.fernet import MultiFernet
+from sqlalchemy import update
 from superset import db
 
 from .const import OAUTH2_DATABASE_NAME
@@ -75,6 +77,17 @@ class OAuth2Client(db.Model, OAuth2ClientMixin):
 
     def check_client_secret(self, plaintext):
         return self.get_client_secret() == plaintext
+
+    def revoke_tokens(self):
+        revoked_at = int(time.time())
+        stmt = (
+            update(OAuth2Token)
+            .where(OAuth2Token.client_id == self.client_id)
+            .where(OAuth2Token.access_token_revoked_at == 0)
+            .values(access_token_revoked_at=revoked_at)
+        )
+        db.session.execute(stmt)
+        db.session.commit()
 
 
 class OAuth2Token(db.Model, OAuth2TokenMixin):

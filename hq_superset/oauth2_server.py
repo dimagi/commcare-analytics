@@ -18,6 +18,7 @@ from .models import OAuth2Client, OAuth2Token, db
 
 def save_token(token: dict, request: FlaskOAuth2Request) -> None:
     client = request.client
+    client.revoke_tokens()
 
     token = OAuth2Token(
         client_id=client.client_id,
