@@ -221,12 +221,8 @@ class DomainSyncUtil:
             return {}, []
 
         response_data = response.json()
-        if not response_data['objects']:
-            return {}, []
-
-        user = response_data['objects'][0]
-        hq_permissions = user['permissions']
-        roles = user['roles'] or []
+        hq_permissions = response_data['permissions']
+        roles = response_data['roles'] or []
 
         # Map between HQ and CCA
         permissions = {
