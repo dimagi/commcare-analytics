@@ -82,10 +82,8 @@ class OAuthMock():
         }
         self.api_base_url = "https://cchq.org/"
         self.user_domain_roles = {
-            "objects": [{
-                "permissions": {"can_view": True, "can_edit": True},
-                "roles": ["Gamma", "sql_lab"],
-            }],
+            "permissions": {"can_view": True, "can_edit": True},
+            "roles": ["Gamma", "sql_lab"],
         }
 
     def authorize_access_token(self):
