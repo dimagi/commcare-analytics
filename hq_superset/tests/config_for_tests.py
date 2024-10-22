@@ -25,11 +25,6 @@ FERNET_KEYS = [
     '0fXurIGyQM4HQYoe7feuwV8c1Kz_88BdmCNutLKiO38=',  # Don't reuse this!
 ]
 
-# Any other additional roles to be assigned to the user on top of the base role
-# Note: by design we cannot use AUTH_USER_REGISTRATION_ROLE to
-# specify more than one role
-AUTH_USER_ADDITIONAL_ROLES = ["sql_lab"]
-
 HQ_DATABASE_URI = "postgresql://commcarehq:commcarehq@localhost:5432/test_superset_hq"
 
 AUTH_TYPE = AUTH_OAUTH
