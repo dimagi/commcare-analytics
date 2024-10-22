@@ -1,0 +1,10 @@
+# This file is used to keep track of which feature branches
+# should be in the `staging` branch.
+# How it works:
+# 1. Add your feature branch to the end of the list
+# 2. Run ./scripts/rebuildstaging to rebuild the `staging` branch
+# 3. Push the `staging` branch and deploy the code (this is a manual process at the moment)
+trunk: master
+name: staging
+branches:
+  - cs/SC-3473-user-roles-from-hq

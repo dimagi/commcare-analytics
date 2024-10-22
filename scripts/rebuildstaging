@@ -1,0 +1,8 @@
+#!/bin/bash
+
+function rebuildstaging() {
+    echo "Rebuilding staging branch..."
+    git-build-branch scripts/staging.yml
+}
+
+rebuildstaging

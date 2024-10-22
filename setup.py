@@ -23,6 +23,11 @@ setup(
         'Werkzeug==2.3.3',
         'WTForms==2.3.3',
     ],
+    extras_require={
+        'dev': [
+            'git-build-branch',
+        ],
+    },
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.9'
