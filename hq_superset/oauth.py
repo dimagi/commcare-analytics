@@ -56,6 +56,15 @@ class CommCareSecurityManager(SupersetSecurityManager):
         # }
         session[SESSION_OAUTH_RESPONSE_KEY] = oauth_response
 
+    def set_role_permissions(self, role, permissions):
+        """
+        This method sets the permissions on a role by overwriting the existing
+        permissions
+        """
+        role.permissions = []
+        for permission in permissions:
+            self.add_permission_role(role, permission)
+
 
 def get_valid_cchq_oauth_token():
     # Returns a valid working oauth access_token and also saves it on session
