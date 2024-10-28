@@ -24,7 +24,6 @@ from .const import (
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
     READ_ONLY_MENU_PERMISSIONS,
-    WRITE_MENU_PERMISSIONS,
 )
 from .exceptions import DatabaseMissing
 
@@ -144,11 +143,11 @@ class DomainSyncUtil:
         hq_user_role = self._ensure_hq_user_role()
         domain_schema_role = self._create_domain_role(domain)
 
-        domain_user_role, platform_roles = self._get_additional_user_roles(domain)
-        if not domain_user_role and not platform_roles:
+        additional_roles = self._get_additional_user_roles(domain)
+        if not additional_roles:
             return False
 
-        current_user.roles = [hq_user_role, domain_schema_role, domain_user_role] + platform_roles
+        current_user.roles = [hq_user_role, domain_schema_role] + additional_roles
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
@@ -203,11 +202,25 @@ class DomainSyncUtil:
 
     def _get_additional_user_roles(self, domain):
         domain_permissions, platform_roles_names = self._get_domain_access(domain)
-        if self._user_has_no_access(domain_permissions, platform_roles_names):
-            return None, []
+        if self._user_has_no_access(domain_permissions):
+            return []
 
-        domain_user_role = self._get_user_domain_role_for_permissions(domain, domain_permissions)
-        return domain_user_role, self._get_platform_roles(platform_roles_names)
+        additional_roles = []
+        if domain_permissions[CAN_WRITE_PERMISSION]:
+            platform_roles_names.append(
+                'gamma',
+            )
+        elif domain_permissions[CAN_READ_PERMISSION]:
+            additional_roles.append(
+                self._get_user_domain_read_only_role(domain)
+            )
+
+        if platform_roles_names:
+            additional_roles.extend(
+                self._get_platform_roles(platform_roles_names)
+            )
+
+        return additional_roles
 
     @staticmethod
     def _get_domain_access(domain):
@@ -232,8 +245,8 @@ class DomainSyncUtil:
         return permissions, roles
 
     @staticmethod
-    def _user_has_no_access(permissions: dict, platform_roles: list):
-        user_has_access = any([permissions[p] for p in permissions]) or platform_roles
+    def _user_has_no_access(permissions: dict):
+        user_has_access = any([permissions[p] for p in permissions])
         return not user_has_access
 
     def _get_platform_roles(self, roles_names):
@@ -245,21 +258,9 @@ class DomainSyncUtil:
                 platform_roles.append(role)
         return platform_roles
 
-    def _get_user_domain_role_for_permissions(self, domain, permissions):
+    def _get_user_domain_read_only_role(self, domain):
         role = self._get_domain_user_role(domain, current_user)
-        role_permissions = []
-
-        if permissions[CAN_READ_PERMISSION]:
-            role_permissions.extend(
-                self._read_permissions_for_user
-            )
-
-        if permissions[CAN_WRITE_PERMISSION]:
-            role_permissions.extend(
-                self._write_permissions_for_user
-            )
-
-        self.sm.set_role_permissions(role, role_permissions)
+        self.sm.set_role_permissions(role, self._read_permissions_for_user)
         return role
 
     def _get_domain_user_role(self, domain, user):
@@ -273,12 +274,6 @@ class DomainSyncUtil:
     def _read_permissions_for_user(self):
         return self._get_view_menu_permissions(
             menu_permissions=READ_ONLY_MENU_PERMISSIONS
-        )
-
-    @property
-    def _write_permissions_for_user(self):
-        return self._get_view_menu_permissions(
-            menu_permissions=WRITE_MENU_PERMISSIONS
         )
 
     def _get_view_menu_permissions(self, menu_permissions):
