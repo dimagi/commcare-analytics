@@ -290,7 +290,7 @@ class DomainSyncUtil:
 
     @staticmethod
     def _domain_user_role_name(domain, user):
-        return f"{domain}_user_{user.id}"
+        return f"{domain}_user_{user.id}_read_only"
 
 
 @contextmanager

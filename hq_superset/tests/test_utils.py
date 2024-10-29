@@ -60,7 +60,7 @@ class TestDomainSyncUtil(SupersetTestCase):
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
     def test_read_permission_gives_custom_domain_role(self, get_domain_access_mock, domain_user_role_name_mock):
-        domain_user_role_name = "test-domain_user_1"
+        domain_user_role_name = "test-domain_user_1_read_only"
         domain_user_role_name_mock.return_value = domain_user_role_name
 
         security_manager = self.app.appbuilder.sm
@@ -78,7 +78,7 @@ class TestDomainSyncUtil(SupersetTestCase):
     @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
     def test_permissions_change_updates_user_role(self, get_domain_access_mock, domain_user_role_name_mock):
-        domain_user_role_name = "test-domain_user_1"
+        domain_user_role_name = "test-domain_user_1_read_only"
         domain_user_role_name_mock.return_value = domain_user_role_name
 
         security_manager = self.app.appbuilder.sm
