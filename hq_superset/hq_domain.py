@@ -44,6 +44,7 @@ DOMAIN_EXCLUDED_VIEWS = [
     'AuthOAuthView.login',
     'AuthOAuthView.logout',
     'AuthOAuthView.oauth_authorized',
+    'CurrentUserRestApi.get_me',
     'DataSetChangeAPI.post_dataset_change',
     'OAuth.issue_access_token',
     'SelectDomainView.list',
