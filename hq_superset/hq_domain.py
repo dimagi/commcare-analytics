@@ -33,7 +33,7 @@ def after_request_hook(response):
         "AuthDBView.login",
         "AuthOAuthView.logout",
     ]
-    if (request.url_rule and request.url_rule.endpoint in logout_views):
+    if request.url_rule and (request.url_rule.endpoint in logout_views):
         response.set_cookie('hq_domain', '', expires=0)
     return response
 
@@ -114,7 +114,6 @@ def user_domains():
 
 
 def add_domain_links(active_domain, domains):
-    import superset
     for domain in domains:
         superset.appbuilder.menu.add_link(domain, category=active_domain, href=url_for('SelectDomainView.select', hq_domain=domain))
 
