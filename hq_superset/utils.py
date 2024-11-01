@@ -17,7 +17,7 @@ from flask_login import current_user
 from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
-from .const import (
+from hq_superset.const import (
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
     DOMAIN_PREFIX,
@@ -28,7 +28,7 @@ from .const import (
     SCHEMA_ACCESS_PERMISSION,
     SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
 )
-from .exceptions import DatabaseMissing
+from hq_superset.exceptions import DatabaseMissing
 
 
 def get_hq_database():

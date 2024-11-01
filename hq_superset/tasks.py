@@ -2,9 +2,9 @@ import os
 
 from superset.extensions import celery_app
 
-from .exceptions import TableMissing
-from .models import DataSetChange
-from .services import AsyncImportHelper, refresh_hq_datasource
+from hq_superset.exceptions import TableMissing
+from hq_superset.models import DataSetChange
+from hq_superset.services import AsyncImportHelper, refresh_hq_datasource
 
 
 @celery_app.task(name='refresh_hq_datasource_task')

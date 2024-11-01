@@ -16,19 +16,23 @@ from superset.commands.dataset.delete import (
 from superset.connectors.sqla.models import SqlaTable
 from superset.views.base import BaseSupersetView
 
-from .exceptions import HQAPIException
-from .hq_domain import user_domains
-from .hq_requests import HQRequest
-from .hq_url import datasource_list
-from .services import (
+from hq_superset.exceptions import HQAPIException
+from hq_superset.hq_domain import user_domains
+from hq_superset.hq_requests import HQRequest
+from hq_superset.hq_url import datasource_list
+from hq_superset.services import (
     AsyncImportHelper,
     download_and_subscribe_to_datasource,
     get_datasource_defn,
     refresh_hq_datasource,
     unsubscribe_from_hq_datasource,
 )
-from .tasks import refresh_hq_datasource_task
-from .utils import DomainSyncUtil, get_hq_database, get_schema_name_for_domain
+from hq_superset.tasks import refresh_hq_datasource_task
+from hq_superset.utils import (
+    DomainSyncUtil,
+    get_hq_database,
+    get_schema_name_for_domain,
+)
 
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 

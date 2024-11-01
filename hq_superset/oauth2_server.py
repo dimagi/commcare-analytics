@@ -13,7 +13,7 @@ from authlib.integrations.sqla_oauth2 import (
 )
 from authlib.oauth2.rfc6749 import grants
 
-from .models import OAuth2Client, OAuth2Token, db
+from hq_superset.models import OAuth2Client, OAuth2Token, db
 
 
 def save_token(token: dict, request: FlaskOAuth2Request) -> None:
