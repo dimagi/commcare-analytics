@@ -4,7 +4,16 @@ from .utils import SESSION_USER_DOMAINS_KEY
 
 
 def before_request_hook():
-    return ensure_domain_selected()
+    """
+    Call all hooks functions set in sequence and
+    if any hook returns a response,
+    break the chain and return that response
+    """
+    hooks = [ensure_domain_selected]
+    for _function in hooks:
+        response = _function()
+        if response:
+            return response
 
 
 def after_request_hook(response):
