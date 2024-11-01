@@ -19,7 +19,6 @@ from superset.utils.database import get_or_create_db
 from .const import (
     GAMMA_ROLE,
     HQ_DATABASE_NAME,
-    HQ_ROLE_NAME_MAPPING,
     HQ_USER_ROLE_NAME,
     SCHEMA_ACCESS_PERMISSION,
     CAN_READ_PERMISSION,
@@ -253,8 +252,7 @@ class DomainSyncUtil:
     def _get_platform_roles(self, roles_names):
         platform_roles = []
         for role_name in roles_names:
-            superset_role_name = HQ_ROLE_NAME_MAPPING.get(role_name, role_name)
-            role = self.sm.find_role(superset_role_name)
+            role = self.sm.find_role(role_name)
             if role:
                 platform_roles.append(role)
         return platform_roles

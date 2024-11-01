@@ -6,11 +6,6 @@ OAUTH2_DATABASE_NAME = "oauth2-server-data"
 HQ_USER_ROLE_NAME = "hq_user"
 GAMMA_ROLE = "Gamma"
 
-HQ_ROLE_NAME_MAPPING = {
-    GAMMA_ROLE: "Gamma",
-    "dataset_editor": "dataset_editor",
-    "sql_lab": "sql_lab",
-}
 
 # Permissions
 SCHEMA_ACCESS_PERMISSION = "schema_access"
