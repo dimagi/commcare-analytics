@@ -205,16 +205,7 @@ class DomainSyncUtil:
         if self._user_has_no_access(domain_permissions):
             return []
 
-        additional_roles = []
-        if domain_permissions[CAN_WRITE_PERMISSION]:
-            platform_roles_names.append(
-                GAMMA_ROLE,
-            )
-        elif domain_permissions[CAN_READ_PERMISSION]:
-            additional_roles.append(
-                self._get_user_domain_read_only_role(domain)
-            )
-
+        additional_roles = [self._get_user_domain_role_with_permissions(domain, domain_permissions)]
         if platform_roles_names:
             additional_roles.extend(
                 self._get_platform_roles(platform_roles_names)
@@ -257,9 +248,17 @@ class DomainSyncUtil:
                 platform_roles.append(role)
         return platform_roles
 
-    def _get_user_domain_read_only_role(self, domain):
+    def _get_user_domain_role_with_permissions(self, domain, domain_permissions):
         role = self._get_domain_user_role(domain, current_user)
-        self.sm.set_role_permissions(role, self._read_permissions_for_user)
+
+        permissions = []
+        if domain_permissions[CAN_WRITE_PERMISSION]:
+            permissions = self._write_permissions_for_user
+        elif domain_permissions[CAN_READ_PERMISSION]:
+            permissions = self._read_permissions_for_user
+
+        self.sm.set_role_permissions(role, permissions)
+
         return role
 
     def _get_domain_user_role(self, domain, user):
@@ -268,6 +267,11 @@ class DomainSyncUtil:
         if not role:
             return self.sm.add_role(role_name)
         return role
+
+    @property
+    def _write_permissions_for_user(self):
+        gamma_role = self.sm.find_role(GAMMA_ROLE)
+        return gamma_role.permissions
 
     @property
     def _read_permissions_for_user(self):
@@ -289,7 +293,7 @@ class DomainSyncUtil:
 
     @staticmethod
     def _domain_user_role_name(domain, user):
-        return f"{domain}_user_{user.id}_read_only"
+        return f"{domain}_user_{user.id}"
 
 
 @contextmanager
