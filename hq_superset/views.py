@@ -28,11 +28,7 @@ from .services import (
     unsubscribe_from_hq_datasource,
 )
 from .tasks import refresh_hq_datasource_task
-from .utils import (
-    DomainSyncUtil,
-    get_hq_database,
-    get_schema_name_for_domain,
-)
+from .utils import DomainSyncUtil, get_hq_database, get_schema_name_for_domain
 
 ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES = 5_000_000  # ~5MB
 

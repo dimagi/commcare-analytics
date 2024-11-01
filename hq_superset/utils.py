@@ -18,13 +18,13 @@ from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
 from .const import (
+    CAN_READ_PERMISSION,
+    CAN_WRITE_PERMISSION,
     GAMMA_ROLE,
     HQ_DATABASE_NAME,
     HQ_USER_ROLE_NAME,
-    SCHEMA_ACCESS_PERMISSION,
-    CAN_READ_PERMISSION,
-    CAN_WRITE_PERMISSION,
     READ_ONLY_MENU_PERMISSIONS,
+    SCHEMA_ACCESS_PERMISSION,
 )
 from .exceptions import DatabaseMissing
 
@@ -227,8 +227,8 @@ class DomainSyncUtil:
 
     @staticmethod
     def _get_domain_access(domain):
-        from .hq_url import user_domain_roles
         from .hq_requests import HQRequest
+        from .hq_url import user_domain_roles
 
         hq_request = HQRequest(url=user_domain_roles(domain))
         response = hq_request.get()

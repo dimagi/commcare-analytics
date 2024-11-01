@@ -1,10 +1,15 @@
 import doctest
-
-from flask import session
 from unittest.mock import patch
 
-from hq_superset.utils import get_column_dtypes, DomainSyncUtil, SESSION_DOMAIN_ROLE_LAST_SYNCED_AT
-from .base_test import SupersetTestCase, LoginUserTestMixin
+from flask import session
+
+from hq_superset.utils import (
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
+    DomainSyncUtil,
+    get_column_dtypes,
+)
+
+from .base_test import LoginUserTestMixin, SupersetTestCase
 from .const import TEST_DATASOURCE
 
 
