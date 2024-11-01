@@ -17,6 +17,7 @@ from hq_superset.tests.const import (
 )
 from hq_superset.tests.utils import MockResponse, OAuthMock, UserMock
 from hq_superset.utils import (
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
     SESSION_USER_DOMAINS_KEY,
     DomainSyncUtil,
     get_schema_name_for_domain,
@@ -311,3 +312,63 @@ class TestViews(HQDBTestCase):
 
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
+
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.hq_domain._sync_domain_role', return_value=True)
+    def test_sync_user_domain_role_calls(self, sync_domain_role_mock, *args):
+        with self.app.test_client() as client:
+            assert SESSION_USER_DOMAINS_KEY not in session
+            self.login(client)
+            self.assertIsNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on login
+            sync_domain_role_mock.assert_not_called()
+
+            response = client.get('/', follow_redirects=True)
+            self.assertEqual(response.status, "200 OK")
+            self.assertTrue('/domain/list' in response.request.path)
+            self.assertIsNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on domain listing after login
+            sync_domain_role_mock.assert_not_called()
+
+            client.get('/domain/select/test1/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on domain selection
+            sync_domain_role_mock.assert_not_called()
+
+            client.get('/hq_datasource/list/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called if recently synced
+            sync_domain_role_mock.assert_not_called()
+
+            with patch('hq_superset.hq_domain.USER_DOMAIN_ROLE_EXPIRY', 0):
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+                # called only if expired
+                sync_domain_role_mock.assert_called()
+
+            self.logout(client)
+
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    def test_sync_user_domain_before_request(self, *args):
+        with self.app.test_client() as client:
+            assert SESSION_USER_DOMAINS_KEY not in session
+            self.login(client)
+
+            client.get('/domain/select/test1/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+
+            with patch('hq_superset.hq_domain.USER_DOMAIN_ROLE_EXPIRY', 0):
+                session_role_last_synced_at = session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT)
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                # timestamp in session updated
+                self.assertNotEqual(session_role_last_synced_at, session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+
+                with patch.object(DomainSyncUtil, 'sync_domain_role') as domain_sync_util_mock:
+                    client.get('/hq_datasource/list/', follow_redirects=True)
+                    # confirm function call for sync
+                    domain_sync_util_mock.assert_called_once_with(
+                        "test1"
+                    )
+
+            self.logout(client)
+

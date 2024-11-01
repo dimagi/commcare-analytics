@@ -1,6 +1,16 @@
+import superset
+
+from datetime import timedelta
 from flask import flash, g, redirect, request, session, url_for
 
-from .utils import SESSION_USER_DOMAINS_KEY
+from superset.config import USER_DOMAIN_ROLE_EXPIRY
+
+from .utils import (
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
+    SESSION_USER_DOMAINS_KEY,
+    DomainSyncUtil,
+    datetime_utcnow_naive,
+)
 
 
 def before_request_hook():
@@ -9,7 +19,10 @@ def before_request_hook():
     if any hook returns a response,
     break the chain and return that response
     """
-    hooks = [ensure_domain_selected]
+    hooks = [
+        ensure_domain_selected,
+        sync_user_domain_role
+    ]
     for _function in hooks:
         response = _function()
         if response:
@@ -62,6 +75,28 @@ def ensure_domain_selected():
     else:
         flash('Please select a domain to access this page.', 'warning')
         return redirect(url_for('SelectDomainView.list', next=request.url))
+
+
+def sync_user_domain_role():
+    if is_user_admin() or (
+        request.url_rule
+        and request.url_rule.endpoint in DOMAIN_EXCLUDED_VIEWS
+    ):
+        return
+    if _domain_role_expired():
+        _sync_domain_role()
+
+
+def _domain_role_expired():
+    if not session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT):
+        return True
+
+    time_since_last_sync = datetime_utcnow_naive() - session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT]
+    return time_since_last_sync >= timedelta(minutes=USER_DOMAIN_ROLE_EXPIRY)
+
+
+def _sync_domain_role():
+    DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(g.hq_domain)
 
 
 def is_valid_user_domain(hq_domain):

@@ -153,7 +153,7 @@ class DomainSyncUtil:
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
-        session['domain_role_last_synced_at'] = datetime_utcnow_naive()
+        session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT] = datetime_utcnow_naive()
         return True
 
     def _ensure_hq_user_role(self):
