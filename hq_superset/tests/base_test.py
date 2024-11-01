@@ -10,8 +10,9 @@ from flask_testing import TestCase
 from sqlalchemy.sql import text
 from superset.app import create_app
 
+from hq_superset.const import DOMAIN_PREFIX
 from hq_superset.tests.utils import OAuthMock
-from hq_superset.utils import DOMAIN_PREFIX, get_hq_database
+from hq_superset.utils import get_hq_database
 
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
 shutil.rmtree(superset_test_home, ignore_errors=True)

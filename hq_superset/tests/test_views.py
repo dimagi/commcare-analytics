@@ -8,6 +8,10 @@ import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
 
+from hq_superset.const import (
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
+    SESSION_USER_DOMAINS_KEY,
+)
 from hq_superset.exceptions import HQAPIException
 from hq_superset.tests.base_test import HQDBTestCase
 from hq_superset.tests.const import (
@@ -16,12 +20,7 @@ from hq_superset.tests.const import (
     TEST_UCR_CSV_V2,
 )
 from hq_superset.tests.utils import MockResponse, OAuthMock, UserMock
-from hq_superset.utils import (
-    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
-    SESSION_USER_DOMAINS_KEY,
-    DomainSyncUtil,
-    get_schema_name_for_domain,
-)
+from hq_superset.utils import DomainSyncUtil, get_schema_name_for_domain
 
 
 class TestViews(HQDBTestCase):

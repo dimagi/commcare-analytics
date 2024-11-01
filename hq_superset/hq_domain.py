@@ -1,16 +1,11 @@
-import superset
-
 from datetime import timedelta
-from flask import flash, g, redirect, request, session, url_for
 
+import superset
+from flask import flash, g, redirect, request, session, url_for
 from superset.config import USER_DOMAIN_ROLE_EXPIRY
 
-from .utils import (
-    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
-    SESSION_USER_DOMAINS_KEY,
-    DomainSyncUtil,
-    datetime_utcnow_naive,
-)
+from .const import SESSION_DOMAIN_ROLE_LAST_SYNCED_AT, SESSION_USER_DOMAINS_KEY
+from .utils import DomainSyncUtil, datetime_utcnow_naive
 
 
 def before_request_hook():

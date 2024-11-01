@@ -3,12 +3,9 @@ from unittest.mock import patch
 
 from flask import session
 
-from hq_superset.utils import (
-    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
-    DomainSyncUtil,
-    get_column_dtypes,
-)
+from hq_superset.utils import DomainSyncUtil, get_column_dtypes
 
+from ..const import SESSION_DOMAIN_ROLE_LAST_SYNCED_AT
 from .base_test import LoginUserTestMixin, SupersetTestCase
 from .const import TEST_DATASOURCE
 

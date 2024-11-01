@@ -11,12 +11,12 @@ from hq_superset.hq_domain import (
     user_domains,
 )
 from hq_superset.utils import (
-    SESSION_USER_DOMAINS_KEY,
     DomainSyncUtil,
     get_hq_database,
     get_schema_name_for_domain,
 )
 
+from ..const import SESSION_USER_DOMAINS_KEY
 from .base_test import HQDBTestCase, SupersetTestCase
 
 MOCK_DOMAIN_SESSION = {

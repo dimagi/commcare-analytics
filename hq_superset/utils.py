@@ -20,18 +20,15 @@ from superset.utils.database import get_or_create_db
 from .const import (
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
+    DOMAIN_PREFIX,
     GAMMA_ROLE,
     HQ_DATABASE_NAME,
     HQ_USER_ROLE_NAME,
     READ_ONLY_MENU_PERMISSIONS,
     SCHEMA_ACCESS_PERMISSION,
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
 )
 from .exceptions import DatabaseMissing
-
-DOMAIN_PREFIX = "hqdomain_"
-SESSION_USER_DOMAINS_KEY = "user_hq_domains"
-SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
-SESSION_DOMAIN_ROLE_LAST_SYNCED_AT = "domain_role_last_synced_at"
 
 
 def get_hq_database():

@@ -6,8 +6,8 @@ from flask import flash, session
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
 
+from .const import SESSION_OAUTH_RESPONSE_KEY, SESSION_USER_DOMAINS_KEY
 from .exceptions import OAuthSessionExpired
-from .utils import SESSION_OAUTH_RESPONSE_KEY, SESSION_USER_DOMAINS_KEY
 
 logger = logging.getLogger(__name__)
 
