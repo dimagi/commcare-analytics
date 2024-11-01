@@ -9,9 +9,10 @@ from typing import Any, Generator
 from zipfile import ZipFile
 
 import pandas
+import pytz
 import sqlalchemy
 from cryptography.fernet import Fernet
-from flask import current_app
+from flask import current_app, session
 from flask_login import current_user
 from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
@@ -30,6 +31,7 @@ from .exceptions import DatabaseMissing
 DOMAIN_PREFIX = "hqdomain_"
 SESSION_USER_DOMAINS_KEY = "user_hq_domains"
 SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
+SESSION_DOMAIN_ROLE_LAST_SYNCED_AT = "domain_role_last_synced_at"
 
 
 def get_hq_database():
@@ -151,6 +153,7 @@ class DomainSyncUtil:
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
+        session['domain_role_last_synced_at'] = datetime_utcnow_naive()
         return True
 
     def _ensure_hq_user_role(self):
@@ -415,3 +418,7 @@ def cast_data_for_table(
 def generate_secret():
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for __ in range(64))
+
+
+def datetime_utcnow_naive():
+    return datetime.utcnow().replace(tzinfo=pytz.UTC)
