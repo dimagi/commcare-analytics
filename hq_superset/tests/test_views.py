@@ -133,6 +133,7 @@ class TestViews(HQDBTestCase):
         client.get('/domain/select/test2/', follow_redirects=True)
         client.get('/hq_datasource/list/', follow_redirects=True)
         _do_assert(self.oauth_mock.test2_datasources)
+        self.logout(client)
 
     @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
     def test_datasource_upload(self, *args):
@@ -148,6 +149,7 @@ class TestViews(HQDBTestCase):
                 ucr_id,
                 'ds1'
             )
+        self.logout(client)
 
     @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
     def test_trigger_datasource_refresh_with_api_exception(self, *args):
@@ -166,6 +168,7 @@ class TestViews(HQDBTestCase):
                 )
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.location, "/tablemodelview/list/")
+            self.logout(client)
 
     def test_trigger_datasource_refresh_with_errors(self, *args):
         from hq_superset.views import (
