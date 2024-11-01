@@ -134,7 +134,7 @@ class TestViews(HQDBTestCase):
         client.get('/hq_datasource/list/', follow_redirects=True)
         _do_assert(self.oauth_mock.test2_datasources)
 
-    @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
+    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
     def test_datasource_upload(self, *args):
         client = self.app.test_client()
         self.login(client)
