@@ -108,3 +108,16 @@ TEST_DATASOURCE = {
   "id": "test1_ucr1",
   "resource_uri": "/a/demo/api/v0.5/ucr_data_source/52a134da12c9b801bd85d2122901b30c/"
 }
+
+TEST_UCR_CSV_V1 = """\
+doc_id,inserted_at,data_visit_date_eaece89e,data_visit_number_33d63739,data_lmp_date_5e24b993,data_visit_comment_fb984fda
+a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
+a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
+"""
+
+TEST_UCR_CSV_V2 = """\
+doc_id,inserted_at,data_visit_date_eaece89e,data_visit_number_33d63739,data_lmp_date_5e24b993,data_visit_comment_fb984fda
+a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
+a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
+a3, 2021-11-22, 2022-01-19, 10, 2022-03-20, some_other_text2
+"""
