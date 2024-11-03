@@ -24,7 +24,7 @@ def save_token(token: dict, request: FlaskOAuth2Request) -> None:
         token_type=token['token_type'],
         access_token=token['access_token'],
         scope=client.domain,
-        expires_in=10, # 10 Seconds
+        expires_in=token['expires_in']
     )
     db.session.add(token)
     db.session.commit()

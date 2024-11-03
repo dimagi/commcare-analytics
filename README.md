@@ -152,6 +152,15 @@ The test runner can only run tests that do not import from Superset. The
 code you want to test will need to be in a module whose dependencies
 don't include Superset.
 
+### Testing on staging
+In order to test your feature branch on staging you need to
+1. Check out to `master` branch (make sure it's up to date)
+2. Add your feature branch to the `branches` section in `scripts/staging.yml` file
+3. Push the file back to remote `master`
+4. Run `scripts/rebuildstaging` (this will rebuild the staging branch on your machine)
+5. Push the new `staging` branch to remote
+6. Deploy `staging` as usual
+
 
 ### Creating a migration
 
