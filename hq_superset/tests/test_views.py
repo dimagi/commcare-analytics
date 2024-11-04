@@ -316,7 +316,7 @@ class TestViews(HQDBTestCase):
             self.assert_context('ucr_id_to_pks', {})
 
     @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
-    @patch('hq_superset.hq_domain._sync_domain_role', return_value=True)
+    @patch('hq_superset.hq_domain._sync_domain_role', return_value=None)
     def test_sync_user_domain_role_calls(self, sync_domain_role_mock, *args):
         with self.app.test_client() as client:
             assert SESSION_USER_DOMAINS_KEY not in session
@@ -366,11 +366,22 @@ class TestViews(HQDBTestCase):
                 self.assertNotEqual(session_role_last_synced_at, session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
 
                 with patch.object(DomainSyncUtil, 'sync_domain_role') as domain_sync_util_mock:
-                    client.get('/hq_datasource/list/', follow_redirects=True)
+                    # in case of failure to sync
+                    domain_sync_util_mock.return_value = False
+                    response = client.get('/hq_datasource/list/', follow_redirects=True)
+
                     # confirm function call for sync
                     domain_sync_util_mock.assert_called_once_with(
                         "test1"
                     )
+
+                    self.assertEqual(
+                        response.text,
+                        "We couldn't refresh your permissions to access the domain 'test1'. "
+                        "Please select the project space again or login again to resolve. "
+                        "If issue persists, please submit a support request."
+                    )
+                    self.assertEqual(response.status_code, 400)
 
             self.logout(client)
 
