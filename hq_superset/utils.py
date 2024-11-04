@@ -24,6 +24,7 @@ from .const import (
     CAN_READ_PERMISSION,
     CAN_WRITE_PERMISSION,
     READ_ONLY_MENU_PERMISSIONS,
+    READ_ONLY_ROLE_NAME,
 )
 from .exceptions import DatabaseMissing
 
@@ -201,26 +202,19 @@ class DomainSyncUtil:
         return self.sm.add_role(get_role_name_for_domain(domain))
 
     def _get_additional_user_roles(self, domain):
-        domain_permissions, platform_roles_names = self._get_domain_access(domain)
+        domain_permissions, roles_names = self._get_domain_access(domain)
         if self._user_has_no_access(domain_permissions):
             return []
 
-        additional_roles = []
         if domain_permissions[CAN_WRITE_PERMISSION]:
-            platform_roles_names.append(
-                GAMMA_ROLE_NAME,
-            )
-        elif domain_permissions[CAN_READ_PERMISSION]:
-            additional_roles.append(
-                self._get_user_domain_read_only_role(domain)
-            )
+            user_role = GAMMA_ROLE_NAME
+        else:
+            self._ensure_read_only_role_exists()
+            user_role = READ_ONLY_ROLE_NAME
 
-        if platform_roles_names:
-            additional_roles.extend(
-                self._get_platform_roles(platform_roles_names)
-            )
+        roles_names.append(user_role)
 
-        return additional_roles
+        return self._get_platform_roles(roles_names)
 
     @staticmethod
     def _get_domain_access(domain):
@@ -257,39 +251,22 @@ class DomainSyncUtil:
                 platform_roles.append(role)
         return platform_roles
 
-    def _get_user_domain_read_only_role(self, domain):
-        role = self._get_domain_user_role(domain, current_user)
-        self.sm.set_role_permissions(role, self._read_permissions_for_user)
-        return role
-
-    def _get_domain_user_role(self, domain, user):
-        role_name = self._domain_user_role_name(domain, user)
-        role = self.sm.find_role(role_name)
+    def _ensure_read_only_role_exists(self):
+        role = self.sm.find_role(READ_ONLY_ROLE_NAME)
         if not role:
-            return self.sm.add_role(role_name)
+            role = self.sm.add_role(READ_ONLY_ROLE_NAME)
+            self.sm.set_role_permissions(role, self._read_only_permissions)
         return role
 
     @property
-    def _read_permissions_for_user(self):
-        return self._get_view_menu_permissions(
-            menu_permissions=READ_ONLY_MENU_PERMISSIONS
-        )
-
-    def _get_view_menu_permissions(self, menu_permissions):
-        """
-        This method returns combinations for all view menus and permissions
-        """
+    def _read_only_permissions(self):
         menus_permissions = []
-        for view_menu_name, permissions_names in menu_permissions.items():
+        for view_menu_name, permissions_names in READ_ONLY_MENU_PERMISSIONS.items():
             menus_permissions.extend([
                 self.sm.add_permission_view_menu(permission_name, view_menu_name)
                 for permission_name in permissions_names
             ])
         return menus_permissions
-
-    @staticmethod
-    def _domain_user_role_name(domain, user):
-        return f"{domain}_user_{user.id}_read_only"
 
 
 @contextmanager
