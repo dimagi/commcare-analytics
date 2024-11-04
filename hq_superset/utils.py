@@ -150,7 +150,7 @@ class DomainSyncUtil:
 
         self.sm.get_session.add(current_user)
         self.sm.get_session.commit()
-        session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT] = datetime_utcnow_naive()
+        session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT] = datetime_utcnow()
         return True
 
     def _ensure_hq_user_role(self):
@@ -417,5 +417,5 @@ def generate_secret():
     return ''.join(secrets.choice(alphabet) for __ in range(64))
 
 
-def datetime_utcnow_naive():
+def datetime_utcnow():
     return datetime.utcnow().replace(tzinfo=pytz.UTC)

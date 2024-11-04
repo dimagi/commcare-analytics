@@ -8,7 +8,7 @@ from hq_superset.const import (
     SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
     SESSION_USER_DOMAINS_KEY,
 )
-from hq_superset.utils import DomainSyncUtil, datetime_utcnow_naive
+from hq_superset.utils import DomainSyncUtil, datetime_utcnow
 
 
 def before_request_hook():
@@ -90,7 +90,7 @@ def _domain_role_expired():
     if not session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT):
         return True
 
-    time_since_last_sync = datetime_utcnow_naive() - session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT]
+    time_since_last_sync = datetime_utcnow() - session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT]
     return time_since_last_sync >= timedelta(minutes=USER_DOMAIN_ROLE_EXPIRY)
 
 

@@ -105,7 +105,7 @@ class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
         additional_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
         assert not additional_roles
 
-    @patch('hq_superset.utils.datetime_utcnow_naive')
+    @patch('hq_superset.utils.datetime_utcnow')
     @patch.object(DomainSyncUtil, "_get_domain_access")
     def test_sync_domain_role(self, get_domain_access_mock, utcnow_mock):
         client = self.app.test_client()
