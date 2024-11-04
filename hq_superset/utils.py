@@ -17,7 +17,7 @@ from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
 from .const import (
-    GAMMA_ROLE,
+    GAMMA_ROLE_NAME,
     HQ_DATABASE_NAME,
     HQ_USER_ROLE_NAME,
     SCHEMA_ACCESS_PERMISSION,
@@ -208,7 +208,7 @@ class DomainSyncUtil:
         additional_roles = []
         if domain_permissions[CAN_WRITE_PERMISSION]:
             platform_roles_names.append(
-                GAMMA_ROLE,
+                GAMMA_ROLE_NAME,
             )
         elif domain_permissions[CAN_READ_PERMISSION]:
             additional_roles.append(
