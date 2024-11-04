@@ -3,6 +3,7 @@ from datetime import timedelta
 import superset
 from flask import current_app, flash, g, redirect, request, session, url_for
 from superset.config import USER_DOMAIN_ROLE_EXPIRY
+from superset.extensions import cache_manager
 
 from hq_superset.const import (
     SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
@@ -84,7 +85,9 @@ def sync_user_domain_role():
     ):
         return
     if _domain_role_expired():
-        return _sync_domain_role()
+        # only sync if another sync not in progress
+        if not _sync_in_progress():
+            return _perform_sync_domain_role()
 
 
 def _domain_role_expired():
@@ -94,6 +97,24 @@ def _domain_role_expired():
     time_since_last_sync = datetime_utcnow() - session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT]
     return time_since_last_sync >= timedelta(minutes=USER_DOMAIN_ROLE_EXPIRY)
 
+
+def _sync_in_progress():
+    return cache_manager.cache.get(_sync_domain_role_cache_key())
+
+
+def _sync_domain_role_cache_key():
+    return f"{g.user.id}_{g.hq_domain}_sync_domain_role"
+
+
+def _perform_sync_domain_role():
+    cache_key = _sync_domain_role_cache_key()
+
+    # set cache for 30 seconds
+    cache_manager.cache.set(cache_key, True, timeout=30)
+    sync_domain_role_response = _sync_domain_role()
+    cache_manager.cache.delete(cache_key)
+
+    return sync_domain_role_response
 
 def _sync_domain_role():
     if not DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(g.hq_domain):
