@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from flask import session
 
-from hq_superset.const import SESSION_DOMAIN_ROLE_LAST_SYNCED_AT
+from hq_superset.const import READ_ONLY_ROLE_NAME, SESSION_DOMAIN_ROLE_LAST_SYNCED_AT
 from hq_superset.tests.base_test import LoginUserTestMixin, SupersetTestCase
 from hq_superset.tests.const import TEST_DATASOURCE
 from hq_superset.utils import DomainSyncUtil, get_column_dtypes
@@ -60,12 +60,8 @@ class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
         additional_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
         assert not additional_roles
 
-    @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
-    def test_read_permission_gives_custom_domain_role(self, get_domain_access_mock, domain_user_role_name_mock):
-        domain_user_role_name = "test-domain_user_1_read_only"
-        domain_user_role_name_mock.return_value = domain_user_role_name
-
+    def test_read_permission_gives_read_only_role(self, get_domain_access_mock):
         security_manager = self.app.appbuilder.sm
         self._ensure_platform_roles_exist(security_manager)
 
@@ -76,25 +72,20 @@ class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
         )
         additional_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
         assert len(additional_roles) == 1
-        assert additional_roles[0].name == domain_user_role_name
+        assert additional_roles[0].name == READ_ONLY_ROLE_NAME
 
-    @patch.object(DomainSyncUtil, "_domain_user_role_name")
     @patch.object(DomainSyncUtil, "_get_domain_access")
-    def test_permissions_change_updates_user_role(self, get_domain_access_mock, domain_user_role_name_mock):
-        domain_user_role_name = "test-domain_user_1_read_only"
-        domain_user_role_name_mock.return_value = domain_user_role_name
-
+    def test_permissions_change_updates_user_role(self, get_domain_access_mock):
         security_manager = self.app.appbuilder.sm
         self._ensure_platform_roles_exist(security_manager)
 
-        # user has maximum access
         get_domain_access_mock.return_value = self._to_permissions_response(
             can_write=False,
             can_read=True,
             roles=[],
         )
         additional_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
-        assert additional_roles[0].name == domain_user_role_name
+        assert additional_roles[0].name == READ_ONLY_ROLE_NAME
 
         # user has no access
         get_domain_access_mock.return_value = self._to_permissions_response(

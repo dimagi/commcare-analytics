@@ -4,8 +4,8 @@ HQ_DATABASE_NAME = "HQ Data"
 OAUTH2_DATABASE_NAME = "oauth2-server-data"
 
 HQ_USER_ROLE_NAME = "hq_user"
-GAMMA_ROLE = "Gamma"
-
+GAMMA_ROLE_NAME = "Gamma"
+READ_ONLY_ROLE_NAME = "hq_user_read_only"
 
 # Permissions
 SCHEMA_ACCESS_PERMISSION = "schema_access"
