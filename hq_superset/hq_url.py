@@ -33,4 +33,4 @@ def datasource_unsubscribe(domain, datasource_id):
 
 
 def user_domain_roles(domain):
-    return f"a/{domain}/api/v0.5/analytics-roles/"
+    return f"a/{domain}/api/analytics-roles/v1"
