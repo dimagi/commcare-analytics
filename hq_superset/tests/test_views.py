@@ -97,8 +97,8 @@ class OAuthMock():
             'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
             'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
             'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(TEST_UCR_CSV_V1, 200),
-            'a/test1/api/v0.5/analytics-roles/': MockResponse(self.user_domain_roles, 200),
-            'a/test2/api/v0.5/analytics-roles/': MockResponse(self.user_domain_roles, 200),
+            'a/test1/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
+            'a/test2/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
         }[url]
 
 
