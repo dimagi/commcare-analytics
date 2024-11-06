@@ -12,6 +12,7 @@ from hq_superset.exceptions import HQAPIException
 from hq_superset.utils import (
     SESSION_USER_DOMAINS_KEY,
     get_schema_name_for_domain,
+    DomainSyncUtil,
 )
 
 from .base_test import HQDBTestCase
@@ -80,6 +81,10 @@ class OAuthMock():
             ]
         }
         self.api_base_url = "https://cchq.org/"
+        self.user_domain_roles = {
+            "permissions": {"can_view": True, "can_edit": True},
+            "roles": ["Gamma", "sql_lab"],
+        }
 
     def authorize_access_token(self):
         return {"access_token": "some-key"}
@@ -92,6 +97,8 @@ class OAuthMock():
             'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
             'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
             'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(TEST_UCR_CSV_V1, 200),
+            'a/test1/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
+            'a/test2/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
         }[url]
 
 
@@ -171,7 +178,8 @@ class TestViews(HQDBTestCase):
             )
             self.logout(client)
 
-    def test_domain_select_works(self):
+    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
+    def test_domain_select_works(self, *args):
         client = self.app.test_client()
         self.login(client)
 
@@ -201,6 +209,7 @@ class TestViews(HQDBTestCase):
         self.logout(client)
 
     @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
     def test_datasource_list(self, *args):
         def _do_assert(datasources):
             self.assert_template_used("hq_datasource_list.html")
@@ -218,6 +227,7 @@ class TestViews(HQDBTestCase):
         client.get('/hq_datasource/list/', follow_redirects=True)
         _do_assert(self.oauth_mock.test2_datasources)
 
+    @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
     def test_datasource_upload(self, *args):
         client = self.app.test_client()
         self.login(client)
@@ -232,7 +242,8 @@ class TestViews(HQDBTestCase):
                 'ds1'
             )
 
-    def test_trigger_datasource_refresh_with_api_exception(self):
+    @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
+    def test_trigger_datasource_refresh_with_api_exception(self, *args):
         with patch("hq_superset.views.download_and_subscribe_to_datasource", side_effect=HQAPIException('mocked error')):
             client = self.app.test_client()
             self.login(client)

@@ -30,3 +30,7 @@ def datasource_unsubscribe(domain, datasource_id):
         f"a/{domain}/configurable_reports/data_sources/unsubscribe/"
         f"{datasource_id}/"
     )
+
+
+def user_domain_roles(domain):
+    return f"a/{domain}/api/analytics-roles/v1"

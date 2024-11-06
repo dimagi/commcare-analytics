@@ -40,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 
 class HQDatasourceView(BaseSupersetView):
+    class_permission_name = "ExploreFormDataRestApi"
+
     def __init__(self):
         self.route_base = "/hq_datasource/"
         self.default_view = "list_hq_datasources"
@@ -63,6 +65,8 @@ class HQDatasourceView(BaseSupersetView):
             return None
 
     @expose("/update/<datasource_id>", methods=["GET"])
+    @has_access
+    @permission_name("write")
     def create_or_update(self, datasource_id):
         # Fetches data for a datasource from HQ and creates/updates a
         # Superset table
@@ -242,5 +246,11 @@ class SelectDomainView(BaseSupersetView):
             )
             return redirect(url_for('SelectDomainView.list', next=request.url))
         response.set_cookie('hq_domain', hq_domain)
-        DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain)
+        if not DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(hq_domain):
+            flash(
+                f"You don't have the necessary HQ permissions to access the domain '{hq_domain}'.",
+                'warning',
+            )
+            return redirect(url_for('SelectDomainView.list', next=request.url))
+
         return response

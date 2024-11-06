@@ -72,6 +72,7 @@ class TestOauthSecurityManger(SupersetTestCase):
             oauth_mock.domain_json["objects"]
         )
 
+
 class TestGetOAuthTokenGetter(SupersetTestCase):
 
     def tearDown(self):
@@ -110,3 +111,27 @@ class TestGetOAuthTokenGetter(SupersetTestCase):
             set_mock.assert_called_once_with(
                 "commcare", {"access_token": "new key"}
             )
+
+
+class TestSetRolePermissions(SupersetTestCase):
+
+    def tearDown(self):
+        session.clear()
+
+    def test_set_role_permissions(self):
+        appbuilder = self.app.appbuilder
+        role_name = "test_role"
+
+        role = appbuilder.sm.add_role(role_name)
+        permissions = [
+            appbuilder.sm.add_permission_view_menu("can_edit", "Chart"),
+            appbuilder.sm.add_permission_view_menu("can_edit", "Dashboard"),
+        ]
+
+        appbuilder.sm.set_role_permissions(role, permissions)
+        role = appbuilder.sm.find_role(role_name)
+        assert role.permissions == permissions
+
+        appbuilder.sm.set_role_permissions(role, [])
+        role = appbuilder.sm.find_role(role_name)
+        assert role.permissions == []
