@@ -130,10 +130,11 @@ class CeleryConfig:
         },
     }
     beat_schedule = {
-        'email_reports.schedule_hourly': {
-            'task': 'email_reports.schedule_hourly',
-            'schedule': crontab(minute='1', hour='*'),
-        },
+        # example:
+        # 'email_reports.schedule_hourly': {
+        #     'task': 'email_reports.schedule_hourly',
+        #     'schedule': crontab(minute='1', hour='*'),
+        # }
     }
 
 
