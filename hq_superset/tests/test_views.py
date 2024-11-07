@@ -377,7 +377,8 @@ class TestViews(HQDBTestCase):
 
                     self.assertEqual(
                         response.text,
-                        "We couldn't refresh your permissions to access the domain 'test1'. "
+                        "Either your permissions for the project 'test1' were revoked or "
+                        "your permissions failed to refresh. "
                         "Please select the project space again or login again to resolve. "
                         "If issue persists, please submit a support request."
                     )

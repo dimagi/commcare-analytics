@@ -119,9 +119,10 @@ def _perform_sync_domain_role():
 def _sync_domain_role():
     if not DomainSyncUtil(superset.appbuilder.sm).sync_domain_role(g.hq_domain):
         error_message = (
-            f"We couldn't refresh your permissions to access the domain '{g.hq_domain}'. "
-            f"Please select the project space again or login again to resolve. "
-            f"If issue persists, please submit a support request."
+            f"Either your permissions for the project '{g.hq_domain}' were revoked or "
+            "your permissions failed to refresh. "
+            "Please select the project space again or login again to resolve. "
+            "If issue persists, please submit a support request."
         )
         return current_app.response_class(
             response=error_message,
