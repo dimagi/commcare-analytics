@@ -19,7 +19,7 @@ def refresh_hq_datasource_task(domain, datasource_id, display_name, export_path,
             os.remove(export_path)
 
 
-@celery_app.task(name='process_dataset_change')
+@celery_app.task(name='process_dataset_change', ignore_result=True, store_errors_even_if_ignored=True)
 def process_dataset_change(request_json):
     change = DataSetChange(**request_json)
     try:
