@@ -11,9 +11,9 @@ from superset.views.base import (
     json_success,
 )
 
-from .models import DataSetChange
-from .oauth2_server import authorization, require_oauth
-from .tasks import process_dataset_change
+from hq_superset.models import DataSetChange
+from hq_superset.oauth2_server import authorization, require_oauth
+from hq_superset.tasks import process_dataset_change
 
 
 class OAuth(BaseApi):

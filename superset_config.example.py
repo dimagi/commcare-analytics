@@ -181,3 +181,5 @@ TALISMAN_CONFIG = {
     "session_cookie_secure": False,
 }
 
+USER_DOMAIN_ROLE_EXPIRY = 60 # minutes
+

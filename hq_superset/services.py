@@ -13,16 +13,16 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.extensions import cache_manager
 from superset.sql_parse import Table
 
-from .exceptions import HQAPIException
-from .hq_requests import HQRequest
-from .hq_url import (
+from hq_superset.exceptions import HQAPIException
+from hq_superset.hq_requests import HQRequest
+from hq_superset.hq_url import (
     datasource_details,
     datasource_export,
     datasource_subscribe,
     datasource_unsubscribe,
 )
-from .models import OAuth2Client
-from .utils import (
+from hq_superset.models import OAuth2Client
+from hq_superset.utils import (
     convert_to_array,
     generate_secret,
     get_column_dtypes,

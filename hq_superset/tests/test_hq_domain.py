@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from flask import g
 
+from hq_superset.const import SESSION_USER_DOMAINS_KEY
 from hq_superset.hq_domain import (
     DOMAIN_EXCLUDED_VIEWS,
     after_request_hook,
@@ -10,14 +11,12 @@ from hq_superset.hq_domain import (
     is_valid_user_domain,
     user_domains,
 )
+from hq_superset.tests.base_test import HQDBTestCase, SupersetTestCase
 from hq_superset.utils import (
-    SESSION_USER_DOMAINS_KEY,
     DomainSyncUtil,
     get_hq_database,
     get_schema_name_for_domain,
 )
-
-from .base_test import HQDBTestCase, SupersetTestCase
 
 MOCK_DOMAIN_SESSION = {
     SESSION_USER_DOMAINS_KEY:[

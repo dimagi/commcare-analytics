@@ -8,112 +8,19 @@ import jwt
 from flask import redirect, session
 from sqlalchemy.sql import text
 
-from hq_superset.exceptions import HQAPIException
-from hq_superset.utils import (
+from hq_superset.const import (
+    SESSION_DOMAIN_ROLE_LAST_SYNCED_AT,
     SESSION_USER_DOMAINS_KEY,
-    get_schema_name_for_domain,
-    DomainSyncUtil,
 )
-
-from .base_test import HQDBTestCase
-from .const import TEST_DATASOURCE
-
-
-class MockResponse:
-    def __init__(self, json_data, status_code):
-        self.json_data = json_data
-        self.status_code = status_code
-
-    def json(self):
-        return self.json_data
-
-    @property
-    def content(self):
-        return pickle.dumps(self.json_data)
-
-
-class UserMock():
-    user_id = '123'
-
-    def get_id(self):
-        return self.user_id
-
-
-class OAuthMock():
-
-    def __init__(self):
-        self.user_json = {
-            'username': 'testuser1',
-            'first_name': 'user',
-            'last_name': '1',
-            'email': 'test@example.com',
-        }
-        self.domain_json = {
-            "objects": [
-                {
-                    "domain_name":"test1",
-                    "project_name":"test1"
-                },
-                {
-                    "domain_name":"test2",
-                    "project_name":"test 1"
-                },
-            ]
-        }
-        self.test1_datasources = {
-            "objects": [
-                {
-                    "id": 'test1_ucr1',
-                    "display_name": 'Test1 UCR1',
-                },
-                {
-                    "id": 'test1_ucr2',
-                    "display_name": 'Test1 UCR2',
-                },
-            ]
-        }
-        self.test2_datasources = {
-            "objects": [
-                {
-                    "id": 'test2_ucr1',
-                    "display_name": 'Test2 UCR1',
-                }
-            ]
-        }
-        self.api_base_url = "https://cchq.org/"
-        self.user_domain_roles = {
-            "permissions": {"can_view": True, "can_edit": True},
-            "roles": ["Gamma", "sql_lab"],
-        }
-
-    def authorize_access_token(self):
-        return {"access_token": "some-key"}
-
-    def get(self, url, token):
-        return {
-            'api/v0.5/identity/': MockResponse(self.user_json, 200),
-            'api/v0.5/user_domains?feature_flag=superset-analytics&can_view_reports=true': MockResponse(self.domain_json, 200),
-            'a/test1/api/v0.5/ucr_data_source/': MockResponse(self.test1_datasources, 200),
-            'a/test2/api/v0.5/ucr_data_source/': MockResponse(self.test2_datasources, 200),
-            'a/test1/api/v0.5/ucr_data_source/test1_ucr1/': MockResponse(TEST_DATASOURCE, 200),
-            'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(TEST_UCR_CSV_V1, 200),
-            'a/test1/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
-            'a/test2/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
-        }[url]
-
-
-TEST_UCR_CSV_V1 = """\
-doc_id,inserted_at,data_visit_date_eaece89e,data_visit_number_33d63739,data_lmp_date_5e24b993,data_visit_comment_fb984fda
-a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
-a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
-"""
-
-TEST_UCR_CSV_V2 = """\
-doc_id,inserted_at,data_visit_date_eaece89e,data_visit_number_33d63739,data_lmp_date_5e24b993,data_visit_comment_fb984fda
-a1, 2021-12-20, 2022-01-19, 100, 2022-02-20, some_text
-a2, 2021-12-22, 2022-02-19, 10, 2022-03-20, some_other_text
-a3, 2021-11-22, 2022-01-19, 10, 2022-03-20, some_other_text2
-"""
+from hq_superset.exceptions import HQAPIException
+from hq_superset.tests.base_test import HQDBTestCase
+from hq_superset.tests.const import (
+    TEST_DATASOURCE,
+    TEST_UCR_CSV_V1,
+    TEST_UCR_CSV_V2,
+)
+from hq_superset.tests.utils import MockResponse, OAuthMock, UserMock
+from hq_superset.utils import DomainSyncUtil, get_schema_name_for_domain
 
 
 class TestViews(HQDBTestCase):
@@ -226,8 +133,9 @@ class TestViews(HQDBTestCase):
         client.get('/domain/select/test2/', follow_redirects=True)
         client.get('/hq_datasource/list/', follow_redirects=True)
         _do_assert(self.oauth_mock.test2_datasources)
+        self.logout(client)
 
-    @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
+    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
     def test_datasource_upload(self, *args):
         client = self.app.test_client()
         self.login(client)
@@ -241,6 +149,7 @@ class TestViews(HQDBTestCase):
                 ucr_id,
                 'ds1'
             )
+        self.logout(client)
 
     @patch.object(DomainSyncUtil, "sync_domain_role", return_value=True)
     def test_trigger_datasource_refresh_with_api_exception(self, *args):
@@ -259,6 +168,7 @@ class TestViews(HQDBTestCase):
                 )
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.location, "/tablemodelview/list/")
+            self.logout(client)
 
     def test_trigger_datasource_refresh_with_errors(self, *args):
         from hq_superset.views import (
@@ -404,3 +314,75 @@ class TestViews(HQDBTestCase):
 
             client.get('/hq_datasource/list/', follow_redirects=True)
             self.assert_context('ucr_id_to_pks', {})
+
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    @patch('hq_superset.hq_domain._sync_domain_role', return_value=None)
+    def test_sync_user_domain_role_calls(self, sync_domain_role_mock, *args):
+        with self.app.test_client() as client:
+            assert SESSION_USER_DOMAINS_KEY not in session
+            self.login(client)
+            self.assertIsNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on login
+            sync_domain_role_mock.assert_not_called()
+
+            response = client.get('/', follow_redirects=True)
+            self.assertEqual(response.status, "200 OK")
+            self.assertTrue('/domain/list' in response.request.path)
+            self.assertIsNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on domain listing after login
+            sync_domain_role_mock.assert_not_called()
+
+            client.get('/domain/select/test1/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called on domain selection
+            sync_domain_role_mock.assert_not_called()
+
+            client.get('/hq_datasource/list/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+            # not called if recently synced
+            sync_domain_role_mock.assert_not_called()
+
+            with patch('hq_superset.hq_domain.USER_DOMAIN_ROLE_EXPIRY', 0):
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+                # called only if expired
+                sync_domain_role_mock.assert_called()
+
+            self.logout(client)
+
+    @patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', return_value={})
+    def test_sync_user_domain_before_request(self, *args):
+        with self.app.test_client() as client:
+            assert SESSION_USER_DOMAINS_KEY not in session
+            self.login(client)
+
+            client.get('/domain/select/test1/', follow_redirects=True)
+            self.assertIsNotNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+
+            with patch('hq_superset.hq_domain.USER_DOMAIN_ROLE_EXPIRY', 0):
+                session_role_last_synced_at = session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT)
+                client.get('/hq_datasource/list/', follow_redirects=True)
+                # timestamp in session updated
+                self.assertNotEqual(session_role_last_synced_at, session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+
+                with patch.object(DomainSyncUtil, 'sync_domain_role') as domain_sync_util_mock:
+                    # in case of failure to sync
+                    domain_sync_util_mock.return_value = False
+                    response = client.get('/hq_datasource/list/', follow_redirects=True)
+
+                    # confirm function call for sync
+                    domain_sync_util_mock.assert_called_once_with(
+                        "test1"
+                    )
+
+                    self.assertEqual(
+                        response.text,
+                        "Either your permissions for the project 'test1' were revoked or "
+                        "your permissions failed to refresh. "
+                        "Please select the project space again or login again to resolve. "
+                        "If issue persists, please submit a support request."
+                    )
+                    self.assertEqual(response.status_code, 400)
+
+            self.logout(client)
+

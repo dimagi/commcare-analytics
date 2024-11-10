@@ -8,9 +8,13 @@ from authlib.integrations.sqla_oauth2 import (
 from cryptography.fernet import MultiFernet
 from superset import db
 
-from .const import OAUTH2_DATABASE_NAME
-from .exceptions import TableMissing
-from .utils import cast_data_for_table, get_fernet_keys, get_hq_database
+from hq_superset.const import OAUTH2_DATABASE_NAME
+from hq_superset.exceptions import TableMissing
+from hq_superset.utils import (
+    cast_data_for_table,
+    get_fernet_keys,
+    get_hq_database,
+)
 
 
 @dataclass

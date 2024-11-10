@@ -65,3 +65,4 @@ AUTH_USER_REGISTRATION_ROLE = "Gamma"
 # CommCare Analytics extensions
 FLASK_APP_MUTATOR = flask_app_mutator
 CUSTOM_SECURITY_MANAGER = oauth.CommCareSecurityManager
+USER_DOMAIN_ROLE_EXPIRY = 60 # minutes

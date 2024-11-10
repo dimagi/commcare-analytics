@@ -3,14 +3,13 @@ from unittest.mock import patch
 
 from flask import session
 
-from hq_superset.exceptions import OAuthSessionExpired
-from hq_superset.oauth import get_valid_cchq_oauth_token
-from hq_superset.utils import (
+from hq_superset.const import (
     SESSION_OAUTH_RESPONSE_KEY,
     SESSION_USER_DOMAINS_KEY,
 )
-
-from .base_test import SupersetTestCase
+from hq_superset.exceptions import OAuthSessionExpired
+from hq_superset.oauth import get_valid_cchq_oauth_token
+from hq_superset.tests.base_test import SupersetTestCase
 
 
 class MockResponse:

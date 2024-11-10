@@ -1,10 +1,12 @@
 import doctest
 from unittest.mock import patch
 
-from hq_superset.utils import get_column_dtypes, DomainSyncUtil
-from .base_test import SupersetTestCase
-from .const import TEST_DATASOURCE
-from hq_superset.const import READ_ONLY_ROLE_NAME
+from flask import session
+
+from hq_superset.const import READ_ONLY_ROLE_NAME, SESSION_DOMAIN_ROLE_LAST_SYNCED_AT
+from hq_superset.tests.base_test import LoginUserTestMixin, SupersetTestCase
+from hq_superset.tests.const import TEST_DATASOURCE
+from hq_superset.utils import DomainSyncUtil, get_column_dtypes
 
 
 def test_get_column_dtypes():
@@ -28,7 +30,7 @@ def test_doctests():
     assert results.failed == 0
 
 
-class TestDomainSyncUtil(SupersetTestCase):
+class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
     PLATFORM_ROLE_NAMES = ["Gamma", "sql_lab", "dataset_editor"]
 
     @patch.object(DomainSyncUtil, "_get_domain_access")
@@ -93,6 +95,26 @@ class TestDomainSyncUtil(SupersetTestCase):
         )
         additional_roles = DomainSyncUtil(security_manager)._get_additional_user_roles("test-domain")
         assert not additional_roles
+
+    @patch('hq_superset.utils.datetime_utcnow')
+    @patch.object(DomainSyncUtil, "_get_domain_access")
+    def test_sync_domain_role(self, get_domain_access_mock, utcnow_mock):
+        client = self.app.test_client()
+        self.login(client)
+
+        utcnow_mock_return = "2024-11-01 14:30:04.323000+00:00"
+        utcnow_mock.return_value = utcnow_mock_return
+        get_domain_access_mock.return_value = self._to_permissions_response(
+            can_write=False,
+            can_read=True,
+            roles=[],
+        )
+        security_manager = self.app.appbuilder.sm
+
+        self.assertIsNone(session.get(SESSION_DOMAIN_ROLE_LAST_SYNCED_AT))
+        DomainSyncUtil(security_manager).sync_domain_role("test-domain")
+        self.assertEqual(session[SESSION_DOMAIN_ROLE_LAST_SYNCED_AT], utcnow_mock_return)
+        self.logout(client)
 
     def _ensure_platform_roles_exist(self, sm):
         for role_name in self.PLATFORM_ROLE_NAMES:

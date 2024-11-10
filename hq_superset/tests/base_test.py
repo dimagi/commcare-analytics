@@ -2,15 +2,17 @@
 """
 Base TestCase class
 """
-
 import os
 import shutil
 
+import jwt
 from flask_testing import TestCase
 from sqlalchemy.sql import text
 from superset.app import create_app
 
-from hq_superset.utils import DOMAIN_PREFIX, get_hq_database
+from hq_superset.const import DOMAIN_PREFIX
+from hq_superset.tests.utils import OAuthMock
+from hq_superset.utils import get_hq_database
 
 superset_test_home = os.path.join(os.path.dirname(__file__), ".test_superset")
 shutil.rmtree(superset_test_home, ignore_errors=True)
@@ -48,3 +50,33 @@ class HQDBTestCase(SupersetTestCase):
                     sql = "; ".join(domain_schemas) + ";"
                     connection.execute(text(sql))
         super(HQDBTestCase, self).tearDown()
+
+
+class LoginUserTestMixin(object):
+    """
+    Use this mixin by calling login function with client
+    & then logout once done for clearing the session
+    """
+    def login(self, client):
+        self._setup_user()
+        # bypass oauth-workflow by skipping login and oauth flow
+        with client.session_transaction() as session_:
+            session_["oauth_state"] = "mock_state"
+        state = jwt.encode({}, "mock_state", algorithm="HS256")
+        return client.get(f"/oauth-authorized/commcare?state={state}", follow_redirects=True)
+
+    def _setup_user(self):
+        self.app.appbuilder.add_permissions(update_perms=True)
+        self.app.appbuilder.sm.sync_role_definitions()
+
+        self.oauth_mock = OAuthMock()
+        self.app.appbuilder.sm.oauth_remotes = {"commcare": self.oauth_mock}
+
+        gamma_role = self.app.appbuilder.sm.find_role('Gamma')
+        self.user = self.app.appbuilder.sm.find_user(self.oauth_mock.user_json['username'])
+        if not self.user:
+            self.user = self.app.appbuilder.sm.add_user(**self.oauth_mock.user_json, role=[gamma_role])
+
+    @staticmethod
+    def logout(client):
+        return client.get("/logout/")

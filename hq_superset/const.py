@@ -48,3 +48,8 @@ READ_ONLY_MENU_PERMISSIONS = {
     "Datasets": [MENU_ACCESS_PERMISSION],
     "ExploreFormDataRestApi": [CAN_READ_PERMISSION]
 }
+
+DOMAIN_PREFIX = "hqdomain_"
+SESSION_USER_DOMAINS_KEY = "user_hq_domains"
+SESSION_OAUTH_RESPONSE_KEY = "oauth_response"
+SESSION_DOMAIN_ROLE_LAST_SYNCED_AT = "domain_role_last_synced_at"
