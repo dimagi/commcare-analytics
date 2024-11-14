@@ -43,7 +43,7 @@ SQLALCHEMY_BINDS = {
     OAUTH2_DATABASE_NAME: 'postgresql://postgres:postgres@localhost:5432/superset_oauth2'
 }
 
-HQ_DATABASE_URI = "postgresql://commcarehq:commcarehq@localhost:5432/superset_hq_data"
+HQ_DATABASE_URI = "postgresql://commcarehq:commcarehq@localhost:5432/superset_cchq_data"
 
 # Populate with oauth credentials from your local CommCareHQ
 OAUTH_PROVIDERS = [
