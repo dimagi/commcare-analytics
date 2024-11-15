@@ -18,8 +18,6 @@ from sqlalchemy.sql import TableClause
 from superset.utils.database import get_or_create_db
 
 from hq_superset.const import (
-    CAN_READ_PERMISSION,
-    CAN_WRITE_PERMISSION,
     DOMAIN_PREFIX,
     GAMMA_ROLE_NAME,
     HQ_DATABASE_NAME,
@@ -199,19 +197,19 @@ class DomainSyncUtil:
         return self.sm.add_role(get_role_name_for_domain(domain))
 
     def _get_additional_user_roles(self, domain):
-        domain_permissions, roles_names = self._get_domain_access(domain)
-        if self._user_has_no_access(domain_permissions):
+        can_read, can_write, platform_roles_names = self._get_domain_access(domain)
+        if not (can_read or can_write):
             return []
 
-        if domain_permissions[CAN_WRITE_PERMISSION]:
+        if can_write:
             user_role = GAMMA_ROLE_NAME
         else:
             self._ensure_read_only_role_exists()
             user_role = READ_ONLY_ROLE_NAME
 
-        roles_names.append(user_role)
+        platform_roles_names.append(user_role)
 
-        return self._get_platform_roles(roles_names)
+        return self._get_platform_roles(platform_roles_names)
 
     @staticmethod
     def _get_domain_access(domain):
@@ -228,17 +226,7 @@ class DomainSyncUtil:
         hq_permissions = response_data['permissions']
         roles = response_data['roles'] or []
 
-        # Map between HQ and CCA
-        permissions = {
-            CAN_WRITE_PERMISSION: hq_permissions["can_edit"],
-            CAN_READ_PERMISSION: hq_permissions["can_view"],
-        }
-        return permissions, roles
-
-    @staticmethod
-    def _user_has_no_access(permissions: dict):
-        user_has_access = any([permissions[p] for p in permissions])
-        return not user_has_access
+        return hq_permissions["can_view"], hq_permissions["can_edit"], roles
 
     def _get_platform_roles(self, roles_names):
         platform_roles = []
