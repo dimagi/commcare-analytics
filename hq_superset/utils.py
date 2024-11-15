@@ -135,10 +135,7 @@ class DomainSyncUtil:
         The user gets assigned at least 3 roles in order to function on any domain:
         1. hq_user_role: gives access to superset platform
         2. domain_schema_role: restricts user access to specific domain schema
-        3. domain_user_role: restricts access for particular user on domain in accordance with how the permissions
-        are defined on CommCare HQ.
-
-        Any additional roles defined on CommCare HQ will also be assigned to the user.
+        3. Either the Gamma role for "edit" users or the READ_ONLY_ROLE_NAME for "view only" user
         """
         hq_user_role = self._ensure_hq_user_role()
         domain_schema_role = self._create_domain_role(domain)
