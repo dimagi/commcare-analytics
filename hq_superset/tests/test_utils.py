@@ -122,7 +122,4 @@ class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
 
     @staticmethod
     def _to_permissions_response(can_write, can_read, roles):
-        return {
-            "can_write": can_write,
-            "can_read": can_read,
-        }, roles
+        return can_read, can_write, roles

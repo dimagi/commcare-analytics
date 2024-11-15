@@ -85,7 +85,7 @@ class TestViews(HQDBTestCase):
             )
             self.logout(client)
 
-    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
+    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=(True, True, []))
     def test_domain_select_works(self, *args):
         client = self.app.test_client()
         self.login(client)
@@ -135,7 +135,7 @@ class TestViews(HQDBTestCase):
         _do_assert(self.oauth_mock.test2_datasources)
         self.logout(client)
 
-    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=({"can_write": True, "can_read": True}, []))
+    @patch.object(DomainSyncUtil, "_get_domain_access", return_value=(True, True, []))
     def test_datasource_upload(self, *args):
         client = self.app.test_client()
         self.login(client)

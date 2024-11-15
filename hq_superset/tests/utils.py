@@ -65,8 +65,8 @@ class OAuthMock(object):
             'a/test1/configurable_reports/data_sources/export/test1_ucr1/?format=csv': MockResponse(
                 TEST_UCR_CSV_V1, 200
             ),
-            'a/test1/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
-            'a/test2/api/analytics-roles/v1': MockResponse(self.user_domain_roles, 200),
+            'a/test1/api/analytics-roles/v1/': MockResponse(self.user_domain_roles, 200),
+            'a/test2/api/analytics-roles/v1/': MockResponse(self.user_domain_roles, 200),
         }[url]
 
 
