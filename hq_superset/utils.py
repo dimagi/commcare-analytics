@@ -133,7 +133,7 @@ class DomainSyncUtil:
         The user gets assigned at least 3 roles in order to function on any domain:
         1. hq_user_role: gives access to superset platform
         2. domain_schema_role: restricts user access to specific domain schema
-        3. Either the Gamma role for "edit" users or the READ_ONLY_ROLE_NAME for "view only" user
+        3. Gamma role for users with write access or READ_ONLY_ROLE_NAME for users with read access only
         """
         hq_user_role = self._ensure_hq_user_role()
         domain_schema_role = self._create_domain_role(domain)
