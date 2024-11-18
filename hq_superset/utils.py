@@ -202,14 +202,14 @@ class DomainSyncUtil:
             return []
 
         if can_write:
-            user_role = GAMMA_ROLE_NAME
+            user_role_name = GAMMA_ROLE_NAME
         else:
             self._ensure_read_only_role_exists()
-            user_role = READ_ONLY_ROLE_NAME
+            user_role_name = READ_ONLY_ROLE_NAME
 
-        platform_roles_names.append(user_role)
-
-        return self._get_platform_roles(platform_roles_names)
+        return self._get_platform_roles(
+            platform_roles_names + [user_role_name]
+        )
 
     @staticmethod
     def _get_domain_access(domain):
