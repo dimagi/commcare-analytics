@@ -220,7 +220,7 @@ class DomainSyncUtil:
         response = hq_request.get()
 
         if response.status_code != 200:
-            return {}, []
+            return False, False, []
 
         response_data = response.json()
         hq_permissions = response_data['permissions']
