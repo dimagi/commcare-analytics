@@ -7,6 +7,7 @@ from hq_superset.const import READ_ONLY_ROLE_NAME, SESSION_DOMAIN_ROLE_LAST_SYNC
 from hq_superset.tests.base_test import LoginUserTestMixin, SupersetTestCase
 from hq_superset.tests.const import TEST_DATASOURCE
 from hq_superset.utils import DomainSyncUtil, get_column_dtypes
+from hq_superset.hq_requests import HQRequest
 
 
 def test_get_column_dtypes():
@@ -30,8 +31,40 @@ def test_doctests():
     assert results.failed == 0
 
 
+class DomainAccessMockResponse:
+    status_code: int = 200
+
+    def __init__(self, status_code=None):
+        if status_code:
+            self.status_code = status_code
+
+    def json(self):
+        return {
+            'permissions': {'can_edit': True, 'can_view': True},
+            'roles': ['sql_lab']
+        }
+
+
 class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
     PLATFORM_ROLE_NAMES = ["Gamma", "sql_lab", "dataset_editor"]
+
+    @patch.object(HQRequest, "get")
+    def test_domain_access_success_response(self, get_mock):
+        get_mock.return_value = DomainAccessMockResponse()
+
+        security_manager = self.app.appbuilder.sm
+        response = DomainSyncUtil(security_manager)._get_domain_access("test-domain")
+
+        assert response == (True, True, ["sql_lab"])
+
+    @patch.object(HQRequest, "get")
+    def test_domain_access_faulty_response(self, get_mock):
+        get_mock.return_value = DomainAccessMockResponse(status_code=400)
+
+        security_manager = self.app.appbuilder.sm
+        response = DomainSyncUtil(security_manager)._get_domain_access("test-domain")
+
+        assert response == (False, False, [])
 
     @patch.object(DomainSyncUtil, "_get_domain_access")
     def test_gamma_role_assigned_for_edit_permissions(self, get_domain_access_mock):
@@ -122,7 +155,4 @@ class TestDomainSyncUtil(LoginUserTestMixin, SupersetTestCase):
 
     @staticmethod
     def _to_permissions_response(can_write, can_read, roles):
-        return {
-            "can_write": can_write,
-            "can_read": can_read,
-        }, roles
+        return can_read, can_write, roles
