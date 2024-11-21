@@ -162,7 +162,7 @@ In order to test your feature branch on staging you need to
 6. Deploy `staging` (see Deploying Staging below)
 
 #### Deploying staging
-1. SSH to `commcare-analytics-staging.dimag.com`
+1. SSH to `commcare-analytics-staging.dimagi.com`
 2. Virtual environment should already be activated
 3. Uninstall current superset version
 
