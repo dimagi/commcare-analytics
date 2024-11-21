@@ -156,10 +156,33 @@ don't include Superset.
 In order to test your feature branch on staging you need to
 1. Check out to `master` branch (make sure it's up to date)
 2. Add your feature branch to the `branches` section in `scripts/staging.yml` file
-3. Push the file back to remote `master`
-4. Run `scripts/rebuildstaging` (this will rebuild the staging branch on your machine)
+3. Make a PR to `master`
+4. Once merged, run `scripts/rebuildstaging` (this will rebuild the staging branch on your machine)
 5. Push the new `staging` branch to remote
-6. Deploy `staging` as usual
+6. Deploy `staging` (see Deploying Staging below)
+
+#### Deploying staging
+1. SSH to `commcare-analytics-staging.dimag.com`
+2. Virtual environment should already be activated
+3. Uninstall current superset version
+
+```shell
+$ pip uninstall hq-superset
+```
+
+4. Install new superset version
+
+```shell
+$ pip install git+https://github.com/dimagi/hq_superset.git@staging
+```
+
+5. Restart superset & celery as needed
+
+```shell
+$ sudo supervisorctl restart superset
+$ sudo supervisorctl restart commcare_analytics_celery_default
+```
+
 
 
 ### Creating a migration
