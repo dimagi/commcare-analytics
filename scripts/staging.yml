@@ -9,3 +9,4 @@ name: staging
 branches:
   - cs/SC-3473-user-roles-from-hq
   - mk/3475-expire-user-permissions
+  - ze/dd-celery-integration
