@@ -22,7 +22,8 @@ setup(
         'sentry-sdk[flask]==1.39.2',
         'Werkzeug==2.3.3',
         'WTForms==2.3.3',
-        'ddtrace==2.17.0rc2'
+        'ddtrace==2.17.0rc2',
+        'statsd==4.0.1'
     ],
     extras_require={
         'dev': [
