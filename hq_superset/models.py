@@ -7,6 +7,7 @@ from authlib.integrations.sqla_oauth2 import (
 )
 from cryptography.fernet import MultiFernet
 from superset import db
+from superset.extensions import cache_manager
 
 from hq_superset.const import OAUTH2_DATABASE_NAME
 from hq_superset.exceptions import TableMissing
@@ -16,6 +17,7 @@ from hq_superset.utils import (
     get_hq_database,
 )
 
+cache = cache_manager.cache
 
 @dataclass
 class DataSetChange:
@@ -31,16 +33,14 @@ class DataSetChange:
         for a form or a case, which is identified by ``self.doc_id``. If
         the form or case has been deleted, then the list will be empty.
         """
-        database = get_hq_database()
-        try:
-            sqla_table = next((
-                table for table in database.tables
-                if table.table_name == self.data_source_id
-            ))
-        except StopIteration:
+        sqla_table = _get_data_source_table(self.data_source_id)
+        if not sqla_table:
+            # do not cache missing table results
+            _get_data_source_table.delete_memoized(self.data_source_id)
             raise TableMissing(f'{self.data_source_id} table not found.')
         table = sqla_table.get_sqla_table_object()
 
+        database = _get_cached_hq_database()
         with (
             database.get_sqla_engine_with_context() as engine,
             engine.connect() as connection,
@@ -52,6 +52,39 @@ class DataSetChange:
                 rows = list(cast_data_for_table(self.data, table))
                 insert_stmt = table.insert().values(rows)
                 connection.execute(insert_stmt)
+
+
+@cache.memoize(timeout=24*3600)  # 1 day
+def _get_data_source_table(data_source_id):
+    """
+    Fetch table for datasource.
+    Try again after expiring database cache if not found first
+    """
+
+    def _get_table():
+        database = _get_cached_hq_database()
+        return _get_sqla_table(database, data_source_id)
+
+    sqla_table = _get_table()
+    if not sqla_table:
+        _get_cached_hq_database.delete_memoized()
+        sqla_table = _get_table()
+    return sqla_table
+
+
+def _get_sqla_table(database, data_source_id):
+    try:
+        return next((
+            table for table in database.tables
+            if table.table_name == data_source_id
+        ))
+    except StopIteration:
+        return None
+
+
+@cache.memoize(timeout=24*3600)  # 1 day
+def _get_cached_hq_database():
+    return get_hq_database()
 
 
 class OAuth2Client(db.Model, OAuth2ClientMixin):
