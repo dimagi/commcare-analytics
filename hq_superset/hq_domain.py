@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import superset
 from flask import current_app, flash, g, redirect, request, session, url_for
+from flask_login import logout_user
 from superset.config import USER_DOMAIN_ROLE_EXPIRY
 from superset.extensions import cache_manager
 
@@ -37,6 +38,15 @@ def after_request_hook(response):
     if request.url_rule and (request.url_rule.endpoint in logout_views):
         response.set_cookie('hq_domain', '', expires=0)
     return response
+
+
+def oauth_session_expired(*arg, **kwargs):
+    logout_user()
+    flash(
+        f"Your session has expired. Please log in again.",
+        'warning',
+    )
+    return redirect(url_for("AuthOAuthView.login"))
 
 
 DOMAIN_EXCLUDED_VIEWS = [
