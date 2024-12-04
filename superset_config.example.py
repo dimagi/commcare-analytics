@@ -9,8 +9,12 @@
 import sentry_sdk
 from cachelib.redis import RedisCache
 from celery.schedules import crontab
+from ddtrace import patch
 from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
 from sentry_sdk.integrations.flask import FlaskIntegration
+
+from superset.stats_logger import StatsdStatsLogger
+
 
 from hq_superset import flask_app_mutator, oauth
 from hq_superset.const import OAUTH2_DATABASE_NAME
@@ -105,6 +109,9 @@ RESULTS_BACKEND = RedisCache(
     host='localhost', port=6379, key_prefix='superset_results'
 )
 
+# Enable Datadog instrumentation for Celery and Redis
+patch(celery=True, redis=True)
+STATS_LOGGER = StatsdStatsLogger()
 
 class CeleryConfig:
     accept_content = ['pickle']
