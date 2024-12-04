@@ -21,6 +21,7 @@ from hq_superset.tests.const import (
 )
 from hq_superset.tests.utils import MockResponse, OAuthMock, UserMock
 from hq_superset.utils import DomainSyncUtil, get_schema_name_for_domain
+from hq_superset.exceptions import OAuthSessionExpired
 
 
 class TestViews(HQDBTestCase):
@@ -385,4 +386,12 @@ class TestViews(HQDBTestCase):
                     self.assertEqual(response.status_code, 400)
 
             self.logout(client)
+
+    def test_expired_oauth_session_redirects_to_login(self, *args):
+        with self.app.test_client() as client:
+            self.login(client)
+
+            with patch('hq_superset.hq_requests.get_valid_cchq_oauth_token', side_effect=OAuthSessionExpired()):
+                response = client.get('/domain/select/test1/', follow_redirects=False)
+                assert response.location == "/login/"
 

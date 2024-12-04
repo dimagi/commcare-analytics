@@ -2,6 +2,7 @@ import logging
 import time
 
 import superset
+from authlib.integrations.base_client import OAuthError
 from flask import flash, session
 from requests.exceptions import HTTPError
 from superset.security import SupersetSecurityManager
@@ -101,7 +102,7 @@ def refresh_and_fetch_token(refresh_token):
             refresh_token=refresh_token
         )
         return refresh_response
-    except HTTPError:
+    except (HTTPError, OAuthError):
         # If the refresh token too expired raise exception.
         raise OAuthSessionExpired(
             "OAuth refresh token has expired. User need to re-authorize the OAuth Application"

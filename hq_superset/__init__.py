@@ -8,8 +8,8 @@ def flask_app_mutator(app):
     # Import the views (which assumes the app is initialized) here
     # return
     from superset.extensions import appbuilder
-
     from . import api, hq_domain, oauth2_server, views
+    from .exceptions import OAuthSessionExpired
 
     appbuilder.add_view(views.HQDatasourceView, 'Update HQ Datasource', menu_cond=lambda *_: False)
     appbuilder.add_view(views.SelectDomainView, 'Select a Domain', menu_cond=lambda *_: False)
@@ -17,6 +17,7 @@ def flask_app_mutator(app):
     appbuilder.add_api(api.DataSetChangeAPI)
     oauth2_server.config_oauth2(app)
 
+    app.register_error_handler(OAuthSessionExpired, hq_domain.oauth_session_expired)
     app.before_request(hq_domain.before_request_hook)
     app.after_request(hq_domain.after_request_hook)
     app.strict_slashes = False
