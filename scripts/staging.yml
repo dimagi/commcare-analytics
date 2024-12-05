@@ -8,4 +8,3 @@ trunk: master
 name: staging
 branches:
   - ze/dd-celery-integration
-  - redirect-to-login-for-expired-refresh-tokens
