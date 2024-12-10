@@ -12,6 +12,8 @@ from celery.schedules import crontab
 from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
 from sentry_sdk.integrations.flask import FlaskIntegration
 
+from ddtrace import patch
+
 from hq_superset import flask_app_mutator, oauth
 from hq_superset.const import OAUTH2_DATABASE_NAME
 
@@ -105,6 +107,7 @@ RESULTS_BACKEND = RedisCache(
     host='localhost', port=6379, key_prefix='superset_results'
 )
 
+patch(redis=True)
 
 class CeleryConfig:
     accept_content = ['pickle']
