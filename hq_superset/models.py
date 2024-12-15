@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from sqlalchemy.dialects.postgresql import insert
 from typing import Any
 
 from authlib.integrations.sqla_oauth2 import (
@@ -46,12 +47,18 @@ class DataSetChange:
             engine.connect() as connection,
             connection.begin()  # Commit on leaving context
         ):
-            delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
-            connection.execute(delete_stmt)
             if self.data:
                 rows = list(cast_data_for_table(self.data, table))
-                insert_stmt = table.insert().values(rows)
-                connection.execute(insert_stmt)
+                upsert = insert(table).values(rows)
+                upsert.on_conflict_do_update(
+                    constraint=table.primary_key,
+                    set_={
+                        col.name: col for col in upsert.excluded if not col.primary_key
+                    }
+                )
+            else:
+                delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
+                connection.execute(delete_stmt)
 
 
 class OAuth2Client(db.Model, OAuth2ClientMixin):
