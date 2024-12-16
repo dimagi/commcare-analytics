@@ -140,7 +140,7 @@ class CeleryConfig:
         #     'schedule': crontab(minute='1', hour='*'),
         # }
         'delete_redundant_shared_files': {
-            'task': 'tasks.delete_redundant_shared_files',
+            'task': 'delete_redundant_shared_files',
             'schedule': crontab(hour='0', minute='0')
         }
     }
