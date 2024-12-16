@@ -7,4 +7,3 @@
 trunk: master
 name: staging
 branches:
-  - ze/dd-celery-integration
