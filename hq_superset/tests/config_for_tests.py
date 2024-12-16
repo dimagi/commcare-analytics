@@ -51,6 +51,7 @@ SQLALCHEMY_BINDS = {
     OAUTH2_DATABASE_NAME: 'sqlite:///test_oauth2.db'
 }
 SHARED_DIR = "shared_dir"
+REMOVE_SHARED_FILES_AFTER = 0 # days
 ENABLE_ASYNC_UCR_IMPORTS = True
 CACHE_CONFIG = {
       'CACHE_TYPE': 'RedisCache',

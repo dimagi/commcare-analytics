@@ -78,8 +78,9 @@ AUTH_USER_REGISTRATION = True
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
-# This is where async UCR imports are stored temporarily
+# This is where async UCR imports are stored temporarily for REMOVE_SHARED_FILES_AFTER days
 SHARED_DIR = 'shared_dir'
+REMOVE_SHARED_FILES_AFTER = 7 # days
 
 # If this is enabled, UCRs larger than
 #   hq_superset.views.ASYNC_DATASOURCE_IMPORT_LIMIT_IN_BYTES
@@ -138,6 +139,10 @@ class CeleryConfig:
         #     'task': 'email_reports.schedule_hourly',
         #     'schedule': crontab(minute='1', hour='*'),
         # }
+        'delete_redundant_shared_files': {
+            'task': 'tasks.delete_redundant_shared_files',
+            'schedule': crontab(hour='0', minute='0')
+        }
     }
 
 
