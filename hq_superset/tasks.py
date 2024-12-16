@@ -30,6 +30,7 @@ def process_dataset_change(request_json):
         pass
 
 
+@celery_app.task(name='delete_redundant_shared_files')
 def delete_redundant_shared_files():
     """
     Delete shared temporary files older than REMOVE_SHARED_FILES_AFTER days
