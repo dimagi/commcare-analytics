@@ -1,4 +1,6 @@
 import os
+import superset
+import time
 
 from superset.extensions import celery_app
 
@@ -26,3 +28,19 @@ def process_dataset_change(request_json):
         change.update_dataset()
     except TableMissing:
         pass
+
+
+def delete_redundant_shared_files():
+    """
+    Delete shared temporary files older than REMOVE_SHARED_FILES_AFTER days
+    """
+    directory = superset.config.SHARED_DIR
+
+    now = time.time()
+    redundant_timestamp = now - (superset.config.REMOVE_SHARED_FILES_AFTER * 86400)
+
+    for file_name in os.listdir(directory):
+        file_path = os.path.join(directory, file_name)
+        if os.stat(file_path).st_mtime < redundant_timestamp:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
