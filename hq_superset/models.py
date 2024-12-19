@@ -7,6 +7,7 @@ from authlib.integrations.sqla_oauth2 import (
 )
 from cryptography.fernet import MultiFernet
 from superset import db
+from superset_config import SKIP_DATASET_CHANGE_FOR_DOMAINS
 
 from hq_superset.const import OAUTH2_DATABASE_NAME
 from hq_superset.exceptions import TableMissing
@@ -16,6 +17,15 @@ from hq_superset.utils import (
     get_hq_database,
 )
 
+import logging
+logger = logging.getLogger(__name__)
+
+# constant here instead of const due to
+# circular import error with config in const
+SKIP_DATASET_CHANGE_FOR_SCHEMAS = [
+    f"hqdomain_{domain_name}"
+    for domain_name in SKIP_DATASET_CHANGE_FOR_DOMAINS
+]
 
 @dataclass
 class DataSetChange:
@@ -40,6 +50,10 @@ class DataSetChange:
         except StopIteration:
             raise TableMissing(f'{self.data_source_id} table not found.')
         table = sqla_table.get_sqla_table_object()
+
+        if table.schema and table.schema in SKIP_DATASET_CHANGE_FOR_SCHEMAS:
+            logger.info("Skipped change for schema {0}".format(table.schema))
+            return
 
         with (
             database.get_sqla_engine_with_context() as engine,
