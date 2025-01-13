@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='commcare-analytics',
-    version='1.1.2',
+    version='1.1.2.dev0',
     description='CommCare HQ Superset Integration',
     license='Apache2',
     author='Dimagi Inc.',
@@ -11,7 +11,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     install_requires=[
-        'dimagi-superset==3.1.0.post1',
+        'dimagi-superset @ git+https://github.com/dimagi/superset.git@e0aa79525a',
         # Dependencies based on Superset 3.1.0 where applicable
         'Authlib==1.3.0',
         'celery==5.4.0',
