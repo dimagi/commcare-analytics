@@ -173,7 +173,7 @@ $ pip uninstall hq-superset
 4. Install new superset version
 
 ```shell
-$ pip install git+https://github.com/dimagi/hq_superset.git@staging
+$ pip install git+https://github.com/dimagi/commcare-analytics.git@staging
 ```
 
 5. Restart superset & celery as needed
@@ -223,7 +223,8 @@ $ alembic revision --autogenerate -m "Add table for Foo model"
 Upgrading Superset
 ------------------
 
-`dimagi-superset` is a requirement of this `hq_superset` package. It is
-a fork of `apache-superset`, and adds important features to it,
-necessary for `hq_superset`. For more information about how to upgrade
-`dimagi-superset`, see [Dimagi Superset Fork](apache-superset.md).
+`dimagi-superset` is a requirement of this `commcare-analytics` package.
+It is a fork of `apache-superset`, and adds important features to it,
+necessary for `commcare-analytics`. For more information about how to
+upgrade `dimagi-superset`, see
+[Dimagi Superset Fork](apache-superset.md).
