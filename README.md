@@ -23,7 +23,7 @@ directly without another `pip install`.
 - Clone this repo and change into the directory of this repo.
 - Run `cp superset_config.example.py superset_config.py` and override
   the config appropriately.
-- Run `pip install -e .`
+- Run `pip install -e '.[dev]'`
 
 ### CommCare HQ OAuth Integration
 
