@@ -143,9 +143,9 @@ This isn't documented in superset but can be seen in the superset's
 
 ### Testing
 
-Tests use pytest, which is included in `requirements_dev.txt`:
+Install requirements for running tests:
 
-    $ pip install -r requirements_test.txt
+    $ pip install -e '.[test]'
     $ pytest
 
 The test runner can only run tests that do not import from Superset. The

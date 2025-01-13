@@ -28,6 +28,10 @@ setup(
         'dev': [
             'git-build-branch',
         ],
+        'test': [
+            'pytest==7.3.1',
+            'Flask-Testing==0.8.1',
+        ]
     },
     classifiers=[
         'Programming Language :: Python',
