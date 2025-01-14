@@ -1,13 +1,13 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='hq_superset',
+    name='commcare-analytics',
     version='1.1.2',
     description='CommCare HQ Superset Integration',
     license='Apache2',
     author='Dimagi Inc.',
     author_email='sreddy@dimagi.com',
-    url='https://github.com/dimagi/hq_superset',
+    url='https://github.com/dimagi/commcare-analytics',
     packages=find_packages(exclude=['docs', 'tests']),
     include_package_data=True,
     install_requires=[
@@ -22,17 +22,21 @@ setup(
         'sentry-sdk[flask]==1.39.2',
         'Werkzeug==2.3.3',
         'WTForms==2.3.3',
-        'ddtrace==2.17.0rc2'
+        'ddtrace==2.17.0rc2',
     ],
     extras_require={
         'dev': [
             'git-build-branch',
         ],
+        'test': [
+            'pytest==7.3.1',
+            'Flask-Testing==0.8.1',
+        ]
     },
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.9'
-        'Programming Language :: Python :: 3.10'
-        'Programming Language :: Python :: 3.11'
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 )
