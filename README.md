@@ -23,7 +23,7 @@ directly without another `pip install`.
 - Clone this repo and change into the directory of this repo.
 - Run `cp superset_config.example.py superset_config.py` and override
   the config appropriately.
-- Run `pip install -e .`
+- Run `pip install -e '.[dev]'`
 
 ### CommCare HQ OAuth Integration
 
@@ -143,9 +143,9 @@ This isn't documented in superset but can be seen in the superset's
 
 ### Testing
 
-Tests use pytest, which is included in `requirements_dev.txt`:
+Install requirements for running tests:
 
-    $ pip install -r requirements_test.txt
+    $ pip install -e '.[test]'
     $ pytest
 
 The test runner can only run tests that do not import from Superset. The
@@ -173,7 +173,7 @@ $ pip uninstall hq-superset
 4. Install new superset version
 
 ```shell
-$ pip install git+https://github.com/dimagi/hq_superset.git@staging
+$ pip install git+https://github.com/dimagi/commcare-analytics.git@staging
 ```
 
 5. Restart superset & celery as needed
@@ -223,7 +223,8 @@ $ alembic revision --autogenerate -m "Add table for Foo model"
 Upgrading Superset
 ------------------
 
-`dimagi-superset` is a requirement of this `hq_superset` package. It is
-a fork of `apache-superset`, and adds important features to it,
-necessary for `hq_superset`. For more information about how to upgrade
-`dimagi-superset`, see [Dimagi Superset Fork](apache-superset.md).
+`dimagi-superset` is a requirement of this `commcare-analytics` package.
+It is a fork of `apache-superset`, and adds important features to it,
+necessary for `commcare-analytics`. For more information about how to
+upgrade `dimagi-superset`, see
+[Dimagi Superset Fork](apache-superset.md).

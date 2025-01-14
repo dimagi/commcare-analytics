@@ -7,3 +7,6 @@
 trunk: master
 name: staging
 branches:
+  - nh/test_maps+cs/SC-4106-add-dd-application-monitoring
+  - cs/SC-4106-add-dd-application-monitoring
+  - nh/test_maps
