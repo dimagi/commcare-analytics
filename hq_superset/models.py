@@ -35,7 +35,8 @@ class DataSetChange:
     data: list[dict[str, Any]]
 
     def update_dataset(self):
-        with statsd.timed('cca.dataset_change.timer', tags=[SERVER_ENVIRONMENT, self.data_source_id]):
+        env_tag = f"env:{SERVER_ENVIRONMENT}"
+        with statsd.timed('cca.dataset_change.timer', tags=[env_tag, f"datasource:{self.data_source_id}"]):
             self._update_dataset()
 
     def _update_dataset(self):
