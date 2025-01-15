@@ -6,8 +6,9 @@ from authlib.integrations.sqla_oauth2 import (
     OAuth2TokenMixin,
 )
 from cryptography.fernet import MultiFernet
+from datadog import statsd
 from superset import db
-from superset_config import SKIP_DATASET_CHANGE_FOR_DOMAINS
+from superset_config import SKIP_DATASET_CHANGE_FOR_DOMAINS, SERVER_ENVIRONMENT
 
 from hq_superset.const import OAUTH2_DATABASE_NAME
 from hq_superset.exceptions import TableMissing
@@ -34,6 +35,11 @@ class DataSetChange:
     data: list[dict[str, Any]]
 
     def update_dataset(self):
+        env_tag = f"env:{SERVER_ENVIRONMENT}"
+        with statsd.timed('cca.dataset_change.timer', tags=[env_tag, f"datasource:{self.data_source_id}"]):
+            self._update_dataset()
+
+    def _update_dataset(self):
         """
         Updates a dataset with ``self.data``.
 
