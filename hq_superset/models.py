@@ -6,6 +6,7 @@ from authlib.integrations.sqla_oauth2 import (
     OAuth2TokenMixin,
 )
 from cryptography.fernet import MultiFernet
+from datadog import statsd
 from superset import db
 from superset_config import SKIP_DATASET_CHANGE_FOR_DOMAINS
 
@@ -16,6 +17,7 @@ from hq_superset.utils import (
     get_fernet_keys,
     get_hq_database,
 )
+from hq_superset.metrics import get_tags
 
 import logging
 logger = logging.getLogger(__name__)
@@ -34,6 +36,10 @@ class DataSetChange:
     data: list[dict[str, Any]]
 
     def update_dataset(self):
+        with statsd.timed('cca.dataset_change.timer', tags=get_tags({"datasource": self.data_source_id})):
+            self._update_dataset()
+
+    def _update_dataset(self):
         """
         Updates a dataset with ``self.data``.
 
