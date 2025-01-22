@@ -1,8 +1,7 @@
-from typing import Dict, List
 from superset_config import SERVER_ENVIRONMENT
 
 
-def get_tags(tag_values: Dict[str, str]) -> List[str]:
+def get_tags(tag_values: dict[str, str]) -> list[str]:
     tag_values.update({"env": SERVER_ENVIRONMENT})
 
     return [
