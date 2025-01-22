@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='commcare-analytics',
-    version='1.1.2',
+    version='1.2.0',
     description='CommCare HQ Superset Integration',
     license='Apache2',
     author='Dimagi Inc.',
