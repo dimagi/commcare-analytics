@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from authlib.integrations.sqla_oauth2 import (
     OAuth2ClientMixin,
@@ -34,8 +34,7 @@ class DataSetChange:
     data_source_id: str
     doc_id: str
     data: list[dict[str, Any]]
-
-    SEP = ','
+    doc_ids: Optional[list[str]]
 
     def update_dataset(self):
         with statsd.timed('cca.dataset_change.timer', tags=get_tags({"datasource": self.data_source_id})):
@@ -68,9 +67,8 @@ class DataSetChange:
             engine.connect() as connection,
             connection.begin()  # Commit on leaving context
         ):
-            if self.SEP in self.doc_id:
-                doc_ids = self.doc_id.split(self.SEP)
-                delete_stmt = table.delete().where(table.c.doc_id.in_(doc_ids))
+            if self.doc_ids:
+                delete_stmt = table.delete().where(table.c.doc_id.in_(self.doc_ids))
             else:
                 delete_stmt = table.delete().where(table.c.doc_id == self.doc_id)
             connection.execute(delete_stmt)
