@@ -7,5 +7,3 @@
 trunk: master
 name: staging
 branches:
-#  - nh/test_maps
-  - cs/SC-4275-add-moz-map
