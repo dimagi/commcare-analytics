@@ -7,4 +7,3 @@
 trunk: master
 name: staging
 branches:
-  - nh/test_maps
