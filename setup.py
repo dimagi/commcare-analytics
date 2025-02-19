@@ -15,7 +15,7 @@ setup(
         # Dependencies based on Superset 3.1.0 where applicable
         'Authlib==1.3.0',
         'celery==5.3.6',
-        'cryptography==41.0.2',
+        'cryptography==42.0.4',
         'jinja2==3.1.2',
         'psycopg2==2.9.6',
         'requests==2.31.0',
