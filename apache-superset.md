@@ -217,12 +217,22 @@ To generate updated language files:
 
 #### Example of upgrading to a new upstream version
 
+
+First things first, in order for you to do an upgrade of Dimagi Superset you will have to
+add the Apache Superset as an upstream so that you can fetch the new
+tags. You can do this by running the following command on your local machine:
+```bash
+$ git remote add upstream git@github.com:apache/superset.git
+```
+
+Now, on to the upgrade process...
+
 Let us assume that the last Dimagi Superset release was 2.1.3 and we
 want to create a new release based on the new Apache Superset version
 3.0.3. To create a new Dimagi Superset release, we need to know three
 tags:
 
-1. The previous Dimagi release *that doesn't include translations*:
+1. The previous Dimagi release *that doesn't include custom changes*:
    ```bash
    $ git tag -l '*dimagi*'
    1.4.1-dimagi-1
@@ -308,7 +318,7 @@ the build instructions have remained the same before proceeding.
 
 - Upload the tar using twine
   ```
-  twine upload dist/apache-superset-${latest-dimagi-version}.tar.gz
+  twine upload dist/dimagi-superset-${latest-dimagi-version}.tar.gz
   ```
   You can refer to 1Password for the PyPI API token for dimagi-superset.
 
