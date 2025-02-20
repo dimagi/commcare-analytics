@@ -218,7 +218,7 @@ To generate updated language files:
 #### Example of upgrading to a new upstream version
 
 
-First things first, in order for you to do  an upgrade of Dimagi Superset you will have to
+First things first, in order for you to do an upgrade of Dimagi Superset you will have to
 add the Apache Superset as an upstream so that you can fetch the new
 tags. You can do this by running the following command on your local machine:
 ```bash
