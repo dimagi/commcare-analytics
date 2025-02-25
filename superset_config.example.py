@@ -193,8 +193,6 @@ TALISMAN_CONFIG = {
 USER_DOMAIN_ROLE_EXPIRY = 60 # minutes
 SKIP_DATASET_CHANGE_FOR_DOMAINS = []
 
-from flask import Response
-
 SERVER_ENVIRONMENT = 'changeme'  # staging, production, etc.
 
 def FLASK_APP_MUTATOR(app: Flask):
