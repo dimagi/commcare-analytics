@@ -193,6 +193,8 @@ TALISMAN_CONFIG = {
 USER_DOMAIN_ROLE_EXPIRY = 60 # minutes
 SKIP_DATASET_CHANGE_FOR_DOMAINS = []
 
+from flask import Response
+
 SERVER_ENVIRONMENT = 'changeme'  # staging, production, etc.
 
 def FLASK_APP_MUTATOR(app: Flask):
@@ -206,7 +208,7 @@ def error_check_after_req(response_obj):
     """
     if (
         request.path.startswith("/api/v1/sqllab/execute/")
-        and response_obj.status == "500 INTERNAL SERVER ERROR"
+        and response_obj.status_code == 500
     ):
-        response_obj.status = 400
+        response_obj.status_code = 400    
     return response_obj
