@@ -28,7 +28,7 @@
     {% if g.hq_domain %}
         window.onload = function() {
             var element = `
-                <a href="/domain/list" class="navbar-brand"><img src="/static/images/commcare-hq-logo.png" style="max-width:100% ; max-height:100% ;"></a>
+                <a href="/domain/list" class="navbar-brand"><img src="/static/images/commcare-logo.png" style="max-width:100% ; max-height:100% ;"></a>
                 <a href="/domain/list" class="navbar-brand" title="Click to select a different domain">{{g.hq_domain}}</a>
             `;
             $($(".navbar-brand")[0]).after(element);
