@@ -194,19 +194,3 @@ USER_DOMAIN_ROLE_EXPIRY = 60 # minutes
 SKIP_DATASET_CHANGE_FOR_DOMAINS = []
 
 SERVER_ENVIRONMENT = 'changeme'  # staging, production, etc.
-
-def FLASK_APP_MUTATOR(app: Flask):
-    app.after_request(error_check_after_req)
-
-def error_check_after_req(response_obj):
-    """
-    This gets used by the Flask app's after_request hook to check for
-    endpoints that return false-positive 500 errors and change them to
-    a more appropriate 400 error.
-    """
-    if (
-        request.path.startswith("/api/v1/sqllab/execute/")
-        and response_obj.status_code == 500
-    ):
-        response_obj.status_code = 400    
-    return response_obj
