@@ -57,7 +57,7 @@ def error_check_after_request(response_obj):
     endpoints that return false-positive 500 errors and change them to
     a more appropriate 400 error.
     """
-    def has_valid_errors(response):
+    def should_update_status_code_for_errors(response):
         VALID_ERROR_TYPES = [
             'COLUMN_DOES_NOT_EXIST_ERROR',
             'GENERIC_DB_ENGINE_ERROR',
@@ -71,7 +71,7 @@ def error_check_after_request(response_obj):
     if (
         request.path.startswith("/api/v1/sqllab/execute/")
         and response_obj.status_code == 500
-        and has_valid_errors(response_obj.response[0])
+        and should_update_status_code_for_errors(response_obj.response[0])
     ):
         response_obj.status_code = 400
     return response_obj
