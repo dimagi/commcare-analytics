@@ -63,9 +63,12 @@ def error_check_after_request(response_obj):
             'GENERIC_DB_ENGINE_ERROR',
         ]
         response_dict = json.loads(response.decode('utf-8'))
-        for error in response_dict['errors']:
-            if error['error_type'] in VALID_ERROR_TYPES:
-                return True
+        try:
+            for error in response_dict['errors']:
+                if error['error_type'] in VALID_ERROR_TYPES:
+                    return True
+        except KeyError:
+            pass
         return False
 
     if (
