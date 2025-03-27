@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 
 import superset
 from flask import current_app, flash, g, redirect, request, session, url_for
@@ -37,6 +38,7 @@ def after_request_hook(response):
     ]
     if request.url_rule and (request.url_rule.endpoint in logout_views):
         response.set_cookie('hq_domain', '', expires=0)
+    response = error_check_after_request(response)
     return response
 
 
@@ -47,6 +49,35 @@ def oauth_session_expired(*arg, **kwargs):
         'warning',
     )
     return redirect(url_for("AuthOAuthView.login"))
+
+
+def error_check_after_request(response_obj):
+    """
+    This gets used by the Flask app's after_request hook to check for
+    endpoints that return false-positive 500 errors and change them to
+    a more appropriate 400 error.
+    """
+    def should_update_status_code_for_errors(response):
+        VALID_ERROR_TYPES = [
+            'COLUMN_DOES_NOT_EXIST_ERROR',
+            'GENERIC_DB_ENGINE_ERROR',
+        ]
+        response_dict = json.loads(response.decode('utf-8'))
+        try:
+            for error in response_dict['errors']:
+                if error['error_type'] in VALID_ERROR_TYPES:
+                    return True
+        except KeyError:
+            pass
+        return False
+
+    if (
+        request.path.startswith("/api/v1/sqllab/execute/")
+        and response_obj.status_code == 500
+        and should_update_status_code_for_errors(response_obj.response[0])
+    ):
+        response_obj.status_code = 400
+    return response_obj
 
 
 DOMAIN_EXCLUDED_VIEWS = [
