@@ -34,7 +34,7 @@ class DataSetChange:
     data_source_id: str
     doc_id: str
     data: list[dict[str, Any]]
-    doc_ids: Optional[list[str]]
+    doc_ids: Optional[list[str]] = None
 
     def update_dataset(self):
         with statsd.timed('cca.dataset_change.timer', tags=get_tags({"datasource": self.data_source_id})):
