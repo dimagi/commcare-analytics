@@ -77,8 +77,11 @@ class TestAPI(HQDBTestCase):
 
     def test_post_dataset_change_too_large(self):
         row = {"doc_id": "def123", "foo": "bar"}
+        # To create a payload that is bigger than the 10MB limit, set
+        # "data" to A LOT of rows. To calculate the number of rows we
+        # need, divide 10MB by the size of one row, and add 1:
         row_str = json.dumps(row)
-        num_rows = 10 * 1024 * 1024 // len(row_str) + 1  # > 10MB limit
+        num_rows = 10 * 1024 * 1024 // len(row_str) + 1
         payload = {
             "data_source_id": "abc123",
             "doc_id": "def123",
