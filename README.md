@@ -167,7 +167,7 @@ In order to test your feature branch on staging you need to
 3. Uninstall current superset version
 
 ```shell
-$ pip uninstall hq-superset
+$ pip uninstall commcare-analytics
 ```
 
 4. Install new superset version
